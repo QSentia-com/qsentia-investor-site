@@ -314,6 +314,20 @@ function ModelComparison({ data }: { data: any }) {
                   activeDot={{ r: 5 }}
                 />
               ))}
+              
+              {(data?.benchmarks || []).map((b: any) => (
+  <Line
+    key={`${b.name} (${b.ticker})`}
+    type="monotone"
+    dataKey={`${b.name} (${b.ticker})`}
+    stroke={b.color || '#737373'}
+    strokeWidth={2.4}
+    strokeDasharray="8 6"
+    dot={false}
+    connectNulls
+    activeDot={false}
+  />
+))}
             </LineChart>
           </ResponsiveContainer>
         </div>
