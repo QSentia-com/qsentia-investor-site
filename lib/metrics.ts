@@ -69,7 +69,10 @@ export function computeStats(values: number[]): PerfStats {
   const volatility = std * Math.sqrt(252);
   const sharpe = std > 0 ? (mean / std) * Math.sqrt(252) : null;
   const sortino = downsideStd > 0 ? (mean / downsideStd) * Math.sqrt(252) : null;
-  const calmar = maxDrawdown < 0 ? annualizedReturn / Math.abs(maxDrawdown) : null;
+  const calmar =
+  maxDrawdown !== null && maxDrawdown < 0
+    ? annualizedReturn / Math.abs(maxDrawdown)
+    : null;
   const hitRate = returns.filter((r) => r > 0).length / returns.length;
 
   return {
