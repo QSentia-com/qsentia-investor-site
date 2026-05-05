@@ -8,6 +8,14 @@ const REGISTRY_OWNER = process.env.NEXT_PUBLIC_QSENTIA_REPO_OWNER || 'FinTechEnt
 const REGISTRY_REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'Base_Model_BR_PPO';
 const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
 
+const BENCHMARKS = [
+  { name: 'S&P 500', ticker: 'SPY', color: '#111111' },
+  { name: 'Nasdaq 100', ticker: 'QQQ', color: '#7c3aed' },
+  { name: 'Dow Jones', ticker: 'DIA', color: '#737373' },
+  { name: 'Russell 2000', ticker: 'IWM', color: '#b45309' },
+  { name: 'Total US Market', ticker: 'VTI', color: '#0f766e' },
+];
+
 type CsvRow = Record<string, string>;
 
 type ModelConfig = {
@@ -133,6 +141,7 @@ function parseSimpleModelsYaml(text: string): ModelConfig[] {
       current = {};
 
       const rest = line.slice(2).trim();
+
       if (rest.includes(':')) {
         const [key, ...valueParts] = rest.split(':');
         const keyName = key.trim() as keyof ModelConfig;
@@ -229,6 +238,73 @@ function actionCounts(rows: CsvRow[]) {
   }));
 }
 
+async function fetchYahooBenchmark(ticker: string, startDate?: string) {
+  try {
+    const start = startDate ? new Date(startDate) : new Date('2024-01-01');
+    const end = new Date();
+
+    if (Number.isNaN(start.getTime())) return [];
+
+    const period1 = Math.floor(start.getTime() / 1000);
+    const period2 = Math.floor(end.getTime() / 1000);
+
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?period1=${period1}&period2=${period2}&interval=1d&events=history`;
+
+    const response = await fetch(url, {
+      cache: 'no-store',
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
+        'Cache-Control': 'no-cache',
+      },
+    });
+
+    if (!response.ok) return [];
+
+    const json = await response.json();
+    const result = json?.chart?.result?.[0];
+
+    const timestamps: number[] = result?.timestamp || [];
+    const closes: Array<number | null> = result?.indicators?.quote?.[0]?.close || [];
+
+    const clean = timestamps
+      .map((ts, i) => ({
+        timestamp: new Date(ts * 1000).toISOString(),
+        close: closes[i],
+      }))
+      .filter((row) => row.close !== null && Number.isFinite(row.close));
+
+    if (clean.length < 2) return [];
+
+    const first = clean[0].close as number;
+
+    return clean.map((row) => ({
+      timestamp: row.timestamp,
+      value: ((row.close as number) / first) * 100,
+      close: row.close as number,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+async function fetchBenchmarks(startDate?: string) {
+  const results = await Promise.all(
+    BENCHMARKS.map(async (benchmark) => {
+      const points = await fetchYahooBenchmark(benchmark.ticker, startDate);
+      const values = points.map((point) => point.value);
+
+      return {
+        ...benchmark,
+        points,
+        stats: computeStats(values),
+        rowCount: points.length,
+      };
+    })
+  );
+
+  return results;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
@@ -284,6 +360,13 @@ export async function GET(request: Request) {
     return: i === 0 ? 0 : returns[i - 1] ?? 0,
   }));
 
+  const benchmarkStartDate =
+    portfolio.length > 0
+      ? portfolio[0].timestamp.slice(0, 10)
+      : undefined;
+
+  const benchmarks = await fetchBenchmarks(benchmarkStartDate);
+
   const modelComparison = [];
 
   for (const model of registry) {
@@ -331,6 +414,7 @@ export async function GET(request: Request) {
     },
     stats,
     equityCurve,
+    benchmarks,
     returns: returns.map((r, i) => ({
       timestamp: portfolio[i + 1]?.timestamp,
       return: r,
@@ -380,6 +464,11 @@ export async function GET(request: Request) {
         rowCount: m.rowCount,
         repo: m.repo,
         logsPath: m.logsPath,
+      })),
+      benchmarkRows: benchmarks.map((b) => ({
+        name: b.name,
+        ticker: b.ticker,
+        rowCount: b.rowCount,
       })),
     },
     updatedAt: new Date().toISOString(),
