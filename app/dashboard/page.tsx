@@ -339,8 +339,7 @@ function ModelComparison({ data }: { data: any }) {
           </div>
         )}
       </ChartFrame>
-
-      <DataTable
+    <DataTable
   title="Relative Performance Table"
   rows={[
     ...(data?.modelComparison || []).map((m: any) => ({
