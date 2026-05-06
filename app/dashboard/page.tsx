@@ -341,22 +341,41 @@ function ModelComparison({ data }: { data: any }) {
       </ChartFrame>
 
       <DataTable
-        title="Relative Performance Table"
-        rows={(data?.modelComparison || []).map((m: any) => ({
-          Model: m.name,
-          Status:
-            m.stats?.status === 'partial'
-              ? `Partial history (${m.stats?.nObservations || 0} observations)`
-              : m.stats?.status === 'insufficient'
-                ? 'Insufficient history'
-                : 'Ready',
-          'Latest Value': fmtDollar(m.latestValue),
-          'Total Return': fmtPct(m.stats?.totalReturn, true),
-          Sharpe: fmtNum(m.stats?.sharpe),
-          'Max Drawdown': fmtPct(m.stats?.maxDrawdown, true),
-          Volatility: fmtPct(m.stats?.volatility),
-        }))}
-      />
+  title="Relative Performance Table"
+  rows={[
+    ...(data?.modelComparison || []).map((m: any) => ({
+      Asset: m.name,
+      Type: 'QSentia Model',
+      Status:
+        m.stats?.status === 'partial'
+          ? `Partial history (${m.stats?.nObservations || 0} observations)`
+          : m.stats?.status === 'insufficient'
+            ? 'Insufficient history'
+            : 'Ready',
+      'Latest Value': fmtDollar(m.latestValue),
+      'Total Return': fmtPct(m.stats?.totalReturn, true),
+      Sharpe: fmtNum(m.stats?.sharpe),
+      'Max Drawdown': fmtPct(m.stats?.maxDrawdown, true),
+      Volatility: fmtPct(m.stats?.volatility),
+    })),
+
+    ...(data?.benchmarks || []).map((b: any) => ({
+      Asset: `${b.name} (${b.ticker})`,
+      Type: 'Benchmark',
+      Status:
+        b.stats?.status === 'partial'
+          ? `Partial history (${b.stats?.nObservations || 0} observations)`
+          : b.stats?.status === 'insufficient'
+            ? 'Insufficient history'
+            : 'Ready',
+      'Latest Value': 'Index = 100',
+      'Total Return': fmtPct(b.stats?.totalReturn, true),
+      Sharpe: fmtNum(b.stats?.sharpe),
+      'Max Drawdown': fmtPct(b.stats?.maxDrawdown, true),
+      Volatility: fmtPct(b.stats?.volatility),
+    })),
+  ]}
+/>
     </Panel>
   );
 }
