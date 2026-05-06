@@ -359,11 +359,6 @@ export async function GET(request: Request) {
     drawdown: drawdowns[i],
     return: i === 0 ? 0 : returns[i - 1] ?? 0,
   }));
-
-  const modelAConfig = registry.find((m) => m.id === 'model_a') || registry[0];
-
-  const modelAPortfolioRows = await fetchCsvFromModel(modelAConfig, 'portfolio/portfolio.csv');
-  const modelAPortfolio = normalizePortfolioRows(modelAPortfolioRows);
   
   const modelAConfig = registry.find((m) => m.id === 'model_a') || registry[0];
 
