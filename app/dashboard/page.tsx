@@ -357,7 +357,9 @@ function ModelComparison({ data }: { data: any }) {
       Sharpe: fmtNum(m.stats?.sharpe),
       'Max Drawdown': fmtPct(m.stats?.maxDrawdown, true),
       Volatility: fmtPct(m.stats?.volatility),
-    })),
+     })),
+  ]}
+/>
 
     ...(data?.benchmarks || []).map((b: any) => ({
       Asset: `${b.name} (${b.ticker})`,
