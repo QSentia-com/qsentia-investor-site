@@ -365,15 +365,18 @@ export async function GET(request: Request) {
   const modelAPortfolioRows = await fetchCsvFromModel(modelAConfig, 'portfolio/portfolio.csv');
   const modelAPortfolio = normalizePortfolioRows(modelAPortfolioRows);
   
+  const modelAConfig = registry.find((m) => m.id === 'model_a') || registry[0];
+
+  const modelAPortfolioRows = await fetchCsvFromModel(modelAConfig, 'portfolio/portfolio.csv');
+  const modelAPortfolio = normalizePortfolioRows(modelAPortfolioRows);
+  
   const benchmarkStartDate =
     modelAPortfolio.length > 0
       ? modelAPortfolio[0].timestamp.slice(0, 10)
       : portfolio.length > 0
         ? portfolio[0].timestamp.slice(0, 10)
         : undefined;
-
-const benchmarks = await fetchBenchmarks(benchmarkStartDate);
-
+  
   const benchmarks = await fetchBenchmarks(benchmarkStartDate);
 
   const modelComparison = [];
