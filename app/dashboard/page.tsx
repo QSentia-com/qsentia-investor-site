@@ -514,22 +514,59 @@ function ExecutionMonitor({ data }: { data: any }) {
 }
 
 function DecisionHistory({ data }: { data: any }) {
+  const actionCounts = data?.actionCounts || [];
+  const hasActionCounts = actionCounts.length > 0;
+
   return (
-    <Panel eyebrow="Model Intent" title="Decision History" subtitle="Historical allocation decisions and allocation signal frequency.">
-      <div className="grid gap-6 lg:grid-cols-[0.65fr_0.35fr]">
+    <Panel
+      eyebrow="Model Intent"
+      title="Decision History"
+      subtitle="Historical allocation decisions, model signals, and action frequency from the committed decision logs."
+    >
+      <div className="grid gap-6">
         <DataTable title="Decision Log" rows={data?.decisions || []} />
+
         <ChartFrame title="Action Frequency">
-          <div className="h-[460px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data?.actionCounts || []}>
-                <CartesianGrid stroke="rgba(75,63,209,0.10)" vertical={false} />
-                <XAxis dataKey="action" stroke="#737373" tick={{ fontSize: 11, fill: '#525252' }} />
-                <YAxis stroke="#737373" tick={{ fontSize: 12, fill: '#525252' }} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="count" fill="#4b3fd1" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {!hasActionCounts ? (
+            <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-black/10 bg-white/70 p-8 text-center">
+              <div>
+                <div className="mb-2 text-xs font-black uppercase tracking-[0.22em] text-[#4b3fd1]">
+                  Pending Signal History
+                </div>
+                <p className="max-w-xl text-sm leading-6 text-neutral-600">
+                  No action-frequency data is available yet. This chart will populate once the
+                  decision log includes model actions, signals, or decision labels.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="h-[420px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={actionCounts} margin={{ top: 10, right: 20, left: 0, bottom: 40 }}>
+                  <CartesianGrid stroke="rgba(75,63,209,0.10)" vertical={false} />
+                  <XAxis
+                    dataKey="action"
+                    stroke="#737373"
+                    tick={{ fontSize: 11, fill: '#525252' }}
+                    tickLine={false}
+                    axisLine={{ stroke: 'rgba(0,0,0,0.15)' }}
+                    interval={0}
+                    angle={-20}
+                    textAnchor="end"
+                  />
+                  <YAxis
+                    stroke="#737373"
+                    tick={{ fontSize: 12, fill: '#525252' }}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Bar dataKey="count" fill="#4b3fd1" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </ChartFrame>
       </div>
     </Panel>
