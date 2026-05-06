@@ -343,36 +343,38 @@ function ModelComparison({ data }: { data: any }) {
   title="Relative Performance Table"
   rows={[
     ...(data?.modelComparison || []).map((m: any) => ({
-      Asset: m.name,
-      Type: 'QSentia Model',
-      Status:
-        m.stats?.status === 'partial'
-          ? `Partial history (${m.stats?.nObservations || 0} observations)`
-          : m.stats?.status === 'insufficient'
-            ? 'Insufficient history'
-            : 'Ready',
-      'Latest Value': fmtDollar(m.latestValue),
-      'Total Return': fmtPct(m.stats?.totalReturn, true),
-      Sharpe: fmtNum(m.stats?.sharpe),
-      'Max Drawdown': fmtPct(m.stats?.maxDrawdown, true),
-      Volatility: fmtPct(m.stats?.volatility),
-    })),
+  Asset: m.name,
+  Type: 'QSentia Model',
+  'Inception Date': formatInceptionDate(m.points?.[0]?.timestamp),
+  Status:
+    m.stats?.status === 'partial'
+      ? `Partial history (${m.stats?.nObservations || 0} observations)`
+      : m.stats?.status === 'insufficient'
+        ? 'Insufficient history'
+        : 'Ready',
+  'Latest Value': fmtDollar(m.latestValue),
+  'Total Return': fmtPct(m.stats?.totalReturn, true),
+  Sharpe: fmtNum(m.stats?.sharpe),
+  'Max Drawdown': fmtPct(m.stats?.maxDrawdown, true),
+  Volatility: fmtPct(m.stats?.volatility),
+})),
 
     ...(data?.benchmarks || []).map((b: any) => ({
-      Asset: `${b.name} (${b.ticker})`,
-      Type: 'Benchmark',
-      Status:
-        b.stats?.status === 'partial'
-          ? `Partial history (${b.stats?.nObservations || 0} observations)`
-          : b.stats?.status === 'insufficient'
-            ? 'Insufficient history'
-            : 'Ready',
-      'Latest Value': 'Index = 100',
-      'Total Return': fmtPct(b.stats?.totalReturn, true),
-      Sharpe: fmtNum(b.stats?.sharpe),
-      'Max Drawdown': fmtPct(b.stats?.maxDrawdown, true),
-      Volatility: fmtPct(b.stats?.volatility),
-    })),
+  Asset: `${b.name} (${b.ticker})`,
+  Type: 'Benchmark',
+  'Inception Date': formatInceptionDate(b.points?.[0]?.timestamp),
+  Status:
+    b.stats?.status === 'partial'
+      ? `Partial history (${b.stats?.nObservations || 0} observations)`
+      : b.stats?.status === 'insufficient'
+        ? 'Insufficient history'
+        : 'Ready',
+  'Latest Value': 'Index = 100',
+  'Total Return': fmtPct(b.stats?.totalReturn, true),
+  Sharpe: fmtNum(b.stats?.sharpe),
+  'Max Drawdown': fmtPct(b.stats?.maxDrawdown, true),
+  Volatility: fmtPct(b.stats?.volatility),
+})),
   ]}
 />
     </Panel>
@@ -835,6 +837,20 @@ function mergeSeries(series: { key: string; points: { timestamp: string; value: 
   return Object.values(byTimestamp).sort(
     (a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
+}
+
+function formatInceptionDate(timestamp: string | undefined) {
+  if (!timestamp) return 'Pending';
+
+  const date = new Date(timestamp);
+
+  if (Number.isNaN(date.getTime())) return 'Pending';
+
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+  });
 }
 
 function historyStatus(stats: any) {
