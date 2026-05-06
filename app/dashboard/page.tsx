@@ -842,7 +842,16 @@ function mergeSeries(series: { key: string; points: { timestamp: string; value: 
 function formatInceptionDate(timestamp: string | undefined) {
   if (!timestamp) return 'Pending';
 
-  const date = new Date(timestamp);
+  const normalized = String(timestamp)
+    .trim()
+    .replace('_', 'T');
+
+  let date = new Date(normalized);
+
+  if (Number.isNaN(date.getTime())) {
+    const dateOnly = String(timestamp).slice(0, 10);
+    date = new Date(`${dateOnly}T00:00:00Z`);
+  }
 
   if (Number.isNaN(date.getTime())) return 'Pending';
 
