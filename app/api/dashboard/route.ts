@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { computeStats, normalizeTo100, pctChange } from '@/lib/metrics';
+import { loadModelAudit } from '@/lib/auditLoader';
 import Papa from 'papaparse';
 
 export const dynamic = 'force-dynamic';
@@ -367,6 +368,16 @@ export async function GET(request: Request) {
 
   const benchmarks = await fetchBenchmarks(benchmarkStartDate);
 
+  // Load the per-repo backtest audit JSON for the selected model. Returns a normalized
+  // shape with DSR/PSR/PBO/test/validation/full Sharpe when the repo publishes them
+  // (currently only alpha_long_top10), or { source: null } for repos without rich audits.
+  const audit = await loadModelAudit({
+    id: selectedModelConfig.id,
+    repo: selectedModelConfig.repo,
+    branch: selectedModelConfig.branch || 'main',
+    logs_path: selectedModelConfig.logs_path,
+  });
+
   const modelComparison = [];
 
   for (const model of registry) {
@@ -413,6 +424,7 @@ export async function GET(request: Request) {
         null,
     },
     stats,
+    audit,
     equityCurve,
     benchmarks,
     returns: returns.map((r, i) => ({
