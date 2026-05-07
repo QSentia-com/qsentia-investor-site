@@ -29,6 +29,18 @@ type ModelConfig = {
   color: string;
 };
 
+type PortfolioPoint = {
+  timestamp: string;
+  value: number;
+  raw: CsvRow;
+};
+
+type DailyPoint = {
+  timestamp: string;
+  value: number;
+  raw?: CsvRow;
+};
+
 function rawUrl(repoFullName: string, branch: string, path: string) {
   const cleanPath = path.replace(/^\/+/, '');
   return `https://raw.githubusercontent.com/${repoFullName}/${branch}/${cleanPath}`;
@@ -193,7 +205,42 @@ function latest<T>(arr: T[]): T | null {
   return arr.length ? arr[arr.length - 1] : null;
 }
 
-function normalizePortfolioRows(rows: CsvRow[]) {
+function timestampToDateKey(timestamp: string | undefined) {
+  if (!timestamp) return '';
+
+  const clean = String(timestamp).trim();
+
+  if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
+    return clean.slice(0, 10);
+  }
+
+  const normalized = clean.replace('_', 'T');
+  const date = new Date(normalized);
+
+  if (!Number.isNaN(date.getTime())) {
+    return date.toISOString().slice(0, 10);
+  }
+
+  return '';
+}
+
+function timestampSortValue(timestamp: string | undefined) {
+  if (!timestamp) return 0;
+
+  const clean = String(timestamp).trim().replace('_', 'T');
+  const date = new Date(clean);
+
+  if (!Number.isNaN(date.getTime())) {
+    return date.getTime();
+  }
+
+  const dateKey = timestampToDateKey(timestamp);
+  const fallback = new Date(`${dateKey}T00:00:00Z`);
+
+  return Number.isNaN(fallback.getTime()) ? 0 : fallback.getTime();
+}
+
+function normalizePortfolioRows(rows: CsvRow[]): PortfolioPoint[] {
   return rows
     .map((row) => {
       const value =
@@ -208,11 +255,32 @@ function normalizePortfolioRows(rows: CsvRow[]) {
         raw: row,
       };
     })
-    .filter((row) => row.timestamp && row.value !== null) as {
-      timestamp: string;
-      value: number;
-      raw: CsvRow;
-    }[];
+    .filter((row) => row.timestamp && row.value !== null) as PortfolioPoint[];
+}
+
+function toDailyPortfolio(points: PortfolioPoint[]): DailyPoint[] {
+  const byDate = new Map<string, DailyPoint & { sortValue: number }>();
+
+  for (const point of points) {
+    const dateKey = timestampToDateKey(point.timestamp);
+    if (!dateKey) continue;
+
+    const sortValue = timestampSortValue(point.timestamp);
+    const existing = byDate.get(dateKey);
+
+    if (!existing || sortValue >= existing.sortValue) {
+      byDate.set(dateKey, {
+        timestamp: dateKey,
+        value: point.value,
+        raw: point.raw,
+        sortValue,
+      });
+    }
+  }
+
+  return Array.from(byDate.values())
+    .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+    .map(({ timestamp, value, raw }) => ({ timestamp, value, raw }));
 }
 
 function calculateDrawdown(values: number[]) {
@@ -240,7 +308,7 @@ function actionCounts(rows: CsvRow[]) {
 
 async function fetchYahooBenchmark(ticker: string, startDate?: string) {
   try {
-    const start = startDate ? new Date(startDate) : new Date('2024-01-01');
+    const start = startDate ? new Date(`${startDate}T00:00:00Z`) : new Date('2024-01-01T00:00:00Z');
     const end = new Date();
 
     if (Number.isNaN(start.getTime())) return [];
@@ -268,7 +336,7 @@ async function fetchYahooBenchmark(ticker: string, startDate?: string) {
 
     const clean = timestamps
       .map((ts, i) => ({
-        timestamp: new Date(ts * 1000).toISOString(),
+        timestamp: new Date(ts * 1000).toISOString().slice(0, 10),
         close: closes[i],
       }))
       .filter((row) => row.close !== null && Number.isFinite(row.close));
@@ -305,6 +373,20 @@ async function fetchBenchmarks(startDate?: string) {
   return results;
 }
 
+async function benchmarkStartDateFromFirstModel(registry: ModelConfig[]) {
+  const firstModel =
+    registry.find((model) => model.id === 'model_a') ||
+    registry.find((model) => model.name.toLowerCase().includes('br-ppo v10')) ||
+    registry[0];
+
+  if (!firstModel) return undefined;
+
+  const rows = await fetchCsvFromModel(firstModel, 'portfolio/portfolio.csv');
+  const daily = toDailyPortfolio(normalizePortfolioRows(rows));
+
+  return daily.length ? daily[0].timestamp : undefined;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
@@ -328,6 +410,7 @@ export async function GET(request: Request) {
     ordersHistoryRows,
     signalHistoryRows,
     healthStatus,
+    benchmarkStartDate,
   ] = await Promise.all([
     fetchCsvFromModel(selectedModelConfig, 'portfolio/portfolio.csv'),
     fetchCsvFromModel(selectedModelConfig, 'decisions/latest_decision.csv'),
@@ -343,43 +426,33 @@ export async function GET(request: Request) {
       selectedModelConfig,
       'health/health_status.json'
     ),
+    benchmarkStartDateFromFirstModel(registry),
   ]);
 
   const portfolio = normalizePortfolioRows(portfolioRows);
-  const values = portfolio.map((p) => p.value);
+  const dailyPortfolio = toDailyPortfolio(portfolio);
+  const values = dailyPortfolio.map((p) => p.value);
   const normalizedValues = normalizeTo100(values);
   const returns = pctChange(values);
   const drawdowns = calculateDrawdown(values);
   const stats = computeStats(values);
 
-  const equityCurve = portfolio.map((p, i) => ({
+  const equityCurve = dailyPortfolio.map((p, i) => ({
     timestamp: p.timestamp,
     portfolio: normalizedValues[i],
     portfolioValue: p.value,
     drawdown: drawdowns[i],
     return: i === 0 ? 0 : returns[i - 1] ?? 0,
   }));
-  
-  const modelAConfig = registry.find((m) => m.id === 'model_a') || registry[0];
 
-  const modelAPortfolioRows = await fetchCsvFromModel(modelAConfig, 'portfolio/portfolio.csv');
-  const modelAPortfolio = normalizePortfolioRows(modelAPortfolioRows);
-  
-  const benchmarkStartDate =
-    modelAPortfolio.length > 0
-      ? modelAPortfolio[0].timestamp.slice(0, 10)
-      : portfolio.length > 0
-        ? portfolio[0].timestamp.slice(0, 10)
-        : undefined;
-  
   const benchmarks = await fetchBenchmarks(benchmarkStartDate);
 
   const modelComparison = [];
 
   for (const model of registry) {
     const rows = await fetchCsvFromModel(model, 'portfolio/portfolio.csv');
-    const normalized = normalizePortfolioRows(rows);
-    const modelValues = normalized.map((p) => p.value);
+    const daily = toDailyPortfolio(normalizePortfolioRows(rows));
+    const modelValues = daily.map((p) => p.value);
     const curve = normalizeTo100(modelValues);
 
     modelComparison.push({
@@ -389,13 +462,15 @@ export async function GET(request: Request) {
       repo: model.repo,
       logsPath: model.logs_path,
       color: model.color,
-      points: normalized.map((p, i) => ({
+      points: daily.map((p, i) => ({
         timestamp: p.timestamp,
         value: curve[i],
       })),
       stats: computeStats(modelValues),
       latestValue: modelValues.length ? modelValues[modelValues.length - 1] : null,
       rowCount: rows.length,
+      dailyRowCount: daily.length,
+      inceptionDate: daily.length ? daily[0].timestamp : null,
     });
   }
 
@@ -423,7 +498,7 @@ export async function GET(request: Request) {
     equityCurve,
     benchmarks,
     returns: returns.map((r, i) => ({
-      timestamp: portfolio[i + 1]?.timestamp,
+      timestamp: dailyPortfolio[i + 1]?.timestamp,
       return: r,
     })),
     drawdowns: equityCurve.map((p) => ({
@@ -444,6 +519,7 @@ export async function GET(request: Request) {
     debug: {
       requestedModel,
       selectedModel,
+      benchmarkStartDate,
       registryCount: registry.length,
       registry: registry.map((m) => ({
         id: m.id,
@@ -456,6 +532,7 @@ export async function GET(request: Request) {
       selectedModelConfig,
       rowCounts: {
         portfolioRows: portfolioRows.length,
+        dailyPortfolioRows: dailyPortfolio.length,
         latestDecisionRows: latestDecisionRows.length,
         decisionsRows: decisionsRows.length,
         targetWeightsRows: targetWeightsRows.length,
@@ -469,6 +546,8 @@ export async function GET(request: Request) {
       modelComparisonRows: modelComparison.map((m) => ({
         id: m.id,
         rowCount: m.rowCount,
+        dailyRowCount: m.dailyRowCount,
+        inceptionDate: m.inceptionDate,
         repo: m.repo,
         logsPath: m.logsPath,
       })),
