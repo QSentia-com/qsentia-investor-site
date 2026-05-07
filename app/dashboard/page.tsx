@@ -272,11 +272,19 @@ function ModelComparison({ data }: { data: any }) {
 
   const hasBenchmarkData = (data?.benchmarks || []).some((b: any) => b.points?.length);
 
+  const bestModel = useMemo(() => {
+    return getBestPerformingModel(data?.modelComparison || []);
+  }, [data]);
+
+  const bestModelRows = useMemo(() => {
+    return bestModelVsBenchmarkRows(data, bestModel);
+  }, [data, bestModel]);
+
   return (
     <Panel
       eyebrow="Institutional Benchmark Discipline"
       title="Model Comparison"
-      subtitle="Solid lines represent live model portfolios normalized to 100. Benchmark overlays appear as dashed lines when benchmark data is available."
+      subtitle="Solid lines represent live model portfolios normalized to 100. Dashed lines represent SPY, QQQ, DIA, IWM, and VTI benchmarks measured from BR-PPO V10 original inception."
     >
       <ChartFrame title="Normalized Equity Curves">
         <div className="h-[620px]">
@@ -314,69 +322,79 @@ function ModelComparison({ data }: { data: any }) {
                   activeDot={{ r: 5 }}
                 />
               ))}
-              
+
               {(data?.benchmarks || []).map((b: any) => (
-  <Line
-    key={`${b.name} (${b.ticker})`}
-    type="monotone"
-    dataKey={`${b.name} (${b.ticker})`}
-    stroke={b.color || '#737373'}
-    strokeWidth={2.4}
-    strokeDasharray="8 6"
-    dot={false}
-    connectNulls
-    activeDot={false}
-  />
-))}
+                <Line
+                  key={`${b.name} (${b.ticker})`}
+                  type="monotone"
+                  dataKey={`${b.name} (${b.ticker})`}
+                  stroke={b.color || '#737373'}
+                  strokeWidth={2.4}
+                  strokeDasharray="8 6"
+                  dot={false}
+                  connectNulls
+                  activeDot={false}
+                />
+              ))}
             </LineChart>
           </ResponsiveContainer>
         </div>
 
         {!hasBenchmarkData && (
           <div className="mt-4 rounded-2xl border border-[#4b3fd1]/20 bg-[#4b3fd1]/5 p-4 text-sm leading-6 text-neutral-600">
-            Benchmark overlay is ready in the chart layer. The API needs market benchmark series
-            wired for SPY, QQQ, DIA, IWM, and VTI to render dashed benchmark lines.
+            Benchmark overlay is ready in the chart layer, but benchmark data has not been returned
+            by the API yet. Check <code>/api/dashboard</code> for the <code>benchmarks</code> field.
           </div>
         )}
       </ChartFrame>
-    <DataTable
-  title="Relative Performance Table"
-  rows={[
-    ...(data?.modelComparison || []).map((m: any) => ({
-  Asset: m.name,
-  Type: 'QSentia Model',
-  'Inception Date': formatInceptionDate(m.points?.[0]?.timestamp),
-  Status:
-    m.stats?.status === 'partial'
-      ? `Partial history (${m.stats?.nObservations || 0} observations)`
-      : m.stats?.status === 'insufficient'
-        ? 'Insufficient history'
-        : 'Ready',
-  'Latest Value': fmtDollar(m.latestValue),
-  'Total Return': fmtPct(m.stats?.totalReturn, true),
-  Sharpe: fmtNum(m.stats?.sharpe),
-  'Max Drawdown': fmtPct(m.stats?.maxDrawdown, true),
-  Volatility: fmtPct(m.stats?.volatility),
-})),
 
-    ...(data?.benchmarks || []).map((b: any) => ({
-  Asset: `${b.name} (${b.ticker})`,
-  Type: 'Benchmark',
-  'Inception Date': formatInceptionDate(b.points?.[0]?.timestamp),
-  Status:
-    b.stats?.status === 'partial'
-      ? `Partial history (${b.stats?.nObservations || 0} observations)`
-      : b.stats?.status === 'insufficient'
-        ? 'Insufficient history'
-        : 'Ready',
-  'Latest Value': fmtBenchmarkLatestValue(b),
-  'Total Return': fmtPct(b.stats?.totalReturn, true),
-  Sharpe: fmtNum(b.stats?.sharpe),
-  'Max Drawdown': fmtPct(b.stats?.maxDrawdown, true),
-  Volatility: fmtPct(b.stats?.volatility),
-})),
-  ]}
-/>
+      <DataTable
+        title={
+          bestModel
+            ? `Best Performing Model vs Benchmarks — ${bestModel.name}`
+            : 'Best Performing Model vs Benchmarks'
+        }
+        rows={bestModelRows}
+      />
+
+      <DataTable
+        title="Relative Performance Table"
+        rows={[
+          ...(data?.modelComparison || []).map((m: any) => ({
+            Asset: m.name,
+            Type: 'QSentia Model',
+            'Inception Date': formatInceptionDate(m.points?.[0]?.timestamp),
+            Status:
+              m.stats?.status === 'partial'
+                ? `Partial history (${m.stats?.nObservations || 0} observations)`
+                : m.stats?.status === 'insufficient'
+                  ? 'Insufficient history'
+                  : 'Ready',
+            'Latest Value': fmtDollar(m.latestValue),
+            'Total Return': fmtPct(m.stats?.totalReturn, true),
+            Sharpe: fmtNum(m.stats?.sharpe),
+            'Max Drawdown': fmtPct(m.stats?.maxDrawdown, true),
+            Volatility: fmtPct(m.stats?.volatility),
+          })),
+
+          ...(data?.benchmarks || []).map((b: any) => ({
+            Asset: `${b.name} (${b.ticker})`,
+            Type: 'Benchmark',
+            'Inception Date': formatInceptionDate(b.points?.[0]?.timestamp),
+            Status:
+              b.stats?.status === 'partial'
+                ? `Partial history (${b.stats?.nObservations || 0} observations)`
+                : b.stats?.status === 'insufficient'
+                  ? 'Insufficient history'
+                  : 'Ready',
+            'Latest Value': fmtBenchmarkLatestValue(b),
+            'Total Return': fmtPct(b.stats?.totalReturn, true),
+            Sharpe: fmtNum(b.stats?.sharpe),
+            'Max Drawdown': fmtPct(b.stats?.maxDrawdown, true),
+            Volatility: fmtPct(b.stats?.volatility),
+          })),
+        ]}
+      />
     </Panel>
   );
 }
@@ -872,6 +890,72 @@ function formatInceptionDate(timestamp: string | undefined) {
     month: 'short',
     day: '2-digit',
   });
+}
+
+function getBestPerformingModel(models: any[]) {
+  const ranked = (models || [])
+    .filter((m: any) => typeof m?.stats?.totalReturn === 'number' && Number.isFinite(m.stats.totalReturn))
+    .sort((a: any, b: any) => b.stats.totalReturn - a.stats.totalReturn);
+
+  return ranked.length ? ranked[0] : null;
+}
+
+function bestModelVsBenchmarkRows(data: any, bestModel: any) {
+  if (!bestModel) {
+    return [
+      {
+        Asset: 'Pending',
+        Type: 'Best QSentia Model',
+        'Total Return': 'Pending',
+        Sharpe: 'Pending',
+        'Max Drawdown': 'Pending',
+        'Vs Best Benchmark': 'Pending',
+      },
+    ];
+  }
+
+  const benchmarks = data?.benchmarks || [];
+
+  const benchmarkRows = benchmarks.map((b: any) => ({
+    Asset: `${b.name} (${b.ticker})`,
+    Type: 'Benchmark',
+    'Total Return': fmtPct(b.stats?.totalReturn, true),
+    Sharpe: fmtNum(b.stats?.sharpe),
+    'Max Drawdown': fmtPct(b.stats?.maxDrawdown, true),
+    'Return Gap vs Best Model': compareReturnGap(bestModel.stats?.totalReturn, b.stats?.totalReturn),
+  }));
+
+  const bestBenchmark = benchmarks
+    .filter((b: any) => typeof b?.stats?.totalReturn === 'number' && Number.isFinite(b.stats.totalReturn))
+    .sort((a: any, b: any) => b.stats.totalReturn - a.stats.totalReturn)[0];
+
+  return [
+    {
+      Asset: bestModel.name,
+      Type: 'Best QSentia Model',
+      'Total Return': fmtPct(bestModel.stats?.totalReturn, true),
+      Sharpe: fmtNum(bestModel.stats?.sharpe),
+      'Max Drawdown': fmtPct(bestModel.stats?.maxDrawdown, true),
+      'Return Gap vs Best Benchmark': bestBenchmark
+        ? compareReturnGap(bestModel.stats?.totalReturn, bestBenchmark.stats?.totalReturn)
+        : 'Pending',
+    },
+    ...benchmarkRows,
+  ];
+}
+
+function compareReturnGap(modelReturn: number | null | undefined, benchmarkReturn: number | null | undefined) {
+  if (
+    typeof modelReturn !== 'number' ||
+    typeof benchmarkReturn !== 'number' ||
+    !Number.isFinite(modelReturn) ||
+    !Number.isFinite(benchmarkReturn)
+  ) {
+    return 'Pending';
+  }
+
+  const gap = modelReturn - benchmarkReturn;
+  return fmtPct(gap, true);
 }
 
 function historyStatus(stats: any) {
