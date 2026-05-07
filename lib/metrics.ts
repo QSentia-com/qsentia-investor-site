@@ -12,6 +12,8 @@ export type PerfStats = {
   status: 'ready' | 'partial' | 'insufficient';
 };
 
+const MIN_RETURNS_FOR_RISK_METRICS = 5;
+
 export function pctChange(values: number[]) {
   const out: number[] = [];
 
@@ -44,7 +46,7 @@ export function computeStats(values: number[]): PerfStats {
   const totalReturn = clean[clean.length - 1] / clean[0] - 1;
   const maxDrawdown = computeMaxDrawdown(clean);
 
-  if (returns.length < 2) {
+  if (returns.length < MIN_RETURNS_FOR_RISK_METRICS) {
     return {
       totalReturn,
       annualizedReturn: null,
@@ -70,9 +72,9 @@ export function computeStats(values: number[]): PerfStats {
   const sharpe = std > 0 ? (mean / std) * Math.sqrt(252) : null;
   const sortino = downsideStd > 0 ? (mean / downsideStd) * Math.sqrt(252) : null;
   const calmar =
-  maxDrawdown !== null && maxDrawdown < 0
-    ? annualizedReturn / Math.abs(maxDrawdown)
-    : null;
+    maxDrawdown !== null && maxDrawdown < 0
+      ? annualizedReturn / Math.abs(maxDrawdown)
+      : null;
   const hitRate = returns.filter((r) => r > 0).length / returns.length;
 
   return {
@@ -86,7 +88,7 @@ export function computeStats(values: number[]): PerfStats {
     hitRate,
     nObservations: clean.length,
     nReturns: returns.length,
-    status: returns.length >= 5 ? 'ready' : 'partial',
+    status: returns.length >= 20 ? 'ready' : 'partial',
   };
 }
 
@@ -105,7 +107,11 @@ function computeMaxDrawdown(values: number[]) {
   return maxDrawdown;
 }
 
-function emptyStats(nObservations: number, nReturns: number, status: 'ready' | 'partial' | 'insufficient'): PerfStats {
+function emptyStats(
+  nObservations: number,
+  nReturns: number,
+  status: 'ready' | 'partial' | 'insufficient'
+): PerfStats {
   return {
     totalReturn: null,
     annualizedReturn: null,
