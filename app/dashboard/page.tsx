@@ -369,7 +369,7 @@ function ModelComparison({ data }: { data: any }) {
       : b.stats?.status === 'insufficient'
         ? 'Insufficient history'
         : 'Ready',
-  'Latest Value': 'Index = 100',
+  'Latest Value': fmtBenchmarkLatestValue(b),
   'Total Return': fmtPct(b.stats?.totalReturn, true),
   Sharpe: fmtNum(b.stats?.sharpe),
   'Max Drawdown': fmtPct(b.stats?.maxDrawdown, true),
@@ -837,6 +837,18 @@ function mergeSeries(series: { key: string; points: { timestamp: string; value: 
   return Object.values(byTimestamp).sort(
     (a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
+}
+
+function fmtBenchmarkLatestValue(benchmark: any) {
+  const points = benchmark?.points || [];
+  const lastPoint = points.length ? points[points.length - 1] : null;
+  const value = lastPoint?.value;
+
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return 'Pending';
+  }
+
+  return `Index = ${value.toFixed(2)}`;
 }
 
 function formatInceptionDate(timestamp: string | undefined) {
