@@ -20,6 +20,7 @@ import {
   YAxis,
 } from 'recharts';
 import { fmtDollar, fmtNum, fmtPct } from '@/lib/metrics';
+import { HonestSharpeTile } from '@/components/HonestSharpeTile';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -118,10 +119,9 @@ export default function DashboardPage() {
               value={fmtPct(stats.totalReturn, true)}
               detail={historyStatus(stats)}
             />
-            <MetricTile
-              label="Sharpe"
-              value={fmtNum(stats.sharpe)}
-              detail={stats?.status === 'partial' ? 'Pending more return observations' : 'Annualized'}
+            <HonestSharpeTile
+              values={(data?.equityCurve ?? []).map((p: { portfolioValue: number }) => p.portfolioValue)}
+              audit={data?.audit ?? null}
             />
             <MetricTile label="Max Drawdown" value={fmtPct(stats.maxDrawdown, true)} detail="Peak to trough" />
             <MetricTile
