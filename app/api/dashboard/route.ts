@@ -458,6 +458,9 @@ export async function GET(request: Request) {
     const modelInceptionDate = daily.length ? daily[0].timestamp : undefined;
     const modelBenchmarks = await fetchBenchmarks(modelInceptionDate);
     
+    const modelInceptionDate = daily.length ? daily[0].timestamp : undefined;
+    const modelBenchmarks = await fetchBenchmarks(modelInceptionDate);
+    
     modelComparison.push({
       id: model.id,
       name: model.name,
