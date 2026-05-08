@@ -447,7 +447,7 @@ export async function GET(request: Request) {
 
   const benchmarks = await fetchBenchmarks(benchmarkStartDate);
 
-  const modelComparison = [];
+    const modelComparison = [];
 
   for (const model of registry) {
     const rows = await fetchCsvFromModel(model, 'portfolio/portfolio.csv');
@@ -455,29 +455,29 @@ export async function GET(request: Request) {
     const modelValues = daily.map((p) => p.value);
     const curve = normalizeTo100(modelValues);
 
-  const modelInceptionDate = daily.length ? daily[0].timestamp : undefined;
-  const modelBenchmarks = await fetchBenchmarks(modelInceptionDate);
-  
-  modelComparison.push({
-    id: model.id,
-    name: model.name,
-    description: model.description,
-    repo: model.repo,
-    logsPath: model.logs_path,
-    color: model.color,
-    points: daily.map((p, i) => ({
-      timestamp: p.timestamp,
-      value: curve[i],
-    })),
-    stats: computeStats(modelValues),
-    latestValue: modelValues.length ? modelValues[modelValues.length - 1] : null,
-    rowCount: rows.length,
-    dailyRowCount: daily.length,
-    inceptionDate: modelInceptionDate || null,
-    benchmarks: modelBenchmarks,
-  });
-    
-  
+    const modelInceptionDate = daily.length ? daily[0].timestamp : undefined;
+    const modelBenchmarks = await fetchBenchmarks(modelInceptionDate);
+
+    modelComparison.push({
+      id: model.id,
+      name: model.name,
+      description: model.description,
+      repo: model.repo,
+      logsPath: model.logs_path,
+      color: model.color,
+      points: daily.map((p, i) => ({
+        timestamp: p.timestamp,
+        value: curve[i],
+      })),
+      stats: computeStats(modelValues),
+      latestValue: modelValues.length ? modelValues[modelValues.length - 1] : null,
+      rowCount: rows.length,
+      dailyRowCount: daily.length,
+      inceptionDate: modelInceptionDate || null,
+      benchmarks: modelBenchmarks,
+    });
+  }
+
   return NextResponse.json({
     repo: {
       owner: REGISTRY_OWNER,
