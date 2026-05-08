@@ -914,7 +914,7 @@ function bestModelVsBenchmarkRows(data: any, bestModel: any) {
     ];
   }
 
-  const benchmarks = data?.benchmarks || [];
+  const benchmarks = bestModel?.benchmarks || [];
 
   const benchmarkRows = benchmarks.map((b: any) => ({
     Asset: `${b.name} (${b.ticker})`,
