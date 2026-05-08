@@ -960,6 +960,42 @@ function relativePerformanceRows(data: any) {
   return rows;
 }
 
+function relativePerformanceRows(data: any) {
+  const rows: Record<string, any>[] = [];
+
+  for (const model of data?.modelComparison || []) {
+    const inceptionDate = model.inceptionDate || model.points?.[0]?.timestamp;
+
+    rows.push({
+      Asset: model.name,
+      Type: 'QSentia Model',
+      'Inception Date': formatInceptionDate(inceptionDate),
+      Status: statsStatus(model.stats),
+      'Latest Value': fmtDollar(model.latestValue),
+      'Total Return': fmtPct(model.stats?.totalReturn, true),
+      Sharpe: fmtNum(model.stats?.sharpe),
+      'Max Drawdown': fmtPct(model.stats?.maxDrawdown, true),
+      Volatility: fmtPct(model.stats?.volatility),
+    });
+
+    for (const benchmark of model.benchmarks || []) {
+      rows.push({
+        Asset: `↳ ${benchmark.name} (${benchmark.ticker})`,
+        Type: `Benchmark vs ${model.name}`,
+        'Inception Date': formatInceptionDate(inceptionDate),
+        Status: statsStatus(benchmark.stats),
+        'Latest Value': fmtBenchmarkLatestValue(benchmark),
+        'Total Return': fmtPct(benchmark.stats?.totalReturn, true),
+        Sharpe: fmtNum(benchmark.stats?.sharpe),
+        'Max Drawdown': fmtPct(benchmark.stats?.maxDrawdown, true),
+        Volatility: fmtPct(benchmark.stats?.volatility),
+      });
+    }
+  }
+
+  return rows;
+}
+
 function historyStatus(stats: any) {
   if (!stats) return 'Pending data';
   if (stats.status === 'partial') {
