@@ -960,6 +960,20 @@ function relativePerformanceRows(data: any) {
   return rows;
 }
 
+function statsStatus(stats: any) {
+  if (!stats) return 'Pending';
+
+  if (stats.status === 'partial') {
+    return `Partial history (${stats.nObservations || 0} observations)`;
+  }
+
+  if (stats.status === 'insufficient') {
+    return 'Insufficient history';
+  }
+
+  return 'Ready';
+}
+
 function historyStatus(stats: any) {
   if (!stats) return 'Pending data';
   if (stats.status === 'partial') {
