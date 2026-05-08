@@ -359,41 +359,7 @@ function ModelComparison({ data }: { data: any }) {
 
       <DataTable
         title="Relative Performance Table"
-        rows={[
-          ...(data?.modelComparison || []).map((m: any) => ({
-            Asset: m.name,
-            Type: 'QSentia Model',
-            'Inception Date': formatInceptionDate(m.points?.[0]?.timestamp),
-            Status:
-              m.stats?.status === 'partial'
-                ? `Partial history (${m.stats?.nObservations || 0} observations)`
-                : m.stats?.status === 'insufficient'
-                  ? 'Insufficient history'
-                  : 'Ready',
-            'Latest Value': fmtDollar(m.latestValue),
-            'Total Return': fmtPct(m.stats?.totalReturn, true),
-            Sharpe: fmtNum(m.stats?.sharpe),
-            'Max Drawdown': fmtPct(m.stats?.maxDrawdown, true),
-            Volatility: fmtPct(m.stats?.volatility),
-          })),
-
-          ...(data?.benchmarks || []).map((b: any) => ({
-            Asset: `${b.name} (${b.ticker})`,
-            Type: 'Benchmark',
-            'Inception Date': formatInceptionDate(b.points?.[0]?.timestamp),
-            Status:
-              b.stats?.status === 'partial'
-                ? `Partial history (${b.stats?.nObservations || 0} observations)`
-                : b.stats?.status === 'insufficient'
-                  ? 'Insufficient history'
-                  : 'Ready',
-            'Latest Value': fmtBenchmarkLatestValue(b),
-            'Total Return': fmtPct(b.stats?.totalReturn, true),
-            Sharpe: fmtNum(b.stats?.sharpe),
-            'Max Drawdown': fmtPct(b.stats?.maxDrawdown, true),
-            Volatility: fmtPct(b.stats?.volatility),
-          })),
-        ]}
+        rows={relativePerformanceRows(data)}
       />
     </Panel>
   );
@@ -956,6 +922,53 @@ function compareReturnGap(modelReturn: number | null | undefined, benchmarkRetur
 
   const gap = modelReturn - benchmarkReturn;
   return fmtPct(gap, true);
+}
+
+function relativePerformanceRows(data: any) {
+  const rows: Record<string, any>[] = [];
+
+  for (const model of data?.modelComparison || []) {
+    const inceptionDate = model.inceptionDate || model.points?.[0]?.timestamp;
+
+    rows.push({
+      Asset: model.name,
+      Type: 'QSentia Model',
+      'Inception Date': formatInceptionDate(inceptionDate),
+      Status: statsStatus(model.stats),
+      'Latest Value': fmtDollar(model.latestValue),
+      'Total Return': fmtPct(model.stats?.totalReturn, true),
+      Sharpe: fmtNum(model.stats?.sharpe),
+      'Max Drawdown': fmtPct(model.stats?.maxDrawdown, true),
+      Volatility: fmtPct(model.stats?.volatility),
+    });
+
+    for (const benchmark of model.benchmarks || []) {
+      rows.push({
+        Asset: `↳ ${benchmark.name} (${benchmark.ticker})`,
+        Type: `Benchmark vs ${model.name}`,
+        'Inception Date': formatInceptionDate(inceptionDate),
+        Status: statsStatus(benchmark.stats),
+        'Latest Value': fmtBenchmarkLatestValue(benchmark),
+        'Total Return': fmtPct(benchmark.stats?.totalReturn, true),
+        Sharpe: fmtNum(benchmark.stats?.sharpe),
+        'Max Drawdown': fmtPct(benchmark.stats?.maxDrawdown, true),
+        Volatility: fmtPct(benchmark.stats?.volatility),
+      });
+    }
+  }
+
+  return rows;
+}
+
+function historyStatus(stats: any) {
+  if (!stats) return 'Pending data';
+  if (stats.status === 'partial') {
+    return `Partial history: ${stats.nObservations || 0} observations`;
+  }
+  if (stats.status === 'insufficient') {
+    return 'Insufficient history';
+  }
+  return `${stats.nObservations || 0} observations`;
 }
 
 function historyStatus(stats: any) {
