@@ -455,6 +455,9 @@ export async function GET(request: Request) {
     const modelValues = daily.map((p) => p.value);
     const curve = normalizeTo100(modelValues);
 
+    const modelInceptionDate = daily.length ? daily[0].timestamp : undefined;
+    const modelBenchmarks = await fetchBenchmarks(modelInceptionDate);
+    
     modelComparison.push({
       id: model.id,
       name: model.name,
@@ -470,9 +473,9 @@ export async function GET(request: Request) {
       latestValue: modelValues.length ? modelValues[modelValues.length - 1] : null,
       rowCount: rows.length,
       dailyRowCount: daily.length,
-      inceptionDate: daily.length ? daily[0].timestamp : null,
+      inceptionDate: modelInceptionDate || null,
+      benchmarks: modelBenchmarks,
     });
-  }
 
   return NextResponse.json({
     repo: {
