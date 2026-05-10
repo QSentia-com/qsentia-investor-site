@@ -675,49 +675,95 @@ function MetricTile({ label, value, detail, large = false }: { label: string; va
   );
 }
 
-function DataTable({ title, rows }: { title: string; rows: Record<string, any>[] }) {
-  const columns = rows?.length ? Object.keys(rows[0]).slice(0, 9) : [];
+function DataTable({ title, rows }: { title: string; rows: any[] }) {
+  const columns = useMemo(() => {
+    const safeRows = Array.isArray(rows) ? rows : [];
+    const columnSet = new Set<string>();
+
+    for (const row of safeRows) {
+      if (!row || typeof row !== 'object') continue;
+
+      Object.keys(row).forEach((key) => {
+        columnSet.add(key);
+      });
+    }
+
+    return Array.from(columnSet);
+  }, [rows]);
+
+  const safeRows = Array.isArray(rows) ? rows : [];
 
   return (
-    <div className="rounded-[34px] border border-black/10 bg-white/82 p-6 shadow-[0_28px_100px_rgba(25,20,90,0.12)] backdrop-blur-2xl">
-      <div className="mb-5 flex items-center justify-between gap-4">
+    <div className="relative overflow-hidden rounded-[34px] border border-black/10 bg-white/82 shadow-[0_28px_100px_rgba(25,20,90,0.12)] backdrop-blur-2xl">
+      <div className="flex items-center justify-between gap-4 border-b border-black/10 px-6 py-5">
         <div>
-          <div className="mb-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#4b3fd1]">Source of Truth</div>
-          <h3 className="text-3xl font-light tracking-[-0.065em] text-black">{title}</h3>
+          <div className="mb-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#4b3fd1]">
+            Live Data Table
+          </div>
+          <h3 className="text-3xl font-light tracking-[-0.065em] text-black">
+            {title}
+          </h3>
         </div>
-        <div className="border border-black/10 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-neutral-400">
-          {rows?.length || 0} rows
+
+        <div className="shrink-0 rounded-full border border-[#4b3fd1]/20 bg-[#4b3fd1]/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.20em] text-[#4b3fd1]">
+          {safeRows.length} Rows
         </div>
       </div>
 
-      {!rows?.length ? (
-        <p className="rounded-2xl border border-black/10 bg-[#fbfbfb] p-5 text-sm text-neutral-500">
-          No data available yet.
-        </p>
+      {!safeRows.length || !columns.length ? (
+        <div className="p-8 text-sm leading-6 text-neutral-500">
+          No rows available yet.
+        </div>
       ) : (
-        <div className="max-h-[560px] overflow-auto border border-black/10">
-          <table className="w-full min-w-[900px] text-left text-sm">
-            <thead className="sticky top-0 bg-[#fbfbfb] text-xs uppercase tracking-wider text-neutral-500">
+        <div className="max-w-full overflow-x-auto overflow-y-hidden">
+          <table className="min-w-max border-separate border-spacing-0 text-left text-xs">
+            <thead>
               <tr>
-                {columns.map((col) => (
-                  <th key={col} className="border-b border-black/10 px-4 py-4">
-                    {col}
+                {columns.map((column, index) => (
+                  <th
+                    key={column}
+                    className={`sticky top-0 z-20 border-b border-black/10 bg-[#fbfbfb] px-4 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-neutral-500 ${
+                      index === 0 ? 'left-0 z-30 min-w-[220px]' : 'min-w-[180px]'
+                    }`}
+                  >
+                    {prettyColumnName(column)}
                   </th>
                 ))}
               </tr>
             </thead>
+
             <tbody>
-              {[...rows].reverse().slice(0, 140).map((row, i) => (
-                <tr key={i} className="border-b border-black/5 transition hover:bg-[#4b3fd1]/5">
-                  {columns.map((col) => (
-                    <td key={col} className="px-4 py-4 text-neutral-700">
-                      {String(row[col] ?? '')}
-                    </td>
-                  ))}
+              {safeRows.map((row, rowIndex) => (
+                <tr key={rowIndex} className="group">
+                  {columns.map((column, columnIndex) => {
+                    const value = formatTableCell(row?.[column]);
+
+                    return (
+                      <td
+                        key={`${rowIndex}-${column}`}
+                        className={`border-b border-black/5 px-4 py-4 align-top text-neutral-700 transition group-hover:bg-[#4b3fd1]/[0.035] ${
+                          columnIndex === 0
+                            ? 'sticky left-0 z-10 min-w-[220px] bg-white font-bold text-black group-hover:bg-[#f5f3ff]'
+                            : 'min-w-[180px]'
+                        }`}
+                        title={value}
+                      >
+                        <div className="max-w-[320px] whitespace-normal break-words leading-5">
+                          {value}
+                        </div>
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {safeRows.length > 0 && columns.length > 6 && (
+        <div className="border-t border-black/10 bg-[#fbfbfb]/80 px-6 py-3 text-[11px] font-medium text-neutral-500">
+          Scroll sideways inside this table to view all columns.
         </div>
       )}
     </div>
@@ -972,6 +1018,37 @@ function statsStatus(stats: any) {
   }
 
   return 'Ready';
+}
+
+function prettyColumnName(column: string) {
+  return String(column)
+    .replace(/_/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatTableCell(value: any) {
+  if (value === null || value === undefined || value === '') {
+    return '—';
+  }
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? String(value) : '—';
+  }
+
+  if (typeof value === 'boolean') {
+    return value ? 'true' : 'false';
+  }
+
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+
+  return String(value);
 }
 
 function historyStatus(stats: any) {
