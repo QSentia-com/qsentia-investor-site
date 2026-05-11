@@ -94,7 +94,7 @@ export default function DashboardPage() {
             <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#4b3fd1]/10 blur-3xl" />
             <div className="absolute -bottom-24 left-16 h-64 w-64 rounded-full bg-black/5 blur-3xl" />
 
-            <div className="relative mb-6 flex items-center justify-center gap-3">
+            <div className="relative mb-6 flex flex-col items-center justify-center gap-2">
               <QLogo />
               <div className="text-xs font-black uppercase tracking-[0.20em] text-[#4b3fd1]">
                 Live Terminal
