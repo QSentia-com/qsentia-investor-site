@@ -2,6 +2,7 @@
 
 import useSWR from 'swr';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import QSentiaMotionBackground from '@/components/QSentiaMotionBackground';
 import {
@@ -60,43 +61,38 @@ export default function DashboardPage() {
     <main className="relative min-h-screen overflow-hidden bg-[#fbfbfb] text-black">
       <QSentiaMotionBackground />
 
-      <div className="relative z-10 mx-auto max-w-[1620px] px-6 py-8">
+      <div className="relative z-10 mx-auto max-w-[1620px] px-6 py-12">
         <TopNav />
 
-        <section className="mb-10 grid gap-8 lg:grid-cols-[0.92fr_1.08fr]">
-          <div className="relative overflow-hidden rounded-[42px] border border-[#4b3fd1]/20 bg-white/76 p-9 shadow-[0_36px_130px_rgba(25,20,90,0.14)] backdrop-blur-2xl">
+        <section className="mb-12 grid gap-8 lg:grid-cols-[0.92fr_1.08fr]">
+          <div className="relative overflow-hidden rounded-[32px] border border-[#4b3fd1]/15 bg-white/72 p-8 shadow-[0_20px_80px_rgba(75,63,209,0.08)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_30px_100px_rgba(75,63,209,0.12)]">  
             <CornerMarks />
             <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#4b3fd1]/10 blur-3xl" />
             <div className="absolute -bottom-24 left-16 h-64 w-64 rounded-full bg-black/5 blur-3xl" />
 
-            <div className="relative mb-8 flex items-center gap-4">
+            <div className="relative mb-6 flex items-center gap-3">
               <QLogo />
               <div>
-                <div className="tracking-[0.42em] text-2xl font-black">SENTIA</div>
-                <div className="mt-1 text-xs font-black uppercase tracking-[0.24em] text-[#4b3fd1]">
-                  Institutional Research Terminal
+                <div className="tracking-[0.36em] text-xl font-black">SENTIA</div>
+                <div className="mt-0.5 text-xs font-black uppercase tracking-[0.20em] text-[#4b3fd1]">
+                  Live Terminal
                 </div>
               </div>
             </div>
 
-            <div className="relative mb-4 text-xs font-black uppercase tracking-[0.28em] text-[#4b3fd1]">
-              Live Reinforcement Learning Portfolio Monitor
+            <div className="relative mb-3 text-xs font-black uppercase tracking-[0.24em] text-[#4b3fd1]/70">
+              Institutional Research Program
             </div>
 
-            <h1 className="relative max-w-3xl text-7xl font-light leading-[0.90] tracking-[-0.09em] text-black max-xl:text-6xl max-md:text-5xl">
-              More Alpha
-              <br />
-              Less Risk
-              <br />
-              Live.
+            <h1 className="relative max-w-2xl text-5xl font-light leading-[1.1] tracking-[-0.08em] text-black max-xl:text-4xl max-md:text-3xl">
+              More Alpha<br />Less Risk<br />Live.
             </h1>
 
-            <p className="relative mt-7 max-w-2xl text-lg leading-8 text-neutral-600">
-              A live investor-grade interface for BR-PPO paper trading, portfolio exposure,
-              execution monitoring, model diagnostics, and institutional benchmark discipline.
+            <p className="relative mt-5 max-w-xl text-sm leading-7 text-neutral-600">
+              BR-PPO paper trading with live portfolio monitoring, risk control, and execution transparency.
             </p>
 
-            <div className="relative mt-8 flex flex-wrap gap-3">
+            <div className="relative mt-6 flex flex-wrap gap-2">
               <Pill>GitHub Logs</Pill>
               <Pill>Alpaca Paper Trading</Pill>
               <Pill>BR-PPO</Pill>
@@ -105,7 +101,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <MetricTile
               label="Portfolio Value"
               value={fmtDollar(latestPortfolioValue)}
@@ -132,22 +128,21 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="mb-10 rounded-[44px] border border-[#4b3fd1]/20 bg-[#4b3fd1] p-10 text-white shadow-[0_40px_140px_rgba(75,63,209,0.30)]">
-          <div className="text-xs font-black uppercase tracking-[0.28em] text-white/70">
-            Institutional Research Program
+        <section className="mb-12 rounded-[28px] border border-[#4b3fd1]/25 bg-gradient-to-br from-[#4b3fd1] to-[#372db8] p-8 text-white shadow-[0_30px_100px_rgba(75,63,209,0.25)] transition-all duration-300 hover:shadow-[0_40px_120px_rgba(75,63,209,0.35)]">
+          <div className="text-xs font-black uppercase tracking-[0.20em] text-white/60 mb-4">
+            Research Framework
           </div>
-          <div className="mt-4 grid gap-8 lg:grid-cols-[1fr_0.55fr]">
-            <h2 className="text-6xl font-light leading-[0.95] tracking-[-0.085em]">
-              Building the next generation adaptive allocation engine.
+          <div className="grid gap-6 lg:grid-cols-[1fr_0.5fr]">
+            <h2 className="text-4xl font-light leading-[1.15] tracking-[-0.06em]">
+              Adaptive allocation with benchmark discipline.
             </h2>
-            <p className="text-lg leading-8 text-white/78">
-              QSentia is designed around measurable signal quality, transparent execution,
-              benchmark discipline, and risk-first portfolio construction.
+            <p className="text-sm leading-6 text-white/75">
+              Live signal quality, transparent execution, and risk-first portfolio construction.
             </p>
           </div>
         </section>
 
-        <section className="mb-10 grid gap-4 md:grid-cols-4">
+        <section className="mb-12 grid gap-4 md:grid-cols-4">
           <ThesisCard
             number="01"
             title="Adaptive Allocation"
@@ -170,13 +165,13 @@ export default function DashboardPage() {
           />
         </section>
 
-        <section className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-[34px] border border-black/10 bg-white/76 p-5 shadow-[0_26px_100px_rgba(25,20,90,0.10)] backdrop-blur-2xl">
+        <section className="mb-12 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-black/8 bg-white/70 p-5 shadow-[0_12px_40px_rgba(25,20,90,0.06)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_18px_50px_rgba(25,20,90,0.1)]">
           <div>
             <div className="text-xs font-black uppercase tracking-[0.24em] text-neutral-500">
               Strategy Selection
             </div>
             <select
-              className="mt-2 min-w-[360px] rounded-none border border-black/20 bg-white px-5 py-4 text-sm font-bold text-black outline-none transition focus:border-[#4b3fd1]"
+              className="mt-2 min-w-[360px] rounded-[12px] border border-black/10 bg-white px-4 py-3 text-sm font-bold text-black outline-none transition focus:border-[#4b3fd1] focus:shadow-[0_0_0_3px_rgba(75,63,209,0.1)]"
               value={model || data?.selectedModel || ''}
               onChange={(e) => setModel(e.target.value)}
             >
@@ -218,9 +213,42 @@ export default function DashboardPage() {
           ]}
         />
 
-        <footer className="mt-12 border-t border-black/10 py-8 text-xs text-neutral-500">
-          QSentia Research Terminal · Live paper trading intelligence · Not investment advice · Last
-          refreshed: {data?.updatedAt || '—'}
+        <footer className="mt-16 border-t border-black/6 pt-12 pb-8">
+          <div className="grid gap-8 mb-8 md:grid-cols-3">
+            <div>
+              <div className="mb-3">
+                <Image
+                  src="/logo/qsentialogo.png"
+                  alt="QSentia Logo"
+                  width={150}
+                  height={48}
+                  className="h-auto w-auto max-h-[48px] max-w-[150px] object-contain"
+                />
+              </div>
+              <p className="text-xs leading-5 text-neutral-500 max-w-xs">
+                Institutional research terminal for adaptive allocation, benchmark discipline, and execution transparency.
+              </p>
+            </div>
+            <div>
+              <div className="mb-3 text-xs font-black uppercase tracking-[0.16em] text-neutral-600">Resources</div>
+              <ul className="space-y-2 text-xs text-neutral-500">
+                <li><a href="/dashboard" className="hover:text-[#4b3fd1] transition">Live Dashboard</a></li>
+                <li><a href="/" className="hover:text-[#4b3fd1] transition">Home</a></li>
+                <li><a href="mailto:Lucas.Zarzeczny@qsentia.com" className="hover:text-[#4b3fd1] transition">Contact</a></li>
+              </ul>
+            </div>
+            <div className="text-right">
+              <div className="mb-3 text-xs font-black uppercase tracking-[0.16em] text-neutral-600">Status</div>
+              <div className="space-y-2 text-xs">
+                <div><span className="text-neutral-500">Paper Trading:</span> <span className="font-bold text-[#4b3fd1]">Live</span></div>
+                <div><span className="text-neutral-500">Last Updated:</span> <span className="font-bold text-black">{data?.updatedAt || '—'}</span></div>
+                <div className="text-[10px] text-neutral-400 mt-3">Auto-refresh every 120s</div>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-black/6 pt-6 text-xs text-neutral-400 text-center">
+            Q-Sentia Research Terminal · Live paper trading intelligence · Not investment advice · © 2026
+          </div>
         </footer>
       </div>
     </main>
@@ -229,24 +257,27 @@ export default function DashboardPage() {
 
 function TopNav() {
   return (
-    <header className="mb-8 flex items-center justify-between">
-      <Link href="/" className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center border-2 border-[#4b3fd1] text-2xl font-black">
-          Q
-        </div>
-        <div className="tracking-[0.38em] text-lg font-black">SENTIA</div>
+    <header className="mb-12 flex items-center justify-between rounded-[24px] border border-black/8 bg-white/70 px-8 py-5 shadow-[0_12px_40px_rgba(25,20,90,0.06)] backdrop-blur-md transition-all duration-300">
+      <Link href="/" className="flex items-center gap-2 group">
+        <Image
+          src="/logo/qsentialogo.png"
+          alt="QSentia Logo"
+          width={120}
+          height={40}
+          className="h-auto w-auto max-h-[40px] max-w-[120px] object-contain transition-transform duration-300 group-hover:scale-105"
+        />
       </Link>
 
-      <div className="hidden items-center gap-8 text-xs font-black uppercase tracking-[0.20em] text-neutral-500 md:flex">
-        <a href="/dashboard" className="text-[#4b3fd1] hover:text-[#372db8]">
-          Live Research Terminal
+      <div className="hidden items-center gap-8 text-xs font-bold uppercase tracking-[0.18em] text-neutral-600 md:flex">
+        <a href="/dashboard" className="px-4 py-2 rounded-[12px] text-[#4b3fd1] transition hover:bg-[#4b3fd1]/10">
+          Terminal
         </a>
 
         <a
           href="mailto:Lucas.Zarzeczny@qsentia.com?subject=QSentia Investor Information Request"
-          className="border border-[#4b3fd1] px-5 py-3 text-[#4b3fd1] transition hover:bg-[#4b3fd1] hover:text-white"
+          className="border border-[#4b3fd1]/30 bg-[#4b3fd1]/10 px-5 py-2.5 text-[#4b3fd1] rounded-[12px] transition duration-300 hover:bg-[#4b3fd1]/20 hover:border-[#4b3fd1]/50"
         >
-          Request Information
+          Contact
         </a>
       </div>
     </header>
@@ -607,15 +638,15 @@ function Tabs({ tabs, panels }: { tabs: string[]; panels: React.ReactNode[] }) {
 
   return (
     <section>
-      <div className="mb-6 flex flex-wrap gap-2 rounded-[34px] border border-black/10 bg-white/76 p-2 shadow-[0_26px_100px_rgba(25,20,90,0.10)] backdrop-blur-2xl">
+      <div className="mb-6 flex flex-wrap gap-2 rounded-[20px] border border-black/8 bg-white/60 p-1 shadow-[0_12px_40px_rgba(25,20,90,0.06)] backdrop-blur-md">
         {tabs.map((tab, i) => (
           <button
             key={tab}
             onClick={() => setActive(i)}
-            className={`rounded-none px-5 py-4 text-xs font-black uppercase tracking-[0.16em] transition ${
+            className={`rounded-[16px] px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] transition-all duration-300 ${
               active === i
-                ? 'bg-[#4b3fd1] text-white shadow-[0_18px_40px_rgba(75,63,209,0.25)]'
-                : 'text-neutral-500 hover:bg-black/5 hover:text-black'
+                ? 'bg-[#4b3fd1] text-white shadow-[0_12px_30px_rgba(75,63,209,0.3)] scale-105'
+                : 'text-neutral-500 hover:bg-white/50 hover:text-black hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)]'
             }`}
           >
             {tab}
@@ -629,13 +660,13 @@ function Tabs({ tabs, panels }: { tabs: string[]; panels: React.ReactNode[] }) {
 
 function Panel({ eyebrow, title, subtitle, children }: { eyebrow: string; title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <section className="relative overflow-hidden rounded-[42px] border border-black/10 bg-white/76 p-7 shadow-[0_36px_130px_rgba(25,20,90,0.13)] backdrop-blur-2xl">
+    <section className="relative overflow-hidden rounded-[28px] border border-black/8 bg-white/70 p-6 shadow-[0_16px_60px_rgba(25,20,90,0.08)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_24px_80px_rgba(25,20,90,0.12)]">
       <CornerMarks />
-      <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#4b3fd1]/8 blur-3xl" />
-      <div className="relative mb-7">
-        <div className="mb-2 text-xs font-black uppercase tracking-[0.24em] text-[#4b3fd1]">{eyebrow}</div>
-        <h2 className="text-5xl font-light tracking-[-0.078em] text-black">{title}</h2>
-        <p className="mt-3 max-w-4xl text-sm leading-6 text-neutral-600">{subtitle}</p>
+      <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[#4b3fd1]/6 blur-2xl" />
+      <div className="relative mb-6">
+        <div className="mb-2 text-xs font-black uppercase tracking-[0.20em] text-[#4b3fd1]/70">{eyebrow}</div>
+        <h2 className="text-3xl font-light tracking-[-0.06em] text-black">{title}</h2>
+        <p className="mt-3 max-w-3xl text-xs leading-5 text-neutral-500">{subtitle}</p>
       </div>
       <div className="relative">{children}</div>
     </section>
@@ -644,38 +675,42 @@ function Panel({ eyebrow, title, subtitle, children }: { eyebrow: string; title:
 
 function ChartFrame({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="relative overflow-hidden rounded-[34px] border border-black/10 bg-white/82 p-6 shadow-[0_28px_100px_rgba(25,20,90,0.12)] backdrop-blur-2xl">
-      <div className="absolute right-0 top-0 h-24 w-24 border-b border-l border-[#4b3fd1]/20" />
-      <div className="absolute bottom-0 left-0 h-20 w-20 border-r border-t border-[#4b3fd1]/20" />
+    <div className="relative overflow-hidden rounded-[24px] border border-black/8 bg-white/75 p-5 shadow-[0_12px_40px_rgba(25,20,90,0.06)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_18px_50px_rgba(25,20,90,0.1)]">
+      <div className="absolute right-0 top-0 h-16 w-16 border-b border-l border-[#4b3fd1]/10" />
+      <div className="absolute bottom-0 left-0 h-12 w-12 border-r border-t border-[#4b3fd1]/10" />
 
-      <div className="relative mb-5 flex items-start justify-between">
+      <div className="relative mb-4 flex items-start justify-between">
         <div>
-          <div className="mb-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#4b3fd1]">Live Quant Intelligence</div>
-          <h3 className="text-3xl font-light tracking-[-0.065em] text-black">{title}</h3>
+          <div className="mb-1 text-[9px] font-black uppercase tracking-[0.18em] text-[#4b3fd1]/60">Analytics</div>
+          <h3 className="text-lg font-light tracking-[-0.05em] text-black">{title}</h3>
         </div>
-        <div className="h-4 w-4 rotate-45 border-2 border-[#4b3fd1]" />
+        <div className="h-3 w-3 rotate-45 border border-[#4b3fd1]/40" />
       </div>
 
-      <div className="relative rounded-[24px] border border-black/10 bg-[#fbfbfb]/92 p-4">{children}</div>
+      <div className="relative rounded-[16px] border border-black/6 bg-[#fbfbfb]/80 p-3">{children}</div>
     </div>
   );
 }
 
 function MetricTile({ label, value, detail, large = false }: { label: string; value: string; detail: string; large?: boolean }) {
   return (
-    <div className="group relative overflow-hidden rounded-[34px] border border-black/10 bg-white/80 p-6 shadow-[0_26px_100px_rgba(25,20,90,0.10)] backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:shadow-[0_34px_120px_rgba(75,63,209,0.18)]">
-      <div className="absolute right-5 top-5 h-4 w-4 rotate-45 border border-[#4b3fd1]/70 transition group-hover:rotate-90" />
-      <div className="absolute -right-20 -top-20 h-44 w-44 rounded-full bg-[#4b3fd1]/8 blur-3xl" />
-      <div className="relative mb-4 text-xs font-black uppercase tracking-[0.20em] text-neutral-500">{label}</div>
-      <div className={`relative font-light tracking-[-0.078em] text-black ${large ? 'text-5xl' : 'text-4xl'}`}>
+    <div className="group relative overflow-hidden rounded-[20px] border border-black/8 bg-white/70 p-5 shadow-[0_12px_40px_rgba(25,20,90,0.06)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_60px_rgba(75,63,209,0.14)]">
+      <div className="absolute right-4 top-4 h-3 w-3 rotate-45 border border-[#4b3fd1]/50 transition-transform duration-300 group-hover:rotate-90" />
+      <div className="absolute -right-16 -top-16 h-32 w-32 rounded-full bg-[#4b3fd1]/6 blur-2xl" />
+      <div className="relative mb-2 text-xs font-black uppercase tracking-[0.16em] text-neutral-400">{label}</div>
+      <div className={`relative font-light tracking-tight text-black ${large ? 'text-3xl sm:text-4xl' : 'text-2xl sm:text-3xl'}`}>
         {value}
       </div>
-      <div className="relative mt-4 text-sm text-neutral-500">{detail}</div>
+      <div className="relative mt-3 text-xs text-neutral-500">{detail}</div>
     </div>
   );
 }
 
 function DataTable({ title, rows }: { title: string; rows: any[] }) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
   const columns = useMemo(() => {
     const safeRows = Array.isArray(rows) ? rows : [];
     const columnSet = new Set<string>();
@@ -693,26 +728,70 @@ function DataTable({ title, rows }: { title: string; rows: any[] }) {
 
   const safeRows = Array.isArray(rows) ? rows : [];
 
+  const filteredAndSorted = useMemo(() => {
+    let filtered = safeRows.filter(row => {
+      if (!searchTerm.trim()) return true;
+      const searchLower = searchTerm.toLowerCase();
+      return Object.values(row).some(val => 
+        String(val).toLowerCase().includes(searchLower)
+      );
+    });
+
+    if (sortColumn) {
+      filtered.sort((a, b) => {
+        const aVal = a?.[sortColumn];
+        const bVal = b?.[sortColumn];
+        const comparison = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+    }
+
+    return filtered;
+  }, [safeRows, searchTerm, sortColumn, sortDirection]);
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
   return (
-    <div className="relative overflow-hidden rounded-[34px] border border-black/10 bg-white/82 shadow-[0_28px_100px_rgba(25,20,90,0.12)] backdrop-blur-2xl">
-      <div className="flex items-center justify-between gap-4 border-b border-black/10 px-6 py-5">
-        <div>
-          <div className="mb-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#4b3fd1]">
-            Live Data Table
+    <div className="relative overflow-hidden rounded-[24px] border border-black/8 bg-white/75 shadow-[0_12px_40px_rgba(25,20,90,0.06)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_18px_50px_rgba(25,20,90,0.1)]">
+      <div className="border-b border-black/6 px-5 py-4">
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div>
+            <div className="mb-1 text-[9px] font-black uppercase tracking-[0.18em] text-[#4b3fd1]/60">
+              Data
+            </div>
+            <h3 className="text-lg font-light tracking-[-0.05em] text-black">
+              {title}
+            </h3>
           </div>
-          <h3 className="text-3xl font-light tracking-[-0.065em] text-black">
-            {title}
-          </h3>
+
+          <div className="shrink-0 rounded-full border border-[#4b3fd1]/15 bg-[#4b3fd1]/6 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-[#4b3fd1]/70">
+            {filteredAndSorted.length} / {safeRows.length}
+          </div>
         </div>
 
-        <div className="shrink-0 rounded-full border border-[#4b3fd1]/20 bg-[#4b3fd1]/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.20em] text-[#4b3fd1]">
-          {safeRows.length} Rows
-        </div>
+        <input
+          type="text"
+          placeholder="Search models, assets, or values..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full rounded-[12px] border border-black/10 bg-white px-4 py-2.5 text-xs font-medium text-black placeholder-neutral-400 outline-none transition focus:border-[#4b3fd1] focus:shadow-[0_0_0_3px_rgba(75,63,209,0.1)]"
+        />
       </div>
 
       {!safeRows.length || !columns.length ? (
-        <div className="p-8 text-sm leading-6 text-neutral-500">
-          No rows available yet.
+        <div className="p-6 text-xs leading-5 text-neutral-500">
+          No data yet.
+        </div>
+      ) : filteredAndSorted.length === 0 ? (
+        <div className="p-6 text-xs leading-5 text-neutral-500">
+          No results for "{searchTerm}"
         </div>
       ) : (
         <div className="max-w-full overflow-x-auto overflow-y-hidden">
@@ -722,18 +801,26 @@ function DataTable({ title, rows }: { title: string; rows: any[] }) {
                 {columns.map((column, index) => (
                   <th
                     key={column}
-                    className={`sticky top-0 z-20 border-b border-black/10 bg-[#fbfbfb] px-4 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-neutral-500 ${
-                      index === 0 ? 'left-0 z-30 min-w-[220px]' : 'min-w-[180px]'
+                    onClick={() => handleSort(column)}
+                    className={`sticky top-0 z-20 border-b border-black/6 bg-[#fbfbfb]/80 px-3 py-3 text-[9px] font-bold uppercase tracking-[0.16em] text-neutral-500 cursor-pointer transition hover:bg-[#fbfbfb]/95 ${
+                      index === 0 ? 'left-0 z-30 min-w-[200px]' : 'min-w-[160px]'
+                    } ${
+                      sortColumn === column ? 'text-[#4b3fd1]' : ''
                     }`}
                   >
-                    {prettyColumnName(column)}
+                    <div className="flex items-center justify-between">
+                      <span>{prettyColumnName(column)}</span>
+                      {sortColumn === column && (
+                        <span className="ml-1 text-[8px]">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
                   </th>
                 ))}
               </tr>
             </thead>
 
             <tbody>
-              {safeRows.map((row, rowIndex) => (
+              {filteredAndSorted.map((row, rowIndex) => (
                 <tr key={rowIndex} className="group">
                   {columns.map((column, columnIndex) => {
                     const value = formatTableCell(row?.[column]);
@@ -741,14 +828,14 @@ function DataTable({ title, rows }: { title: string; rows: any[] }) {
                     return (
                       <td
                         key={`${rowIndex}-${column}`}
-                        className={`border-b border-black/5 px-4 py-4 align-top text-neutral-700 transition group-hover:bg-[#4b3fd1]/[0.035] ${
+                        className={`border-b border-black/4 px-3 py-3 align-top text-neutral-600 text-[11px] transition-colors duration-200 group-hover:bg-[#4b3fd1]/[0.04] ${
                           columnIndex === 0
-                            ? 'sticky left-0 z-10 min-w-[220px] bg-white font-bold text-black group-hover:bg-[#f5f3ff]'
-                            : 'min-w-[180px]'
+                            ? 'sticky left-0 z-10 min-w-[200px] bg-white font-semibold text-black group-hover:bg-[#f8f6ff]'
+                            : 'min-w-[160px]'
                         }`}
                         title={value}
                       >
-                        <div className="max-w-[320px] whitespace-normal break-words leading-5">
+                        <div className="max-w-[300px] whitespace-normal break-words leading-4">
                           {value}
                         </div>
                       </td>
@@ -762,8 +849,8 @@ function DataTable({ title, rows }: { title: string; rows: any[] }) {
       )}
 
       {safeRows.length > 0 && columns.length > 6 && (
-        <div className="border-t border-black/10 bg-[#fbfbfb]/80 px-6 py-3 text-[11px] font-medium text-neutral-500">
-          Scroll sideways inside this table to view all columns.
+        <div className="border-t border-black/6 bg-[#fbfbfb]/60 px-5 py-2 text-[10px] font-medium text-neutral-400">
+          Scroll to view all columns
         </div>
       )}
     </div>
@@ -772,11 +859,11 @@ function DataTable({ title, rows }: { title: string; rows: any[] }) {
 
 function ThesisCard({ number, title, text }: { number: string; title: string; text: string }) {
   return (
-    <div className="relative overflow-hidden rounded-[34px] border border-black/10 bg-white/78 p-6 shadow-[0_26px_100px_rgba(25,20,90,0.10)] backdrop-blur-2xl">
-      <div className="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-[#4b3fd1]/8 blur-2xl" />
-      <div className="relative mb-10 text-xs font-black tracking-[0.24em] text-[#4b3fd1]">{number}</div>
-      <h3 className="relative mb-4 text-3xl font-light tracking-[-0.065em] text-black">{title}</h3>
-      <p className="relative text-sm leading-6 text-neutral-600">{text}</p>
+    <div className="relative overflow-hidden rounded-[20px] border border-black/8 bg-white/70 p-5 shadow-[0_12px_40px_rgba(25,20,90,0.06)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_60px_rgba(75,63,209,0.12)]">
+      <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[#4b3fd1]/6 blur-2xl" />
+      <div className="relative mb-6 text-xs font-black tracking-[0.20em] text-[#4b3fd1]/70">{number}</div>
+      <h3 className="relative mb-3 text-lg font-light tracking-[-0.05em] text-black">{title}</h3>
+      <p className="relative text-xs leading-5 text-neutral-500">{text}</p>
     </div>
   );
 }
@@ -793,10 +880,10 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function StatusBadge({ label, muted = false }: { label: string; muted?: boolean }) {
   return (
     <div
-      className={`rounded-none border px-5 py-3 text-xs font-black uppercase tracking-[0.18em] ${
+      className={`rounded-[12px] border px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] transition-all duration-300 ${
         muted
-          ? 'border-black/10 bg-white text-neutral-500'
-          : 'border-[#4b3fd1] bg-[#4b3fd1] text-white shadow-[0_18px_40px_rgba(75,63,209,0.25)]'
+          ? 'border-black/8 bg-white/60 text-neutral-500 hover:bg-white/80'
+          : 'border-[#4b3fd1]/30 bg-[#4b3fd1]/20 text-[#4b3fd1] shadow-[0_8px_20px_rgba(75,63,209,0.15)] hover:shadow-[0_12px_30px_rgba(75,63,209,0.25)]'
       }`}
     >
       {label}
@@ -806,7 +893,7 @@ function StatusBadge({ label, muted = false }: { label: string; muted?: boolean 
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="border border-black/10 bg-white/70 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-neutral-600 backdrop-blur-xl">
+    <span className="border border-black/8 bg-white/60 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500 backdrop-blur-md transition-all duration-200 hover:bg-white/80 hover:text-neutral-700">
       {children}
     </span>
   );
@@ -814,19 +901,23 @@ function Pill({ children }: { children: React.ReactNode }) {
 
 function QLogo() {
   return (
-    <div className="flex h-16 w-16 items-center justify-center border-[3px] border-[#4b3fd1] text-4xl font-black text-black">
-      Q
-    </div>
+    <Image
+      src="/logo/qsentialogo.png"
+      alt="QSentia Logo"
+      width={200}
+      height={64}
+      className="h-auto w-auto max-h-[64px] max-w-[200px] object-contain"
+    />
   );
 }
 
 function CornerMarks() {
   return (
     <>
-      <div className="absolute left-5 top-5 h-5 w-5 border-l border-t border-[#4b3fd1]/40" />
-      <div className="absolute right-5 top-5 h-5 w-5 border-r border-t border-[#4b3fd1]/40" />
-      <div className="absolute bottom-5 left-5 h-5 w-5 border-b border-l border-[#4b3fd1]/40" />
-      <div className="absolute bottom-5 right-5 h-5 w-5 border-b border-r border-[#4b3fd1]/40" />
+      <div className="absolute left-4 top-4 h-4 w-4 border-l border-t border-[#4b3fd1]/20" />
+      <div className="absolute right-4 top-4 h-4 w-4 border-r border-t border-[#4b3fd1]/20" />
+      <div className="absolute bottom-4 left-4 h-4 w-4 border-b border-l border-[#4b3fd1]/20" />
+      <div className="absolute bottom-4 right-4 h-4 w-4 border-b border-r border-[#4b3fd1]/20" />
     </>
   );
 }
@@ -836,8 +927,14 @@ function LoadingScreen({ text }: { text: string }) {
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#fbfbfb] text-black">
       <QSentiaMotionBackground />
       <div className="relative z-10 rounded-[40px] border border-[#4b3fd1]/20 bg-white/82 p-10 text-center shadow-[0_36px_130px_rgba(25,20,90,0.14)] backdrop-blur-2xl">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center border-[3px] border-[#4b3fd1] text-4xl font-black">
-          Q
+        <div className="mx-auto mb-6 flex justify-center">
+          <Image
+            src="/logo/qsentialogo.png"
+            alt="QSentia Logo"
+            width={200}
+            height={64}
+            className="h-auto w-auto max-h-[64px] max-w-[200px] object-contain"
+          />
         </div>
         <div className="text-sm font-black uppercase tracking-[0.22em] text-[#4b3fd1]">{text}</div>
       </div>
@@ -847,10 +944,13 @@ function LoadingScreen({ text }: { text: string }) {
 
 const tooltipStyle = {
   background: '#ffffff',
-  border: '1px solid rgba(0,0,0,0.12)',
-  borderRadius: 0,
-  color: '#111111',
-  boxShadow: '0 20px 80px rgba(25,20,90,0.16)',
+  border: '1px solid rgba(0,0,0,0.10)',
+  borderRadius: '12px',
+  color: '#1a1a1a',
+  boxShadow: '0 16px 60px rgba(25,20,90,0.15)',
+  padding: '10px 12px',
+  fontSize: '12px',
+  fontWeight: 600,
 };
 
 function mergeSeries(series: { key: string; points: { timestamp: string; value: number }[] }[]) {
