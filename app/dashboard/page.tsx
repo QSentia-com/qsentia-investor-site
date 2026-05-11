@@ -20,7 +20,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { fmtDollar, fmtNum, fmtPct } from '@/lib/metrics';
+import { computeStats, fmtDollar, fmtNum, fmtPct } from '@/lib/metrics';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -62,6 +62,156 @@ function dailyFundReturnRows(modelComparison: any[]) {
       hasData: dayReturn !== null,
     };
   });
+}
+
+function sortPoints(points: any[]) {
+  return [...(points || [])]
+    .filter((p: any) => p?.timestamp && Number.isFinite(Number(p?.value)))
+    .sort((a: any, b: any) => String(a.timestamp).localeCompare(String(b.timestamp)));
+}
+
+function pctFromPoints(points: any[]) {
+  const clean = sortPoints(points);
+  if (clean.length < 2) return null;
+
+  const first = Number(clean[0].value);
+  const last = Number(clean[clean.length - 1].value);
+
+  if (!Number.isFinite(first) || !Number.isFinite(last) || first === 0) return null;
+
+  return last / first - 1;
+}
+
+function benchmarkReturn(model: any, ticker: string) {
+  const benchmark = (model?.benchmarks || []).find((b: any) => b?.ticker === ticker);
+  const direct = Number(benchmark?.stats?.totalReturn);
+
+  if (Number.isFinite(direct)) return direct;
+
+  return pctFromPoints(benchmark?.points || []);
+}
+
+function sinceOwnInceptionLeaderboardRows(data: any) {
+  const rows = (data?.modelComparison || []).map((model: any) => {
+    const points = sortPoints(model?.points || []);
+    const totalReturn = Number(model?.stats?.totalReturn);
+    const spyReturn = benchmarkReturn(model, 'SPY');
+    const qqqReturn = benchmarkReturn(model, 'QQQ');
+    const vtiReturn = benchmarkReturn(model, 'VTI');
+
+    const excessVsSpy =
+      Number.isFinite(totalReturn) && spyReturn !== null ? totalReturn - spyReturn : null;
+
+    const nReturns = Number(model?.stats?.nReturns ?? 0);
+    const nObservations = Number(model?.stats?.nObservations ?? points.length ?? 0);
+
+    return {
+      _rankValue: excessVsSpy ?? totalReturn ?? -Infinity,
+      _rankable: nReturns >= 3,
+      Model: model?.name || model?.id,
+      'Inception Date': model?.inceptionDate || points[0]?.timestamp || 'Pending',
+      'Live Observations': nObservations,
+      'Total Return': fmtPct(Number.isFinite(totalReturn) ? totalReturn : null, true),
+      'SPY Same Window': fmtPct(spyReturn, true),
+      'QQQ Same Window': fmtPct(qqqReturn, true),
+      'VTI Same Window': fmtPct(vtiReturn, true),
+      'Excess vs SPY': fmtPct(excessVsSpy, true),
+      Sharpe: fmtNum(model?.stats?.sharpe),
+      'Max Drawdown': fmtPct(model?.stats?.maxDrawdown, true),
+      Status:
+        nReturns >= 20
+          ? 'Rankable'
+          : nReturns >= 3
+            ? 'Early live history'
+            : 'Insufficient live history',
+    };
+  });
+
+  return rows
+    .sort((a: any, b: any) => {
+      if (a._rankable !== b._rankable) return a._rankable ? -1 : 1;
+      return Number(b._rankValue) - Number(a._rankValue);
+    })
+    .map(({ _rankValue, _rankable, ...row }: any, index: number) => ({
+      Rank: index + 1,
+      ...row,
+    }));
+}
+
+function commonWindowLeaderboardRows(data: any) {
+  const models = (data?.modelComparison || [])
+    .map((model: any) => ({
+      ...model,
+      cleanPoints: sortPoints(model?.points || []),
+    }))
+    .filter((model: any) => model.cleanPoints.length >= 2);
+
+  if (models.length < 2) return [];
+
+  const commonStart = models
+    .map((model: any) => model.cleanPoints[0].timestamp)
+    .sort()
+    .at(-1);
+
+  const commonEnd = models
+    .map((model: any) => model.cleanPoints[model.cleanPoints.length - 1].timestamp)
+    .sort()[0];
+
+  if (!commonStart || !commonEnd || commonStart > commonEnd) return [];
+
+  const spyPoints = sortPoints(
+    (data?.benchmarks || []).find((b: any) => b?.ticker === 'SPY')?.points || []
+  ).filter((p: any) => p.timestamp >= commonStart && p.timestamp <= commonEnd);
+
+  const spyCommonReturn = pctFromPoints(spyPoints);
+
+  const rows = models.map((model: any) => {
+    const windowPoints = model.cleanPoints.filter(
+      (p: any) => p.timestamp >= commonStart && p.timestamp <= commonEnd
+    );
+
+    const values = windowPoints.map((p: any) => Number(p.value));
+    const stats = computeStats(values);
+    const commonReturn = pctFromPoints(windowPoints);
+
+    const excessVsSpy =
+      commonReturn !== null && spyCommonReturn !== null
+        ? commonReturn - spyCommonReturn
+        : null;
+
+    const observations = windowPoints.length;
+    const nReturns = Math.max(0, observations - 1);
+
+    return {
+      _rankValue: excessVsSpy ?? commonReturn ?? -Infinity,
+      _rankable: nReturns >= 3,
+      Model: model?.name || model?.id,
+      'Common Start': commonStart,
+      'Common End': commonEnd,
+      'Common Observations': observations,
+      'Common Return': fmtPct(commonReturn, true),
+      'SPY Common Return': fmtPct(spyCommonReturn, true),
+      'Excess vs SPY': fmtPct(excessVsSpy, true),
+      'Common Sharpe': fmtNum(stats?.sharpe),
+      'Common Max Drawdown': fmtPct(stats?.maxDrawdown, true),
+      Status:
+        nReturns >= 20
+          ? 'Rankable'
+          : nReturns >= 3
+            ? 'Early common history'
+            : 'Too little common history',
+    };
+  });
+
+  return rows
+    .sort((a: any, b: any) => {
+      if (a._rankable !== b._rankable) return a._rankable ? -1 : 1;
+      return Number(b._rankValue) - Number(a._rankValue);
+    })
+    .map(({ _rankValue, _rankable, ...row }: any, index: number) => ({
+      Rank: index + 1,
+      ...row,
+    }));
 }
 
 export default function DashboardPage() {
@@ -456,13 +606,13 @@ function ModelComparison({ data }: { data: any }) {
 
   const hasBenchmarkData = (data?.benchmarks || []).some((b: any) => b.points?.length);
 
-  const bestModel = useMemo(() => {
-    return getBestPerformingModel(data?.modelComparison || []);
+  const commonWindowRows = useMemo(() => {
+    return commonWindowLeaderboardRows(data);
   }, [data]);
 
-  const bestModelRows = useMemo(() => {
-    return bestModelVsBenchmarkRows(data, bestModel);
-  }, [data, bestModel]);
+  const ownInceptionRows = useMemo(() => {
+    return sinceOwnInceptionLeaderboardRows(data);
+  }, [data]);
 
   return (
     <Panel
@@ -533,12 +683,13 @@ function ModelComparison({ data }: { data: any }) {
       </ChartFrame>
 
       <DataTable
-        title={
-          bestModel
-            ? `Best Performing Model vs Benchmarks — ${bestModel.name}`
-            : 'Best Performing Model vs Benchmarks'
-        }
-        rows={bestModelRows}
+        title="Common Window Leaderboard — Apples-to-Apples Model Ranking"
+        rows={commonWindowRows}
+      />
+
+      <DataTable
+        title="Best Model Since Own Inception — Benchmark Matched"
+        rows={ownInceptionRows}
       />
 
       <DataTable
