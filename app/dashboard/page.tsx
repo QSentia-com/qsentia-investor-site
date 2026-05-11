@@ -24,6 +24,19 @@ import { fmtDollar, fmtNum, fmtPct } from '@/lib/metrics';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+function getHighestSharpeModelId(modelComparison: any[]) {
+  const candidates = (modelComparison || [])
+    .filter((m: any) => {
+      const sharpe = Number(m?.stats?.sharpe);
+      const nReturns = Number(m?.stats?.nReturns ?? 0);
+
+      return m?.id && Number.isFinite(sharpe) && nReturns > 0;
+    })
+    .sort((a: any, b: any) => Number(b?.stats?.sharpe) - Number(a?.stats?.sharpe));
+
+  return candidates[0]?.id || null;
+}
+
 export default function DashboardPage() {
   const [model, setModel] = useState<string | null>(null);
 
@@ -33,11 +46,22 @@ export default function DashboardPage() {
     { refreshInterval: 120000 }
   );
 
+  const bestSharpeModelId = useMemo(() => {
+    return getHighestSharpeModelId(data?.modelComparison || []);
+  }, [data?.modelComparison]);
+
   useEffect(() => {
-    if (!model && data?.selectedModel) {
+    if (model) return;
+
+    if (bestSharpeModelId) {
+      setModel(bestSharpeModelId);
+      return;
+    }
+
+    if (data?.selectedModel) {
       setModel(data.selectedModel);
     }
-  }, [data?.selectedModel, model]);
+  }, [bestSharpeModelId, data?.selectedModel, model]);
 
   if (isLoading) return <LoadingScreen text="Loading live QSentia research terminal..." />;
   if (error) return <LoadingScreen text="Unable to load GitHub trading logs." />;
