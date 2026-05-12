@@ -3,7 +3,7 @@
 import useSWR from 'swr';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import QSentiaMotionBackground from '@/components/QSentiaMotionBackground';
 import {
   Area,
@@ -253,6 +253,7 @@ function commonWindowLeaderboardRows(data: any) {
 
 export default function DashboardPage() {
   const [model, setModel] = useState<string | null>(null);
+  const [selectedFundDetail, setSelectedFundDetail] = useState<any>(null);
 
   const { data, error, isLoading } = useSWR(
     `/api/dashboard${model ? `?model=${model}` : ''}`,
@@ -298,6 +299,8 @@ export default function DashboardPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#fbfbfb] text-black">
       <QSentiaMotionBackground />
+      
+      <FundDetailModal fund={selectedFundDetail} onClose={() => setSelectedFundDetail(null)} />
 
       <div className="relative z-10 mx-auto max-w-[1620px] px-6 py-12">
           <TopNav />
@@ -306,12 +309,14 @@ export default function DashboardPage() {
             data={data}
             selectedModelId={data?.selectedModel}
             onSelectModel={setModel}
+            onFundSelect={setSelectedFundDetail}
           />
 
           <YtdFundReturnBanner
               data={data}
               selectedModelId={data?.selectedModel}
               onSelectModel={setModel}
+              onFundSelect={setSelectedFundDetail}
             />
         
           <section className="mb-12 grid gap-8 lg:grid-cols-[0.92fr_1.08fr]">
@@ -531,18 +536,291 @@ function TopNav() {
   );
 }
 
+function FundDetailModal({ fund, onClose }: { fund: any | null; onClose: () => void }) {
+  const [timePeriod, setTimePeriod] = useState('1Y');
+
+  if (!fund) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="relative w-full max-w-4xl rounded-[32px] border border-black/8 bg-white/95 shadow-[0_30px_120px_rgba(75,63,209,0.2)] backdrop-blur-2xl overflow-hidden">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-6 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/70 hover:bg-white transition-colors"
+          aria-label="Close detail view"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+
+        {/* Header */}
+        <div className="border-b border-black/8 px-8 py-6">
+          <div className="flex items-start gap-4 mb-4">
+            <div
+              className="h-12 w-12 rounded-full flex-shrink-0"
+              style={{
+                backgroundColor: fund.color || '#4b3fd1',
+                opacity: 0.2,
+              }}
+            />
+            <div className="flex-1">
+              <div className="text-xs font-black uppercase tracking-[0.16em] text-[#4b3fd1]/60 mb-1">
+                {fund.id}
+              </div>
+              <h2 className="text-3xl font-light tracking-[-0.06em] text-black mb-2">{fund.name}</h2>
+              <div className="flex items-baseline gap-3">
+                <span className="text-2xl font-light text-black">{fmtDollar(fund.latestValue)}</span>
+                <span
+                  className={`text-sm font-bold ${
+                    Number(fund.dayReturn) > 0 ? 'text-emerald-600' : Number(fund.dayReturn) < 0 ? 'text-red-600' : 'text-neutral-600'
+                  }`}
+                >
+                  {fund.dayReturn !== null ? `${fmtPct(fund.dayReturn, true)} 1D` : 'Pending'}
+                </span>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-2">
+              <button className="flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/70 hover:bg-white transition-colors">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2">
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                </svg>
+              </button>
+              <button className="flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/70 hover:bg-white transition-colors">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Chart Section */}
+        <div className="px-8 py-8">
+          <div className="h-[500px] rounded-[16px] border border-black/6 bg-[#fbfbfb]/80 p-4">
+            <div className="h-full w-full flex items-center justify-center text-sm text-neutral-500">
+              {/* Placeholder - in real implementation, would render actual chart */}
+              Chart for {fund.name} ({timePeriod} period)
+            </div>
+          </div>
+        </div>
+
+        {/* Time Period Selector */}
+        <div className="border-t border-black/8 px-8 py-6 flex items-center justify-center gap-3 flex-wrap">
+          {['1D', '1W', '1M', '3M', '6M', '1Y', '3Y', 'All'].map((period) => (
+            <button
+              key={period}
+              onClick={() => setTimePeriod(period)}
+              className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
+                timePeriod === period
+                  ? 'bg-[#4b3fd1] text-white border border-[#4b3fd1]'
+                  : 'border border-black/15 text-neutral-600 hover:border-[#4b3fd1]/30 hover:text-[#4b3fd1]'
+              }`}
+            >
+              {period}
+            </button>
+          ))}
+          <button className="px-4 py-2 rounded-full text-sm font-bold border border-black/15 text-neutral-600 hover:border-[#4b3fd1]/30 hover:text-[#4b3fd1] transition-all">
+            Terminal
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScrollButtons({
+  scrollContainerRef,
+  rowId,
+}: {
+  scrollContainerRef: React.RefObject<HTMLDivElement | null>;
+  rowId: string;
+}) {
+  const [showLeft, setShowLeft] = useState(false);
+  const [showRight, setShowRight] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const checkScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    const atStart = scrollLeft === 0;
+    const atEnd = Math.ceil(scrollLeft + clientWidth) >= scrollWidth - 1;
+
+    setShowLeft(!atStart);
+    setShowRight(!atEnd);
+
+    // Update mask classes
+    const scrollContainer = container.closest('.scroll-container') as HTMLElement;
+    if (scrollContainer) {
+      scrollContainer.classList.remove('at-start', 'at-end', 'at-both');
+      if (atStart && atEnd) {
+        scrollContainer.classList.add('at-both');
+      } else if (atStart) {
+        scrollContainer.classList.add('at-start');
+      } else if (atEnd) {
+        scrollContainer.classList.add('at-end');
+      }
+    }
+  }, [scrollContainerRef]);
+
+  const handleScroll = useCallback(
+    (direction: 'left' | 'right') => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      const scrollAmount = 260;
+      container.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+
+      setHasInteracted(true);
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current);
+        autoScrollIntervalRef.current = null;
+      }
+
+      // Re-check after scroll settles
+      setTimeout(checkScroll, 400);
+    },
+    [scrollContainerRef, checkScroll]
+  );
+
+  const startAutoScroll = useCallback(() => {
+    if (hasInteracted) return;
+
+    const container = scrollContainerRef.current;
+    if (!container || autoScrollIntervalRef.current) return;
+
+    const scrollParent = container.closest('.scroll-container') as HTMLElement;
+    if (scrollParent) {
+      scrollParent.classList.add('with-hint');
+    }
+
+    autoScrollIntervalRef.current = setInterval(() => {
+      if (container.scrollLeft < container.scrollWidth - container.clientWidth) {
+        container.scrollLeft += 1;
+      }
+    }, 30);
+  }, [hasInteracted, scrollContainerRef]);
+
+  const stopAutoScroll = useCallback(() => {
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
+      autoScrollIntervalRef.current = null;
+    }
+
+    const container = scrollContainerRef.current;
+    if (container) {
+      const scrollParent = container.closest('.scroll-container') as HTMLElement;
+      if (scrollParent) {
+        scrollParent.classList.remove('with-hint');
+      }
+    }
+  }, [scrollContainerRef]);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    // Initial check
+    checkScroll();
+
+    // Add scroll listener
+    container.addEventListener('scroll', checkScroll);
+
+    // Add interaction listeners - stops animation permanently
+    const onInteract = () => {
+      setHasInteracted(true);
+      stopAutoScroll();
+    };
+
+    // Stop animation when cursor enters (to allow reading)
+    const onMouseEnter = () => {
+      stopAutoScroll();
+    };
+
+    // Resume animation when cursor leaves (if not interacted)
+    const onMouseLeave = () => {
+      if (!hasInteracted) {
+        startAutoScroll();
+      }
+    };
+
+    container.addEventListener('mouseenter', onMouseEnter);
+    container.addEventListener('mouseleave', onMouseLeave);
+    container.addEventListener('touchstart', onInteract);
+    container.addEventListener('wheel', onInteract);
+    container.addEventListener('click', onInteract);
+
+    // Start auto-scroll hint on mount
+    const timer = setTimeout(() => {
+      if (!hasInteracted) startAutoScroll();
+    }, 500);
+
+    return () => {
+      container.removeEventListener('scroll', checkScroll);
+      container.removeEventListener('mouseenter', onMouseEnter);
+      container.removeEventListener('mouseleave', onMouseLeave);
+      container.removeEventListener('touchstart', onInteract);
+      container.removeEventListener('wheel', onInteract);
+      container.removeEventListener('click', onInteract);
+      clearTimeout(timer);
+      stopAutoScroll();
+    };
+  }, [scrollContainerRef, checkScroll, hasInteracted, startAutoScroll, stopAutoScroll]);
+
+  return (
+    <>
+      <button
+        className={`scroll-button left ${showLeft ? 'visible' : ''}`}
+        onClick={() => handleScroll('left')}
+        aria-label="Scroll left"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+      <button
+        className={`scroll-button right ${showRight ? 'visible' : ''}`}
+        onClick={() => handleScroll('right')}
+        aria-label="Scroll right"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+    </>
+  );
+}
+
 function DailyFundReturnBanner({
   data,
   selectedModelId,
   onSelectModel,
+  onFundSelect,
 }: {
   data: any;
   selectedModelId?: string | null;
   onSelectModel: (id: string) => void;
+  onFundSelect?: (fund: any) => void;
 }) {
   const rows = useMemo(() => {
     return dailyFundReturnRows(data?.modelComparison || []);
   }, [data?.modelComparison]);
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   if (!rows.length) return null;
 
@@ -580,51 +858,60 @@ function DailyFundReturnBanner({
         </div>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto px-4 py-4">
-        {rows.map((row: any) => {
-          const positive = Number(row.dayReturn) > 0;
-          const negative = Number(row.dayReturn) < 0;
-          const active = row.id === selectedModelId;
+      <div className="scroll-container scroll-masked relative">
+        <div
+          ref={scrollContainerRef}
+          className="flex gap-3 overflow-x-auto px-4 py-4"
+        >
+          {rows.map((row: any) => {
+            const positive = Number(row.dayReturn) > 0;
+            const negative = Number(row.dayReturn) < 0;
+            const active = row.id === selectedModelId;
 
-          return (
-            <button
-              key={row.id}
-              onClick={() => onSelectModel(row.id)}
-              className={`min-w-[245px] rounded-[18px] border px-4 py-4 text-left transition hover:-translate-y-0.5 ${
-                active
-                  ? 'border-[#4b3fd1] bg-[#4b3fd1]/10 shadow-[0_16px_40px_rgba(75,63,209,0.16)]'
-                  : 'border-black/8 bg-white/70 hover:border-[#4b3fd1]/30'
-              }`}
-            >
-              <div className="mb-3 flex items-center gap-2">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: row.color }}
-                />
-                <div className="truncate text-xs font-black uppercase tracking-[0.12em] text-neutral-600">
-                  {row.name}
-                </div>
-              </div>
-
-              <div
-                className={`text-3xl font-light tracking-[-0.06em] ${
-                  positive
-                    ? 'text-emerald-600'
-                    : negative
-                      ? 'text-red-600'
-                      : 'text-neutral-700'
+            return (
+              <button
+                key={row.id}
+                onClick={() => {
+                  onSelectModel(row.id);
+                  onFundSelect?.(row);
+                }}
+                className={`min-w-[245px] rounded-[18px] border px-4 py-4 text-left transition hover:-translate-y-0.5 ${
+                  active
+                    ? 'border-[#4b3fd1] bg-[#4b3fd1]/10 shadow-[0_16px_40px_rgba(75,63,209,0.16)]'
+                    : 'border-black/8 bg-white/70 hover:border-[#4b3fd1]/30'
                 }`}
               >
-                {row.hasData ? fmtPct(row.dayReturn, true) : 'Pending'}
-              </div>
+                <div className="mb-3 flex items-center gap-2">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: row.color }}
+                  />
+                  <div className="truncate text-xs font-black uppercase tracking-[0.12em] text-neutral-600">
+                    {row.name}
+                  </div>
+                </div>
 
-              <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-neutral-500">
-                <span>{row.latestDate}</span>
-                <span>{row.latestValue ? fmtDollar(row.latestValue) : 'No value'}</span>
-              </div>
-            </button>
-          );
-        })}
+                <div
+                  className={`text-3xl font-light tracking-[-0.06em] ${
+                    positive
+                      ? 'text-emerald-600'
+                      : negative
+                        ? 'text-red-600'
+                        : 'text-neutral-700'
+                  }`}
+                >
+                  {row.hasData ? fmtPct(row.dayReturn, true) : 'Pending'}
+                </div>
+
+                <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-neutral-500">
+                  <span>{row.latestDate}</span>
+                  <span>{row.latestValue ? fmtDollar(row.latestValue) : 'No value'}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <ScrollButtons scrollContainerRef={scrollContainerRef} rowId="daily" />
       </div>
     </section>
   );
@@ -634,14 +921,18 @@ function YtdFundReturnBanner({
   data,
   selectedModelId,
   onSelectModel,
+  onFundSelect,
 }: {
   data: any;
   selectedModelId?: string | null;
   onSelectModel: (id: string) => void;
+  onFundSelect?: (fund: any) => void;
 }) {
   const rows = useMemo(() => {
     return ytdFundReturnRows(data?.modelComparison || []);
   }, [data?.modelComparison]);
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   if (!rows.length) return null;
 
@@ -679,51 +970,60 @@ function YtdFundReturnBanner({
         </div>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto px-4 py-4">
-        {rows.map((row: any) => {
-          const positive = Number(row.ytdReturn) > 0;
-          const negative = Number(row.ytdReturn) < 0;
-          const active = row.id === selectedModelId;
+      <div className="scroll-container scroll-masked relative">
+        <div
+          ref={scrollContainerRef}
+          className="flex gap-3 overflow-x-auto px-4 py-4"
+        >
+          {rows.map((row: any) => {
+            const positive = Number(row.ytdReturn) > 0;
+            const negative = Number(row.ytdReturn) < 0;
+            const active = row.id === selectedModelId;
 
-          return (
-            <button
-              key={row.id}
-              onClick={() => onSelectModel(row.id)}
-              className={`min-w-[245px] rounded-[18px] border px-4 py-4 text-left transition hover:-translate-y-0.5 ${
-                active
-                  ? 'border-[#4b3fd1] bg-[#4b3fd1]/10 shadow-[0_16px_40px_rgba(75,63,209,0.16)]'
-                  : 'border-black/8 bg-white/70 hover:border-[#4b3fd1]/30'
-              }`}
-            >
-              <div className="mb-3 flex items-center gap-2">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: row.color }}
-                />
-                <div className="truncate text-xs font-black uppercase tracking-[0.12em] text-neutral-600">
-                  {row.name}
-                </div>
-              </div>
-
-              <div
-                className={`text-3xl font-light tracking-[-0.06em] ${
-                  positive
-                    ? 'text-emerald-600'
-                    : negative
-                      ? 'text-red-600'
-                      : 'text-neutral-700'
+            return (
+              <button
+                key={row.id}
+                onClick={() => {
+                  onSelectModel(row.id);
+                  onFundSelect?.(row);
+                }}
+                className={`min-w-[245px] rounded-[18px] border px-4 py-4 text-left transition hover:-translate-y-0.5 ${
+                  active
+                    ? 'border-[#4b3fd1] bg-[#4b3fd1]/10 shadow-[0_16px_40px_rgba(75,63,209,0.16)]'
+                    : 'border-black/8 bg-white/70 hover:border-[#4b3fd1]/30'
                 }`}
               >
-                {row.hasData ? fmtPct(row.ytdReturn, true) : 'Pending'}
-              </div>
+                <div className="mb-3 flex items-center gap-2">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: row.color }}
+                  />
+                  <div className="truncate text-xs font-black uppercase tracking-[0.12em] text-neutral-600">
+                    {row.name}
+                  </div>
+                </div>
 
-              <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-neutral-500">
-                <span>From {row.ytdStart}</span>
-                <span>{row.latestValue ? fmtDollar(row.latestValue) : 'No value'}</span>
-              </div>
-            </button>
-          );
-        })}
+                <div
+                  className={`text-3xl font-light tracking-[-0.06em] ${
+                    positive
+                      ? 'text-emerald-600'
+                      : negative
+                        ? 'text-red-600'
+                        : 'text-neutral-700'
+                  }`}
+                >
+                  {row.hasData ? fmtPct(row.ytdReturn, true) : 'Pending'}
+                </div>
+
+                <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-neutral-500">
+                  <span>From {row.ytdStart}</span>
+                  <span>{row.latestValue ? fmtDollar(row.latestValue) : 'No value'}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <ScrollButtons scrollContainerRef={scrollContainerRef} rowId="ytd" />
       </div>
     </section>
   );
@@ -760,31 +1060,75 @@ function ModelComparison({ data }: { data: any }) {
     <Panel
       eyebrow="Institutional Benchmark Discipline"
       title="Model Comparison"
-      subtitle="Solid lines represent live model portfolios normalized to 100. Dashed lines represent SPY, QQQ, DIA, IWM, and VTI benchmarks measured from BR-PPO V10 original inception."
+      subtitle="Compare live model portfolio performance against institutional benchmarks. Solid lines represent live model portfolios normalized to 100. Dashed lines represent SPY, QQQ, DIA, IWM, and VTI benchmarks—all measured from BR-PPO V10 original inception."
     >
       <ChartFrame title="Normalized Equity Curves">
-        <div className="h-[620px]">
+        {/* Benchmark Legend */}
+        {(data?.benchmarks || []).length > 0 && (
+          <div className="mb-6 flex flex-wrap gap-3 rounded-lg bg-neutral-50 p-4 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="h-0.5 w-6 bg-neutral-500" />
+              <span className="font-bold text-neutral-600">Strategy</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-0.5 w-6 border-t-2 border-dashed border-neutral-400" />
+              <span className="font-bold text-neutral-600">Benchmark</span>
+            </div>
+            <div className="ml-auto text-neutral-500">
+              Reference line at 100: baseline performance
+            </div>
+          </div>
+        )}
+
+        <div className="h-[900px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <CartesianGrid stroke="rgba(75,63,209,0.10)" vertical={false} />
+            <LineChart data={chartData} margin={{ top: 16, right: 40, bottom: 16, left: 60 }}>
+              <CartesianGrid stroke="rgba(75,63,209,0.08)" vertical={false} strokeDasharray="3 3" />
               <XAxis
                 dataKey="timestamp"
-                stroke="#737373"
-                tick={{ fontSize: 11, fill: '#525252' }}
+                stroke="#999"
+                tick={{ fontSize: 12, fill: '#666', fontWeight: 500 }}
                 tickLine={false}
-                axisLine={{ stroke: 'rgba(0,0,0,0.15)' }}
-                minTickGap={36}
+                axisLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                minTickGap={40}
+                label={{ value: 'Date', position: 'insideBottomRight', offset: -10, fill: '#999', fontSize: 11 }}
               />
               <YAxis
-                stroke="#737373"
-                tick={{ fontSize: 12, fill: '#525252' }}
+                stroke="#999"
+                tick={{ fontSize: 12, fill: '#666', fontWeight: 500 }}
                 tickLine={false}
-                axisLine={false}
+                axisLine={{ stroke: 'rgba(0,0,0,0.1)' }}
                 domain={['auto', 'auto']}
+                label={{ value: 'Performance (Base 100)', angle: -90, position: 'insideLeft', fill: '#999', fontSize: 11 }}
               />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Legend wrapperStyle={{ fontSize: 12, fontWeight: 700 }} />
-              <ReferenceLine y={100} stroke="rgba(0,0,0,0.22)" strokeDasharray="4 4" />
+              <Tooltip
+                contentStyle={{
+                  ...tooltipStyle,
+                  backgroundColor: 'rgba(255,255,255,0.95)',
+                  border: '1px solid rgba(75,63,209,0.2)',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  boxShadow: '0 12px 40px rgba(75,63,209,0.15)',
+                }}
+                labelStyle={{ color: '#333', fontWeight: 600, fontSize: 13 }}
+                formatter={(value: any) => [typeof value === 'number' ? value.toFixed(2) : value, '']}
+              />
+              <Legend
+                wrapperStyle={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  paddingTop: '20px',
+                  paddingBottom: '12px',
+                }}
+                verticalAlign="bottom"
+                height={36}
+              />
+              <ReferenceLine
+                y={100}
+                stroke="rgba(0,0,0,0.25)"
+                strokeDasharray="6 4"
+                label={{ value: 'Baseline (100)', position: 'right', fill: '#666', fontSize: 11, offset: 10 }}
+              />
 
               {(data?.modelComparison || []).map((m: any) => (
                 <Line
@@ -792,10 +1136,11 @@ function ModelComparison({ data }: { data: any }) {
                   type="monotone"
                   dataKey={m.name}
                   stroke={m.color || '#4b3fd1'}
-                  strokeWidth={m.id === data?.selectedModel ? 4.4 : 2.8}
+                  strokeWidth={m.id === data?.selectedModel ? 3.5 : 2.5}
                   dot={false}
                   connectNulls
-                  activeDot={{ r: 5 }}
+                  isAnimationActive={false}
+                  activeDot={{ r: 6, fill: 'white', stroke: m.color, strokeWidth: 2.5 }}
                 />
               ))}
 
@@ -804,11 +1149,12 @@ function ModelComparison({ data }: { data: any }) {
                   key={`${b.name} (${b.ticker})`}
                   type="monotone"
                   dataKey={`${b.name} (${b.ticker})`}
-                  stroke={b.color || '#737373'}
-                  strokeWidth={2.4}
-                  strokeDasharray="8 6"
+                  stroke={b.color || '#a0a0a0'}
+                  strokeWidth={2.0}
+                  strokeDasharray="10 5"
                   dot={false}
                   connectNulls
+                  isAnimationActive={false}
                   activeDot={false}
                 />
               ))}
@@ -817,9 +1163,12 @@ function ModelComparison({ data }: { data: any }) {
         </div>
 
         {!hasBenchmarkData && (
-          <div className="mt-4 rounded-2xl border border-[#4b3fd1]/20 bg-[#4b3fd1]/5 p-4 text-sm leading-6 text-neutral-600">
-            Benchmark overlay is ready in the chart layer, but benchmark data has not been returned
-            by the API yet. Check <code>/api/dashboard</code> for the <code>benchmarks</code> field.
+          <div className="mt-6 rounded-2xl border border-[#4b3fd1]/20 bg-[#4b3fd1]/8 p-5 text-sm leading-6 text-[#4b3fd1]">
+            <div className="font-bold mb-1">📊 Benchmark data pending</div>
+            <div className="text-neutral-600">
+              Benchmark overlay is ready in the chart layer, but benchmark data has not been returned by the API yet. 
+              Check <code className="text-xs bg-white/50 px-2 py-0.5 rounded">/api/dashboard</code> for the <code className="text-xs bg-white/50 px-2 py-0.5 rounded">benchmarks</code> field.
+            </div>
           </div>
         )}
       </ChartFrame>
@@ -853,27 +1202,50 @@ function ExecutiveOverview({ data }: { data: any }) {
     >
       <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
         <ChartFrame title="Portfolio Value">
-          <div className="h-[520px]">
+          <div className="h-[600px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data?.equityCurve || []}>
+              <AreaChart data={data?.equityCurve || []} margin={{ top: 16, right: 40, bottom: 16, left: 60 }}>
                 <defs>
                   <linearGradient id="portfolioFillLight" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4b3fd1" stopOpacity={0.28} />
-                    <stop offset="58%" stopColor="#4b3fd1" stopOpacity={0.08} />
+                    <stop offset="5%" stopColor="#4b3fd1" stopOpacity={0.32} />
+                    <stop offset="58%" stopColor="#4b3fd1" stopOpacity={0.12} />
                     <stop offset="100%" stopColor="#4b3fd1" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="rgba(75,63,209,0.10)" vertical={false} />
-                <XAxis dataKey="timestamp" stroke="#737373" tick={{ fontSize: 11, fill: '#525252' }} />
-                <YAxis stroke="#737373" tick={{ fontSize: 12, fill: '#525252' }} />
-                <Tooltip contentStyle={tooltipStyle} />
+                <CartesianGrid stroke="rgba(75,63,209,0.08)" vertical={false} strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="timestamp"
+                  stroke="#999"
+                  tick={{ fontSize: 11, fill: '#666', fontWeight: 500 }}
+                  tickLine={false}
+                  axisLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                />
+                <YAxis
+                  stroke="#999"
+                  tick={{ fontSize: 11, fill: '#666', fontWeight: 500 }}
+                  tickLine={false}
+                  axisLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                  label={{ value: 'Portfolio Value ($)', angle: -90, position: 'insideLeft', fill: '#999', fontSize: 11 }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    ...tooltipStyle,
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    border: '1px solid rgba(75,63,209,0.2)',
+                    borderRadius: '12px',
+                    padding: '12px 16px',
+                    boxShadow: '0 12px 40px rgba(75,63,209,0.15)',
+                  }}
+                  formatter={(value: any) => [value ? fmtDollar(value) : 'N/A', 'Portfolio Value']}
+                />
                 <Area
                   type="monotone"
                   dataKey="portfolioValue"
                   stroke="#4b3fd1"
-                  strokeWidth={4}
+                  strokeWidth={3}
                   fill="url(#portfolioFillLight)"
                   dot={false}
+                  isAnimationActive={false}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -915,15 +1287,51 @@ function PerformanceAnalytics({ data }: { data: any }) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <ChartFrame title="Drawdown Profile">
-          <div className="h-[460px]">
+          <div className="h-[520px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data?.drawdowns || []}>
-                <CartesianGrid stroke="rgba(75,63,209,0.10)" vertical={false} />
-                <XAxis dataKey="timestamp" stroke="#737373" tick={{ fontSize: 11, fill: '#525252' }} />
-                <YAxis stroke="#737373" tick={{ fontSize: 12, fill: '#525252' }} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <ReferenceLine y={0} stroke="rgba(0,0,0,0.22)" strokeDasharray="4 4" />
-                <Area type="monotone" dataKey="drawdown" stroke="#111111" strokeWidth={2.6} fill="#4b3fd1" fillOpacity={0.12} dot={false} />
+              <AreaChart data={data?.drawdowns || []} margin={{ top: 16, right: 40, bottom: 16, left: 60 }}>
+                <CartesianGrid stroke="rgba(75,63,209,0.08)" vertical={false} strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="timestamp"
+                  stroke="#999"
+                  tick={{ fontSize: 11, fill: '#666', fontWeight: 500 }}
+                  tickLine={false}
+                  axisLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                />
+                <YAxis
+                  stroke="#999"
+                  tick={{ fontSize: 11, fill: '#666', fontWeight: 500 }}
+                  tickLine={false}
+                  axisLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                  label={{ value: 'Drawdown (%)', angle: -90, position: 'insideLeft', fill: '#999', fontSize: 11 }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    ...tooltipStyle,
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    border: '1px solid rgba(220,38,38,0.2)',
+                    borderRadius: '12px',
+                    padding: '12px 16px',
+                    boxShadow: '0 12px 40px rgba(220,38,38,0.1)',
+                  }}
+                  formatter={(value: any) => [typeof value === 'number' ? (value * 100).toFixed(2) + '%' : 'N/A', 'Drawdown']}
+                />
+                <ReferenceLine
+                  y={0}
+                  stroke="rgba(0,0,0,0.25)"
+                  strokeDasharray="6 4"
+                  label={{ value: 'Zero Line', position: 'right', fill: '#666', fontSize: 11, offset: 10 }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="drawdown"
+                  stroke="#dc2626"
+                  strokeWidth={2.5}
+                  fill="#ef4444"
+                  fillOpacity={0.15}
+                  dot={false}
+                  isAnimationActive={false}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -1106,34 +1514,37 @@ function Tabs({ tabs, panels }: { tabs: string[]; panels: React.ReactNode[] }) {
 
 function Panel({ eyebrow, title, subtitle, children }: { eyebrow: string; title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <section className="relative overflow-hidden rounded-[28px] border border-black/8 bg-white/70 p-6 shadow-[0_16px_60px_rgba(25,20,90,0.08)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_24px_80px_rgba(25,20,90,0.12)]">
+    <section className="relative overflow-hidden rounded-[32px] border border-black/8 bg-gradient-to-br from-white/75 via-white/70 to-white/65 p-8 shadow-[0_16px_60px_rgba(25,20,90,0.08)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_24px_80px_rgba(25,20,90,0.12)]">
       <CornerMarks />
-      <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[#4b3fd1]/6 blur-2xl" />
-      <div className="relative mb-6">
-        <div className="mb-2 text-xs font-black uppercase tracking-[0.20em] text-[#4b3fd1]/70">{eyebrow}</div>
-        <h2 className="text-3xl font-light tracking-[-0.06em] text-black">{title}</h2>
-        <p className="mt-3 max-w-3xl text-xs leading-5 text-neutral-500">{subtitle}</p>
+      <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#4b3fd1]/5 blur-3xl" />
+      <div className="absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-[#4b3fd1]/4 blur-2xl" />
+      
+      <div className="relative mb-8">
+        <div className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-[#4b3fd1]/75">{eyebrow}</div>
+        <h2 className="mb-4 text-4xl font-light tracking-[-0.08em] text-black">{title}</h2>
+        <p className="max-w-4xl text-sm leading-6 text-neutral-600">{subtitle}</p>
       </div>
-      <div className="relative">{children}</div>
+      <div className="relative space-y-6">{children}</div>
     </section>
   );
 }
 
-function ChartFrame({ title, children }: { title: string; children: React.ReactNode }) {
+function ChartFrame({ title, children, description }: { title: string; children: React.ReactNode; description?: string }) {
   return (
-    <div className="relative overflow-hidden rounded-[24px] border border-black/8 bg-white/75 p-5 shadow-[0_12px_40px_rgba(25,20,90,0.06)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_18px_50px_rgba(25,20,90,0.1)]">
-      <div className="absolute right-0 top-0 h-16 w-16 border-b border-l border-[#4b3fd1]/10" />
-      <div className="absolute bottom-0 left-0 h-12 w-12 border-r border-t border-[#4b3fd1]/10" />
+    <div className="relative overflow-hidden rounded-[24px] border border-black/8 bg-gradient-to-br from-white/80 to-white/60 p-7 shadow-[0_12px_40px_rgba(25,20,90,0.06)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_18px_50px_rgba(25,20,90,0.1)]">
+      <div className="absolute right-0 top-0 h-20 w-20 border-b border-l border-[#4b3fd1]/8" />
+      <div className="absolute bottom-0 left-0 h-16 w-16 border-r border-t border-[#4b3fd1]/8" />
 
-      <div className="relative mb-4 flex items-start justify-between">
-        <div>
-          <div className="mb-1 text-[9px] font-black uppercase tracking-[0.18em] text-[#4b3fd1]/60">Analytics</div>
-          <h3 className="text-lg font-light tracking-[-0.05em] text-black">{title}</h3>
+      <div className="relative mb-6 flex items-start justify-between">
+        <div className="flex-1">
+          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.24em] text-[#4b3fd1]/70">Chart Analysis</div>
+          <h3 className="text-xl font-light tracking-[-0.06em] text-black">{title}</h3>
+          {description && <p className="mt-2 text-xs text-neutral-500">{description}</p>}
         </div>
-        <div className="h-3 w-3 rotate-45 border border-[#4b3fd1]/40" />
+        <div className="h-3.5 w-3.5 rotate-45 border border-[#4b3fd1]/30" />
       </div>
 
-      <div className="relative rounded-[16px] border border-black/6 bg-[#fbfbfb]/80 p-3">{children}</div>
+      <div className="relative rounded-[16px] border border-black/5 bg-gradient-to-b from-[#fafafa] to-[#f9f9f9] p-4">{children}</div>
     </div>
   );
 }

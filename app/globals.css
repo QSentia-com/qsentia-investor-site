@@ -217,6 +217,25 @@ body {
   transform: translateY(-2px);
 }
 
+/* Recharts legend improvements */
+.recharts-legend-wrapper {
+  padding: 20px 0 !important;
+  margin-top: 16px !important;
+}
+
+.recharts-legend-item {
+  margin-right: 20px !important;
+  margin-bottom: 8px !important;
+}
+
+.recharts-cartesian-axis-tick {
+  font-size: 11px !important;
+}
+
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+
 /* Cyan glow animation */
 @keyframes cyan-glow {
   0%, 100% {
@@ -283,4 +302,140 @@ body {
 
 .count-up {
   animation: count-up 0.4s ease-out;
+}
+
+/* Scroll Button Styles */
+@keyframes auto-scroll-hint {
+  0%, 100% { transform: translateX(0px); }
+  50% { transform: translateX(12px); }
+}
+
+.scroll-button {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(6px);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 180ms ease, transform 180ms ease, background 200ms ease, border-color 200ms ease;
+  opacity: 0;
+  transform: scale(0.85);
+  pointer-events: none;
+}
+
+.scroll-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.scroll-button:active:not(:disabled) {
+  transform: scale(0.75);
+}
+
+.scroll-button.visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.scroll-button.left {
+  left: 8px;
+}
+
+.scroll-button.right {
+  right: 8px;
+}
+
+.scroll-button svg {
+  width: 18px;
+  height: 18px;
+  color: #555;
+  stroke-width: 3;
+}
+
+.scroll-container {
+  position: relative;
+  scroll-behavior: smooth;
+}
+
+.scroll-container.with-hint .scroll-button.right {
+  animation: auto-scroll-hint 3s ease-in-out infinite;
+}
+
+/* Scroll fade mask for edges */
+.scroll-container.scroll-masked {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0px,
+    black 48px,
+    black calc(100% - 48px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0px,
+    black 48px,
+    black calc(100% - 48px),
+    transparent 100%
+  );
+}
+
+.scroll-container.scroll-masked.at-start {
+  mask-image: linear-gradient(
+    to right,
+    black 0px,
+    black calc(100% - 48px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    black 0px,
+    black calc(100% - 48px),
+    transparent 100%
+  );
+}
+
+.scroll-container.scroll-masked.at-end {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0px,
+    black 48px,
+    black 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0px,
+    black 48px,
+    black 100%
+  );
+}
+
+.scroll-container.scroll-masked.at-both {
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+/* Accessibility: Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .scroll-button {
+    transition: none;
+  }
+
+  .scroll-button.visible {
+    transform: scale(1);
+  }
+
+  .scroll-container.with-hint .scroll-button.right {
+    animation: none;
+  }
+
+  .scroll-container {
+    scroll-behavior: auto;
+  }
 }
