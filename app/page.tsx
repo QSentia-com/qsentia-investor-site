@@ -33,9 +33,9 @@ export default function HomePage() {
             <Image 
               src="/logo/Qsentia Logo Bg transparent.png" 
               alt="QSentia Logo" 
-              width={280} 
-              height={70}
-              className="h-16 w-auto"
+              width={350} 
+              height={90}
+              className="h-24 w-auto"
               priority
             />
           </div>
@@ -147,9 +147,9 @@ export default function HomePage() {
                 <Image 
                   src="/logo/Qsentia Logo Bg transparent.png" 
                   alt="QSentia Logo" 
-                  width={260} 
-                  height={65}
-                  className="h-12 w-auto"
+                  width={340} 
+                  height={80}
+                  className="h-20 w-auto"
                 />
               </div>
               <p className="text-sm text-gray-600">Intelligent reinforcement learning for quantitative finance.</p>
