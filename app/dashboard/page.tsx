@@ -467,9 +467,9 @@ export default function DashboardPage() {
                 <Image
                   src="/logo/Qsentia Logo Bg transparent.png"
                   alt="QSentia Logo"
-                  width={280}
-                  height={90}
-                  className="h-auto w-auto max-h-[100px] max-w-[280px] object-contain"
+                  width={320}
+                  height={100}
+                  className="h-auto w-auto max-h-[130px] max-w-[320px] object-contain"
                 />
               </div>
               <p className="text-xs leading-5 text-neutral-500 max-w-xs">
@@ -509,9 +509,9 @@ function TopNav() {
         <Image
           src="/logo/Qsentia Logo Bg transparent.png"
           alt="QSentia Logo"
-          width={270}
-          height={90}
-          className="h-auto w-auto max-h-[90px] max-w-[270px] object-contain transition-transform duration-300 group-hover:scale-105"
+          width={320}
+          height={105}
+          className="h-auto w-auto max-h-[120px] max-w-[320px] object-contain transition-transform duration-300 group-hover:scale-105"
         />
       </Link>
 
@@ -1350,9 +1350,9 @@ function QLogo() {
     <Image
       src="/logo/Qsentia Logo Bg transparent.png"
       alt="QSentia Logo"
-      width={400}
-      height={130}
-      className="h-auto w-auto max-h-[140px] max-w-[400px] object-contain"
+      width={480}
+      height={160}
+      className="h-auto w-auto max-h-[180px] max-w-[480px] object-contain"
     />
   );
 }
@@ -1377,9 +1377,9 @@ function LoadingScreen({ text }: { text: string }) {
           <Image
             src="/logo/Qsentia Logo Bg transparent.png"
             alt="QSentia Logo"
-            width={400}
-            height={130}
-            className="h-auto w-auto max-h-[140px] max-w-[400px] object-contain"
+            width={480}
+            height={160}
+            className="h-auto w-auto max-h-[180px] max-w-[480px] object-contain"
           />
         </div>
         <div className="text-sm font-black uppercase tracking-[0.22em] text-[#4b3fd1]">{text}</div>
