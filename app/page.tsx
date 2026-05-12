@@ -31,7 +31,7 @@ export default function HomePage() {
         <div className="flex items-center justify-between px-6 py-4 md:px-10">
           <div className="flex items-center gap-2">
             <Image 
-              src="/logo/qsentialogo.png" 
+              src="/logo/Qsentia Logo Bg transparent.png" 
               alt="QSentia Logo" 
               width={200} 
               height={50}
@@ -145,7 +145,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Image 
-                  src="/logo/qsentialogo.png" 
+                  src="/logo/Qsentia Logo Bg transparent.png" 
                   alt="QSentia Logo" 
                   width={200} 
                   height={50}
