@@ -20,7 +20,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { fmtDollar, fmtNum, fmtPct } from '@/lib/metrics';
+import { computeStats, fmtDollar, fmtNum, fmtPct } from '@/lib/metrics';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -35,6 +35,220 @@ function getHighestSharpeModelId(modelComparison: any[]) {
     .sort((a: any, b: any) => Number(b?.stats?.sharpe) - Number(a?.stats?.sharpe));
 
   return candidates[0]?.id || null;
+}
+
+function dailyFundReturnRows(modelComparison: any[]) {
+  return (modelComparison || []).map((model: any) => {
+    const points = model?.points || [];
+    const latest = points[points.length - 1];
+    const previous = points[points.length - 2];
+
+    const latestValue = Number(model?.latestValue);
+    const latestIndex = Number(latest?.value);
+    const previousIndex = Number(previous?.value);
+
+    const dayReturn =
+      Number.isFinite(latestIndex) && Number.isFinite(previousIndex) && previousIndex !== 0
+        ? latestIndex / previousIndex - 1
+        : null;
+
+    return {
+      id: model.id,
+      name: model.name || model.id,
+      color: model.color || '#4b3fd1',
+      latestDate: latest?.timestamp || 'Pending',
+      latestValue: Number.isFinite(latestValue) ? latestValue : null,
+      dayReturn,
+      hasData: dayReturn !== null,
+    };
+  });
+}
+
+function sortPoints(points: any[]) {
+  return [...(points || [])]
+    .filter((p: any) => p?.timestamp && Number.isFinite(Number(p?.value)))
+    .sort((a: any, b: any) => String(a.timestamp).localeCompare(String(b.timestamp)));
+}
+
+function ytdFundReturnRows(modelComparison: any[]) {
+  const allPoints = (modelComparison || []).flatMap((model: any) => sortPoints(model?.points || []));
+  const latestTimestamp =
+    allPoints.length > 0 ? allPoints[allPoints.length - 1]?.timestamp : new Date().toISOString().slice(0, 10);
+
+  const currentYear = String(latestTimestamp || new Date().toISOString()).slice(0, 4);
+  const ytdStart = `${currentYear}-01-01`;
+
+  return (modelComparison || []).map((model: any) => {
+    const points = sortPoints(model?.points || []);
+    const ytdPoints = points.filter((point: any) => String(point.timestamp) >= ytdStart);
+
+    const first = ytdPoints[0];
+    const latest = ytdPoints[ytdPoints.length - 1];
+
+    const firstIndex = Number(first?.value);
+    const latestIndex = Number(latest?.value);
+    const latestValue = Number(model?.latestValue);
+
+    const ytdReturn =
+      Number.isFinite(firstIndex) && Number.isFinite(latestIndex) && firstIndex !== 0
+        ? latestIndex / firstIndex - 1
+        : null;
+
+    return {
+      id: model.id,
+      name: model.name || model.id,
+      color: model.color || '#4b3fd1',
+      ytdStart: first?.timestamp || 'Pending',
+      latestDate: latest?.timestamp || 'Pending',
+      latestValue: Number.isFinite(latestValue) ? latestValue : null,
+      ytdReturn,
+      hasData: ytdReturn !== null,
+    };
+  });
+}
+
+function pctFromPoints(points: any[]) {
+  const clean = sortPoints(points);
+  if (clean.length < 2) return null;
+
+  const first = Number(clean[0].value);
+  const last = Number(clean[clean.length - 1].value);
+
+  if (!Number.isFinite(first) || !Number.isFinite(last) || first === 0) return null;
+
+  return last / first - 1;
+}
+
+function benchmarkReturn(model: any, ticker: string) {
+  const benchmark = (model?.benchmarks || []).find((b: any) => b?.ticker === ticker);
+  const direct = Number(benchmark?.stats?.totalReturn);
+
+  if (Number.isFinite(direct)) return direct;
+
+  return pctFromPoints(benchmark?.points || []);
+}
+
+function sinceOwnInceptionLeaderboardRows(data: any) {
+  const rows = (data?.modelComparison || []).map((model: any) => {
+    const points = sortPoints(model?.points || []);
+    const totalReturn = Number(model?.stats?.totalReturn);
+    const spyReturn = benchmarkReturn(model, 'SPY');
+    const qqqReturn = benchmarkReturn(model, 'QQQ');
+    const vtiReturn = benchmarkReturn(model, 'VTI');
+
+    const excessVsSpy =
+      Number.isFinite(totalReturn) && spyReturn !== null ? totalReturn - spyReturn : null;
+
+    const nReturns = Number(model?.stats?.nReturns ?? 0);
+    const nObservations = Number(model?.stats?.nObservations ?? points.length ?? 0);
+
+    return {
+      _rankValue: excessVsSpy ?? totalReturn ?? -Infinity,
+      _rankable: nReturns >= 3,
+      Model: model?.name || model?.id,
+      'Inception Date': model?.inceptionDate || points[0]?.timestamp || 'Pending',
+      'Live Observations': nObservations,
+      'Total Return': fmtPct(Number.isFinite(totalReturn) ? totalReturn : null, true),
+      'SPY Same Window': fmtPct(spyReturn, true),
+      'QQQ Same Window': fmtPct(qqqReturn, true),
+      'VTI Same Window': fmtPct(vtiReturn, true),
+      'Excess vs SPY': fmtPct(excessVsSpy, true),
+      Sharpe: fmtNum(model?.stats?.sharpe),
+      'Max Drawdown': fmtPct(model?.stats?.maxDrawdown, true),
+      Status:
+        nReturns >= 20
+          ? 'Rankable'
+          : nReturns >= 3
+            ? 'Early live history'
+            : 'Insufficient live history',
+    };
+  });
+
+  return rows
+    .sort((a: any, b: any) => {
+      if (a._rankable !== b._rankable) return a._rankable ? -1 : 1;
+      return Number(b._rankValue) - Number(a._rankValue);
+    })
+    .map(({ _rankValue, _rankable, ...row }: any, index: number) => ({
+      Rank: index + 1,
+      ...row,
+    }));
+}
+
+function commonWindowLeaderboardRows(data: any) {
+  const models = (data?.modelComparison || [])
+    .map((model: any) => ({
+      ...model,
+      cleanPoints: sortPoints(model?.points || []),
+    }))
+    .filter((model: any) => model.cleanPoints.length >= 2);
+
+  if (models.length < 2) return [];
+
+  const commonStart = models
+    .map((model: any) => model.cleanPoints[0].timestamp)
+    .sort()
+    .at(-1);
+
+  const commonEnd = models
+    .map((model: any) => model.cleanPoints[model.cleanPoints.length - 1].timestamp)
+    .sort()[0];
+
+  if (!commonStart || !commonEnd || commonStart > commonEnd) return [];
+
+  const spyPoints = sortPoints(
+    (data?.benchmarks || []).find((b: any) => b?.ticker === 'SPY')?.points || []
+  ).filter((p: any) => p.timestamp >= commonStart && p.timestamp <= commonEnd);
+
+  const spyCommonReturn = pctFromPoints(spyPoints);
+
+  const rows = models.map((model: any) => {
+    const windowPoints = model.cleanPoints.filter(
+      (p: any) => p.timestamp >= commonStart && p.timestamp <= commonEnd
+    );
+
+    const values = windowPoints.map((p: any) => Number(p.value));
+    const stats = computeStats(values);
+    const commonReturn = pctFromPoints(windowPoints);
+
+    const excessVsSpy =
+      commonReturn !== null && spyCommonReturn !== null
+        ? commonReturn - spyCommonReturn
+        : null;
+
+    const observations = windowPoints.length;
+    const nReturns = Math.max(0, observations - 1);
+
+    return {
+      _rankValue: excessVsSpy ?? commonReturn ?? -Infinity,
+      _rankable: nReturns >= 3,
+      Model: model?.name || model?.id,
+      'Common Start': commonStart,
+      'Common End': commonEnd,
+      'Common Observations': observations,
+      'Common Return': fmtPct(commonReturn, true),
+      'SPY Common Return': fmtPct(spyCommonReturn, true),
+      'Excess vs SPY': fmtPct(excessVsSpy, true),
+      'Common Sharpe': fmtNum(stats?.sharpe),
+      'Common Max Drawdown': fmtPct(stats?.maxDrawdown, true),
+      Status:
+        nReturns >= 20
+          ? 'Rankable'
+          : nReturns >= 3
+            ? 'Early common history'
+            : 'Too little common history',
+    };
+  });
+
+  return rows
+    .sort((a: any, b: any) => {
+      if (a._rankable !== b._rankable) return a._rankable ? -1 : 1;
+      return Number(b._rankValue) - Number(a._rankValue);
+    })
+    .map(({ _rankValue, _rankable, ...row }: any, index: number) => ({
+      Rank: index + 1,
+      ...row,
+    }));
 }
 
 export default function DashboardPage() {
@@ -86,9 +300,21 @@ export default function DashboardPage() {
       <QSentiaMotionBackground />
 
       <div className="relative z-10 mx-auto max-w-[1620px] px-6 py-12">
-        <TopNav />
+          <TopNav />
+        
+          <DailyFundReturnBanner
+            data={data}
+            selectedModelId={data?.selectedModel}
+            onSelectModel={setModel}
+          />
 
-        <section className="mb-12 grid gap-8 lg:grid-cols-[0.92fr_1.08fr]">
+          <YtdFundReturnBanner
+              data={data}
+              selectedModelId={data?.selectedModel}
+              onSelectModel={setModel}
+            />
+        
+          <section className="mb-12 grid gap-8 lg:grid-cols-[0.92fr_1.08fr]">
           <div className="relative overflow-hidden rounded-[32px] border border-[#4b3fd1]/15 bg-white/72 p-8 shadow-[0_20px_80px_rgba(75,63,209,0.08)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_30px_100px_rgba(75,63,209,0.12)]">  
             <CornerMarks />
             <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#4b3fd1]/10 blur-3xl" />
@@ -305,6 +531,204 @@ function TopNav() {
   );
 }
 
+function DailyFundReturnBanner({
+  data,
+  selectedModelId,
+  onSelectModel,
+}: {
+  data: any;
+  selectedModelId?: string | null;
+  onSelectModel: (id: string) => void;
+}) {
+  const rows = useMemo(() => {
+    return dailyFundReturnRows(data?.modelComparison || []);
+  }, [data?.modelComparison]);
+
+  if (!rows.length) return null;
+
+  const best = rows
+    .filter((row: any) => row.dayReturn !== null)
+    .sort((a: any, b: any) => Number(b.dayReturn) - Number(a.dayReturn))[0];
+
+  const worst = rows
+    .filter((row: any) => row.dayReturn !== null)
+    .sort((a: any, b: any) => Number(a.dayReturn) - Number(b.dayReturn))[0];
+
+  return (
+    <section className="mb-8 overflow-hidden rounded-[24px] border border-black/8 bg-white/75 shadow-[0_18px_60px_rgba(25,20,90,0.08)] backdrop-blur-md">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-black/8 px-6 py-4">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#4b3fd1]">
+            Daily Fund Performance
+          </div>
+          <div className="mt-1 text-sm font-medium text-neutral-600">
+            Latest one-day gain/loss from committed portfolio logs
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 text-xs">
+          {best && (
+            <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 font-bold text-emerald-700">
+              Best Today: {best.name} {fmtPct(best.dayReturn, true)}
+            </div>
+          )}
+          {worst && (
+            <div className="rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 font-bold text-red-700">
+              Weakest Today: {worst.name} {fmtPct(worst.dayReturn, true)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex gap-3 overflow-x-auto px-4 py-4">
+        {rows.map((row: any) => {
+          const positive = Number(row.dayReturn) > 0;
+          const negative = Number(row.dayReturn) < 0;
+          const active = row.id === selectedModelId;
+
+          return (
+            <button
+              key={row.id}
+              onClick={() => onSelectModel(row.id)}
+              className={`min-w-[245px] rounded-[18px] border px-4 py-4 text-left transition hover:-translate-y-0.5 ${
+                active
+                  ? 'border-[#4b3fd1] bg-[#4b3fd1]/10 shadow-[0_16px_40px_rgba(75,63,209,0.16)]'
+                  : 'border-black/8 bg-white/70 hover:border-[#4b3fd1]/30'
+              }`}
+            >
+              <div className="mb-3 flex items-center gap-2">
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: row.color }}
+                />
+                <div className="truncate text-xs font-black uppercase tracking-[0.12em] text-neutral-600">
+                  {row.name}
+                </div>
+              </div>
+
+              <div
+                className={`text-3xl font-light tracking-[-0.06em] ${
+                  positive
+                    ? 'text-emerald-600'
+                    : negative
+                      ? 'text-red-600'
+                      : 'text-neutral-700'
+                }`}
+              >
+                {row.hasData ? fmtPct(row.dayReturn, true) : 'Pending'}
+              </div>
+
+              <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-neutral-500">
+                <span>{row.latestDate}</span>
+                <span>{row.latestValue ? fmtDollar(row.latestValue) : 'No value'}</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function YtdFundReturnBanner({
+  data,
+  selectedModelId,
+  onSelectModel,
+}: {
+  data: any;
+  selectedModelId?: string | null;
+  onSelectModel: (id: string) => void;
+}) {
+  const rows = useMemo(() => {
+    return ytdFundReturnRows(data?.modelComparison || []);
+  }, [data?.modelComparison]);
+
+  if (!rows.length) return null;
+
+  const best = rows
+    .filter((row: any) => row.ytdReturn !== null)
+    .sort((a: any, b: any) => Number(b.ytdReturn) - Number(a.ytdReturn))[0];
+
+  const worst = rows
+    .filter((row: any) => row.ytdReturn !== null)
+    .sort((a: any, b: any) => Number(a.ytdReturn) - Number(b.ytdReturn))[0];
+
+  return (
+    <section className="mb-8 overflow-hidden rounded-[24px] border border-black/8 bg-white/75 shadow-[0_18px_60px_rgba(25,20,90,0.08)] backdrop-blur-md">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-black/8 px-6 py-4">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#4b3fd1]">
+            YTD Fund Return
+          </div>
+          <div className="mt-1 text-sm font-medium text-neutral-600">
+            Calendar year return from each fund’s first available live observation this year
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 text-xs">
+          {best && (
+            <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 font-bold text-emerald-700">
+              Best YTD: {best.name} {fmtPct(best.ytdReturn, true)}
+            </div>
+          )}
+          {worst && (
+            <div className="rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 font-bold text-red-700">
+              Weakest YTD: {worst.name} {fmtPct(worst.ytdReturn, true)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex gap-3 overflow-x-auto px-4 py-4">
+        {rows.map((row: any) => {
+          const positive = Number(row.ytdReturn) > 0;
+          const negative = Number(row.ytdReturn) < 0;
+          const active = row.id === selectedModelId;
+
+          return (
+            <button
+              key={row.id}
+              onClick={() => onSelectModel(row.id)}
+              className={`min-w-[245px] rounded-[18px] border px-4 py-4 text-left transition hover:-translate-y-0.5 ${
+                active
+                  ? 'border-[#4b3fd1] bg-[#4b3fd1]/10 shadow-[0_16px_40px_rgba(75,63,209,0.16)]'
+                  : 'border-black/8 bg-white/70 hover:border-[#4b3fd1]/30'
+              }`}
+            >
+              <div className="mb-3 flex items-center gap-2">
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: row.color }}
+                />
+                <div className="truncate text-xs font-black uppercase tracking-[0.12em] text-neutral-600">
+                  {row.name}
+                </div>
+              </div>
+
+              <div
+                className={`text-3xl font-light tracking-[-0.06em] ${
+                  positive
+                    ? 'text-emerald-600'
+                    : negative
+                      ? 'text-red-600'
+                      : 'text-neutral-700'
+                }`}
+              >
+                {row.hasData ? fmtPct(row.ytdReturn, true) : 'Pending'}
+              </div>
+
+              <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-neutral-500">
+                <span>From {row.ytdStart}</span>
+                <span>{row.latestValue ? fmtDollar(row.latestValue) : 'No value'}</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function ModelComparison({ data }: { data: any }) {
   const chartData = useMemo(() => {
     const strategySeries =
@@ -324,13 +748,13 @@ function ModelComparison({ data }: { data: any }) {
 
   const hasBenchmarkData = (data?.benchmarks || []).some((b: any) => b.points?.length);
 
-  const bestModel = useMemo(() => {
-    return getBestPerformingModel(data?.modelComparison || []);
+  const commonWindowRows = useMemo(() => {
+    return commonWindowLeaderboardRows(data);
   }, [data]);
 
-  const bestModelRows = useMemo(() => {
-    return bestModelVsBenchmarkRows(data, bestModel);
-  }, [data, bestModel]);
+  const ownInceptionRows = useMemo(() => {
+    return sinceOwnInceptionLeaderboardRows(data);
+  }, [data]);
 
   return (
     <Panel
@@ -401,12 +825,13 @@ function ModelComparison({ data }: { data: any }) {
       </ChartFrame>
 
       <DataTable
-        title={
-          bestModel
-            ? `Best Performing Model vs Benchmarks — ${bestModel.name}`
-            : 'Best Performing Model vs Benchmarks'
-        }
-        rows={bestModelRows}
+        title="Common Window Leaderboard — Apples-to-Apples Model Ranking"
+        rows={commonWindowRows}
+      />
+
+      <DataTable
+        title="Best Model Since Own Inception — Benchmark Matched"
+        rows={ownInceptionRows}
       />
 
       <DataTable
