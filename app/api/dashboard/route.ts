@@ -258,6 +258,39 @@ function normalizePortfolioRows(rows: CsvRow[]): PortfolioPoint[] {
     .filter((row) => row.timestamp && row.value !== null) as PortfolioPoint[];
 }
 
+function submittedOrderCount(rows: CsvRow[]) {
+  return rows.filter((row) => String(row.submitted).toLowerCase() === 'true').length;
+}
+
+function hasLivePositionRows(rows: CsvRow[]) {
+  return rows.some((row) => {
+    const qty = num(row.qty) ?? 0;
+    const marketValue = num(row.market_value) ?? 0;
+    return Math.abs(qty) > 0 || Math.abs(marketValue) > 0;
+  });
+}
+
+function inferPaperStatus(positionsRows: CsvRow[], submittedOrdersRows: CsvRow[]) {
+  const submitted = submittedOrderCount(submittedOrdersRows);
+  const hasPositions = hasLivePositionRows(positionsRows);
+
+  if (submitted > 0 || hasPositions) {
+    return {
+      isLivePaperActive: true,
+      paperStatus: 'Live Paper Active',
+      submittedOrderCount: submitted,
+      hasLivePositions: hasPositions,
+    };
+  }
+
+  return {
+    isLivePaperActive: false,
+    paperStatus: 'Pending',
+    submittedOrderCount: submitted,
+    hasLivePositions: hasPositions,
+  };
+}
+
 function toDailyPortfolio(points: PortfolioPoint[]): DailyPoint[] {
   const byDate = new Map<string, DailyPoint & { sortValue: number }>();
 
@@ -429,6 +462,7 @@ export async function GET(request: Request) {
     benchmarkStartDateFromFirstModel(registry),
   ]);
 
+  const paperStatus = inferPaperStatus(positionsRows, submittedOrdersRows);
   const portfolio = normalizePortfolioRows(portfolioRows);
   const dailyPortfolio = toDailyPortfolio(portfolio);
   const values = dailyPortfolio.map((p) => p.value);
@@ -489,15 +523,15 @@ export async function GET(request: Request) {
     selectedModelConfig,
     registry,
     latest: {
-      decision: latest(latestDecisionRows),
-      portfolioValue: values.length ? values[values.length - 1] : null,
-      firstPortfolioValue: values.length ? values[0] : null,
-      lastRun:
-        latest(latestDecisionRows)?.timestamp_utc ||
-        latest(portfolioRows)?.timestamp_utc ||
-        latest(decisionsRows)?.timestamp_utc ||
-        null,
-    },
+        decision: latest(latestDecisionRows),
+        portfolioValue: values.length ? values[values.length - 1] : null,
+        firstPortfolioValue: values.length ? values[0] : null,
+        isLivePaperActive: paperStatus.isLivePaperActive,
+        paperStatus: paperStatus.paperStatus,
+        submittedOrderCount: paperStatus.submittedOrderCount,
+        hasLivePositions: paperStatus.hasLivePositions,
+              null,
+          },
     stats,
     equityCurve,
     benchmarks,
@@ -532,6 +566,7 @@ export async function GET(request: Request) {
         logs_path: m.logs_path,
         branch: m.branch,
         enabled: m.enabled,
+        paperStatus
       })),
       selectedModelConfig,
       rowCounts: {
