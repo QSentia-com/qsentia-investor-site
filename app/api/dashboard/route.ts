@@ -529,8 +529,7 @@ export async function GET(request: Request) {
         isLivePaperActive: paperStatus.isLivePaperActive,
         paperStatus: paperStatus.paperStatus,
         submittedOrderCount: paperStatus.submittedOrderCount,
-        hasLivePositions: paperStatus.hasLivePositions,
-              null,
+        hasLivePositions: paperStatus.hasLivePositions
           },
     stats,
     equityCurve,
