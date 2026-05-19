@@ -1568,6 +1568,17 @@ function DataTable({ title, rows }: { title: string; rows: any[] }) {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
+  // ADDED: State for pagination limited to Relative Performance Table
+  const [visibleCount, setVisibleCount] = useState(10);
+  const isRelativePerformanceTable = title === 'Relative Performance Table';
+
+  // ADDED: Reset pagination when sorting or search filtering changes
+  useEffect(() => {
+    if (isRelativePerformanceTable) {
+      setVisibleCount(10);
+    }
+  }, [searchTerm, sortColumn, sortDirection, isRelativePerformanceTable]);
+
   const columns = useMemo(() => {
     const safeRows = Array.isArray(rows) ? rows : [];
     const columnSet = new Set<string>();
@@ -1629,7 +1640,10 @@ function DataTable({ title, rows }: { title: string; rows: any[] }) {
           </div>
 
           <div className="shrink-0 rounded-full border border-[#4b3fd1]/15 bg-[#4b3fd1]/6 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-[#4b3fd1]/70">
-            {filteredAndSorted.length} / {safeRows.length}
+            {/* CHANGED: Reflect actual visible rows dynamically if paginated */}
+            {isRelativePerformanceTable
+              ? `${Math.min(visibleCount, filteredAndSorted.length)} / ${filteredAndSorted.length}`
+              : `${filteredAndSorted.length} / ${safeRows.length}`}
           </div>
         </div>
 
@@ -1677,7 +1691,10 @@ function DataTable({ title, rows }: { title: string; rows: any[] }) {
             </thead>
 
             <tbody>
-              {filteredAndSorted.map((row, rowIndex) => (
+              {filteredAndSorted
+                /* CHANGED: Slice array based on visible component state if it's the target table */
+                .slice(0, isRelativePerformanceTable ? visibleCount : undefined)
+                .map((row, rowIndex) => (
                 <tr key={rowIndex} className="group">
                   {columns.map((column, columnIndex) => {
                     const value = formatTableCell(row?.[column]);
@@ -1708,6 +1725,27 @@ function DataTable({ title, rows }: { title: string; rows: any[] }) {
       {safeRows.length > 0 && columns.length > 6 && (
         <div className="border-t border-black/6 bg-[#fbfbfb]/60 px-5 py-2 text-[10px] font-medium text-neutral-400">
           Scroll to view all columns
+        </div>
+      )}
+
+      {/* ADDED: "Read More" Pagination logic exclusively for the Relative Performance Table */}
+      {isRelativePerformanceTable && filteredAndSorted.length > 10 && (
+        <div className="flex justify-center border-t border-black/6 bg-[#fbfbfb]/60 px-5 py-4">
+          {visibleCount < filteredAndSorted.length ? (
+            <button
+              onClick={() => setVisibleCount((prev) => prev + 10)}
+              className="rounded-full border border-black/10 bg-white px-5 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-[#4b3fd1] transition hover:border-[#4b3fd1]/40 hover:bg-[#4b3fd1]/5"
+            >
+              Read More
+            </button>
+          ) : (
+            <button
+              disabled
+              className="cursor-not-allowed rounded-full border border-transparent bg-transparent px-5 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-400"
+            >
+              All entries shown
+            </button>
+          )}
         </div>
       )}
     </div>
