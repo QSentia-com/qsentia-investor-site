@@ -910,12 +910,12 @@ function DailyFundReturnBanner({
                         : 'text-neutral-700'
                   }`}
                 >
-                  {row.isReturnPending ? 'Live' : fmtPct(row.dayReturn, true)}
+                  {row.hasData ? fmtPct(row.dayReturn, true) : 'Pending'}
                 </div>
 
                 <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-neutral-500">
                   <span>{row.latestDate}</span>
-                  <span>{Number.isFinite(Number(row.latestValue)) ? fmtDollar(row.latestValue) : 'No value'}</span>
+                  <span>{row.latestValue ? fmtDollar(row.latestValue) : 'No value'}</span>
                 </div>
               </button>
             );
@@ -1027,7 +1027,7 @@ function YtdFundReturnBanner({
 
                 <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-neutral-500">
                   <span>From {row.ytdStart}</span>
-                  <span>{Number.isFinite(Number(row.latestValue)) ? fmtDollar(row.latestValue) : 'No value'}</span>
+                  <span>{row.latestValue ? fmtDollar(row.latestValue) : 'No value'}</span>
                 </div>
               </button>
             );
