@@ -39,18 +39,22 @@ function getHighestSharpeModelId(modelComparison: any[]) {
 
 function dailyFundReturnRows(modelComparison: any[]) {
   return (modelComparison || []).map((model: any) => {
-    const points = model?.points || [];
+    const points = sortPoints(model?.points || []);
     const latest = points[points.length - 1];
     const previous = points[points.length - 2];
 
-    const latestValue = Number(model?.latestValue);
+    const latestValue = Number(model?.latestValue ?? latest?.portfolioValue ?? latest?.value);
+    const previousValue = Number(previous?.portfolioValue ?? previous?.rawValue ?? previous?.value);
+
     const latestIndex = Number(latest?.value);
     const previousIndex = Number(previous?.value);
 
     const dayReturn =
-      Number.isFinite(latestIndex) && Number.isFinite(previousIndex) && previousIndex !== 0
-        ? latestIndex / previousIndex - 1
-        : null;
+      Number.isFinite(latestValue) && Number.isFinite(previousValue) && previousValue !== 0
+        ? latestValue / previousValue - 1
+        : Number.isFinite(latestIndex) && Number.isFinite(previousIndex) && previousIndex !== 0
+          ? latestIndex / previousIndex - 1
+          : null;
 
     return {
       id: model.id,
@@ -59,7 +63,8 @@ function dailyFundReturnRows(modelComparison: any[]) {
       latestDate: latest?.timestamp || 'Pending',
       latestValue: Number.isFinite(latestValue) ? latestValue : null,
       dayReturn,
-      hasData: dayReturn !== null,
+      hasData: Number.isFinite(latestValue),
+      isReturnPending: dayReturn === null,
     };
   });
 }
@@ -905,12 +910,12 @@ function DailyFundReturnBanner({
                         : 'text-neutral-700'
                   }`}
                 >
-                  {row.hasData ? fmtPct(row.dayReturn, true) : 'Pending'}
+                  {row.isReturnPending ? 'Live' : fmtPct(row.dayReturn, true)}
                 </div>
 
                 <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-neutral-500">
                   <span>{row.latestDate}</span>
-                  <span>{row.latestValue ? fmtDollar(row.latestValue) : 'No value'}</span>
+                  <span>{Number.isFinite(Number(row.latestValue)) ? fmtDollar(row.latestValue) : 'No value'}</span>
                 </div>
               </button>
             );
@@ -1022,7 +1027,7 @@ function YtdFundReturnBanner({
 
                 <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-neutral-500">
                   <span>From {row.ytdStart}</span>
-                  <span>{row.latestValue ? fmtDollar(row.latestValue) : 'No value'}</span>
+                  <span>{Number.isFinite(Number(row.latestValue)) ? fmtDollar(row.latestValue) : 'No value'}</span>
                 </div>
               </button>
             );
