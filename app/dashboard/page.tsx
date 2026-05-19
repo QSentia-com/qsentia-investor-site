@@ -283,8 +283,18 @@ export default function DashboardPage() {
 
   const stats = data?.stats || {};
   const latestDecision = data?.latest?.decision || {};
-  const latestPortfolioValue = data?.latest?.portfolioValue;
-  const firstPortfolioValue = data?.latest?.firstPortfolioValue;
+  const latestPortfolioValue = Number(data?.latest?.portfolioValue);
+  const firstPortfolioValue = Number(data?.latest?.firstPortfolioValue);
+  
+  // SOURCE OF TRUTH: API latest portfolioPnl from portfolio.csv / IBKR NetLiquidation
+  const pnl =
+    Number.isFinite(Number(data?.latest?.portfolioPnl))
+      ? Number(data.latest.portfolioPnl)
+      : Number.isFinite(latestPortfolioValue) &&
+          Number.isFinite(firstPortfolioValue) &&
+          firstPortfolioValue !== 0
+        ? latestPortfolioValue - firstPortfolioValue
+        : null;
 
   const pnl =
     latestPortfolioValue !== null && latestPortfolioValue !== undefined && firstPortfolioValue
