@@ -119,6 +119,12 @@ body {
   50% { transform: translateY(-8px); }
 }
 
+@keyframes floatDrift {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-18px) rotate(180deg); }
+  100% { transform: translateY(0) rotate(360deg); }
+}
+
 @keyframes shimmer {
   0% { background-position: -1000px 0; }
   100% { background-position: 1000px 0; }
