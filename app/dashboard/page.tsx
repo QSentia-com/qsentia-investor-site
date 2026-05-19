@@ -39,22 +39,18 @@ function getHighestSharpeModelId(modelComparison: any[]) {
 
 function dailyFundReturnRows(modelComparison: any[]) {
   return (modelComparison || []).map((model: any) => {
-    const points = sortPoints(model?.points || []);
+    const points = model?.points || [];
     const latest = points[points.length - 1];
     const previous = points[points.length - 2];
 
-    const latestValue = Number(model?.latestValue ?? latest?.portfolioValue ?? latest?.value);
-    const previousValue = Number(previous?.portfolioValue ?? previous?.rawValue ?? previous?.value);
-
+    const latestValue = Number(model?.latestValue);
     const latestIndex = Number(latest?.value);
     const previousIndex = Number(previous?.value);
 
     const dayReturn =
-      Number.isFinite(latestValue) && Number.isFinite(previousValue) && previousValue !== 0
-        ? latestValue / previousValue - 1
-        : Number.isFinite(latestIndex) && Number.isFinite(previousIndex) && previousIndex !== 0
-          ? latestIndex / previousIndex - 1
-          : null;
+      Number.isFinite(latestIndex) && Number.isFinite(previousIndex) && previousIndex !== 0
+        ? latestIndex / previousIndex - 1
+        : null;
 
     return {
       id: model.id,
@@ -63,8 +59,7 @@ function dailyFundReturnRows(modelComparison: any[]) {
       latestDate: latest?.timestamp || 'Pending',
       latestValue: Number.isFinite(latestValue) ? latestValue : null,
       dayReturn,
-      hasData: Number.isFinite(latestValue),
-      isReturnPending: dayReturn === null,
+      hasData: dayReturn !== null,
     };
   });
 }
@@ -288,18 +283,13 @@ export default function DashboardPage() {
 
   const stats = data?.stats || {};
   const latestDecision = data?.latest?.decision || {};
-  const latestPortfolioValue = Number(data?.latest?.portfolioValue);
-  const firstPortfolioValue = Number(data?.latest?.firstPortfolioValue);
-  
-  // SOURCE OF TRUTH: API latest portfolioPnl from portfolio.csv / IBKR NetLiquidation
+  const latestPortfolioValue = data?.latest?.portfolioValue;
+  const firstPortfolioValue = data?.latest?.firstPortfolioValue;
+
   const pnl =
-    Number.isFinite(Number(data?.latest?.portfolioPnl))
-      ? Number(data.latest.portfolioPnl)
-      : Number.isFinite(latestPortfolioValue) &&
-          Number.isFinite(firstPortfolioValue) &&
-          firstPortfolioValue !== 0
-        ? latestPortfolioValue - firstPortfolioValue
-        : null;
+    latestPortfolioValue !== null && latestPortfolioValue !== undefined && firstPortfolioValue
+      ? latestPortfolioValue - firstPortfolioValue
+      : null;
   
   const selectedModelName =
     data?.registry?.find((m: any) => m.id === data?.selectedModel)?.name ||
