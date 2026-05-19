@@ -524,8 +524,19 @@ export async function GET(request: Request) {
     registry,
     latest: {
         decision: latest(latestDecisionRows),
+      
+        // SOURCE OF TRUTH: portfolio/portfolio.csv
         portfolioValue: values.length ? values[values.length - 1] : null,
         firstPortfolioValue: values.length ? values[0] : null,
+        portfolioPnl:
+          values.length >= 2 ? values[values.length - 1] - values[0] : null,
+        portfolioReturn:
+          values.length >= 2 && values[0] !== 0
+            ? values[values.length - 1] / values[0] - 1
+            : null,
+      
+        // Do NOT derive P&L from positions market_value.
+        pnlSource: 'portfolio_csv_net_liquidation',
         isLivePaperActive: paperStatus.isLivePaperActive,
         paperStatus: paperStatus.paperStatus,
         submittedOrderCount: paperStatus.submittedOrderCount,
