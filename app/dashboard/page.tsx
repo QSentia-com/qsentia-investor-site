@@ -295,12 +295,7 @@ export default function DashboardPage() {
           firstPortfolioValue !== 0
         ? latestPortfolioValue - firstPortfolioValue
         : null;
-
-  const pnl =
-    latestPortfolioValue !== null && latestPortfolioValue !== undefined && firstPortfolioValue
-      ? latestPortfolioValue - firstPortfolioValue
-      : null;
-
+  
   const selectedModelName =
     data?.registry?.find((m: any) => m.id === data?.selectedModel)?.name ||
     data?.selectedModel ||
