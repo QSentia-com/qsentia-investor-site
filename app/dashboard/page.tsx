@@ -1492,15 +1492,15 @@ function Tabs({ tabs, panels }: { tabs: string[]; panels: React.ReactNode[] }) {
 
   return (
     <section>
-      <div className="mb-6 flex flex-wrap gap-2 rounded-[20px] border border-black/8 bg-white/60 p-1 shadow-[0_12px_40px_rgba(25,20,90,0.06)] backdrop-blur-md">
+      <div className="mb-6 flex flex-nowrap items-center gap-0 overflow-x-auto border-b border-[#6e6ec8]/20 bg-[#eeeef6]/80 px-8">
         {tabs.map((tab, i) => (
           <button
             key={tab}
             onClick={() => setActive(i)}
-            className={`rounded-[16px] px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] transition-all duration-300 ${
+            className={`whitespace-nowrap border-b-2 bg-transparent px-[16px] flex items-center h-[38px] text-[11px] font-sans tracking-[0.2px] transition-all duration-150 ${
               active === i
-                ? 'bg-[#4b3fd1] text-white shadow-[0_12px_30px_rgba(75,63,209,0.3)] scale-105'
-                : 'text-neutral-500 hover:bg-white/50 hover:text-black hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)]'
+                ? 'border-[#4f46e5] font-semibold text-[#4f46e5]'
+                : 'border-transparent font-medium text-[#9090b8] hover:text-[#4a4a72]'
             }`}
           >
             {tab}
@@ -1514,51 +1514,42 @@ function Tabs({ tabs, panels }: { tabs: string[]; panels: React.ReactNode[] }) {
 
 function Panel({ eyebrow, title, subtitle, children }: { eyebrow: string; title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <section className="relative overflow-hidden rounded-[32px] border border-black/8 bg-gradient-to-br from-white/75 via-white/70 to-white/65 p-8 shadow-[0_16px_60px_rgba(25,20,90,0.08)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_24px_80px_rgba(25,20,90,0.12)]">
-      <CornerMarks />
-      <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#4b3fd1]/5 blur-3xl" />
-      <div className="absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-[#4b3fd1]/4 blur-2xl" />
-      
-      <div className="relative mb-8">
-        <div className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-[#4b3fd1]/75">{eyebrow}</div>
-        <h2 className="mb-4 text-4xl font-light tracking-[-0.08em] text-black">{title}</h2>
-        <p className="max-w-4xl text-sm leading-6 text-neutral-600">{subtitle}</p>
+    <section className="relative overflow-hidden rounded-[14px] border border-[#6e6ec8]/20 bg-white/60 p-6 mb-4 shadow-sm backdrop-blur-md transition-all duration-300">
+      <div className="relative mb-6">
+        <div className="mb-1 text-[10px] font-bold uppercase tracking-[1.5px] text-[#4f46e5]">{eyebrow}</div>
+        <h2 className="mb-2 text-[2rem] font-serif font-normal tracking-tight text-[#1a1a2e] leading-[1.1]">{title}</h2>
+        <p className="max-w-[700px] text-[12px] font-light leading-[1.6] text-[#4a4a72]">{subtitle}</p>
       </div>
-      <div className="relative space-y-6">{children}</div>
+      <div className="relative space-y-4">{children}</div>
     </section>
   );
 }
 
 function ChartFrame({ title, children, description }: { title: string; children: React.ReactNode; description?: string }) {
   return (
-    <div className="relative overflow-hidden rounded-[24px] border border-black/8 bg-gradient-to-br from-white/80 to-white/60 p-7 shadow-[0_12px_40px_rgba(25,20,90,0.06)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_18px_50px_rgba(25,20,90,0.1)]">
-      <div className="absolute right-0 top-0 h-20 w-20 border-b border-l border-[#4b3fd1]/8" />
-      <div className="absolute bottom-0 left-0 h-16 w-16 border-r border-t border-[#4b3fd1]/8" />
-
-      <div className="relative mb-6 flex items-start justify-between">
+    <div className="relative overflow-hidden rounded-[10px] border border-[#6e6ec8]/20 bg-white/85 mb-4 shadow-sm backdrop-blur-md">
+      <div className="border-b border-[#6e6ec8]/15 px-4 py-3 flex items-start justify-between">
         <div className="flex-1">
-          <div className="mb-2 text-[9px] font-black uppercase tracking-[0.24em] text-[#4b3fd1]/70">Chart Analysis</div>
-          <h3 className="text-xl font-light tracking-[-0.06em] text-black">{title}</h3>
-          {description && <p className="mt-2 text-xs text-neutral-500">{description}</p>}
+          <div className="mb-[3px] text-[10px] font-bold uppercase tracking-[1px] text-[#9090b8]">Chart Analysis</div>
+          <h3 className="text-[13px] font-medium text-[#1a1a2e]">{title}</h3>
+          {description && <p className="mt-1 text-[11px] text-neutral-500">{description}</p>}
         </div>
-        <div className="h-3.5 w-3.5 rotate-45 border border-[#4b3fd1]/30" />
+        <div className="h-5 w-5 border border-[#6e6ec8]/20 rounded flex items-center justify-center text-[10px] text-[#9090b8]" />
       </div>
-
-      <div className="relative rounded-[16px] border border-black/5 bg-gradient-to-b from-[#fafafa] to-[#f9f9f9] p-4">{children}</div>
+      <div className="relative p-3 bg-white/50">{children}</div>
     </div>
   );
 }
 
 function MetricTile({ label, value, detail, large = false }: { label: string; value: string; detail: string; large?: boolean }) {
   return (
-    <div className="group relative overflow-hidden rounded-[20px] border border-black/8 bg-white/70 p-5 shadow-[0_12px_40px_rgba(25,20,90,0.06)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_60px_rgba(75,63,209,0.14)]">
-      <div className="absolute right-4 top-4 h-3 w-3 rotate-45 border border-[#4b3fd1]/50 transition-transform duration-300 group-hover:rotate-90" />
-      <div className="absolute -right-16 -top-16 h-32 w-32 rounded-full bg-[#4b3fd1]/6 blur-2xl" />
-      <div className="relative mb-2 text-xs font-black uppercase tracking-[0.16em] text-neutral-400">{label}</div>
-      <div className={`relative font-light tracking-tight text-black ${large ? 'text-3xl sm:text-4xl' : 'text-2xl sm:text-3xl'}`}>
+    <div className="relative overflow-hidden rounded-[10px] border border-[#6e6ec8]/20 bg-white/85 p-4 shadow-sm backdrop-blur-md">
+      <div className="mb-[6px] text-[10px] font-bold uppercase tracking-[0.6px] text-[#9090b8]">{label}</div>
+      <div className={`font-mono font-bold tracking-tight text-[#1a1a2e] ${large ? 'text-[2rem] leading-none' : 'text-[1.65rem] leading-none'}`}>
         {value}
       </div>
-      <div className="relative mt-3 text-xs text-neutral-500">{detail}</div>
+      <div className="mt-1 text-[10px] text-[#9090b8]">{detail}</div>
+      <div className="absolute top-[10px] right-[10px] flex h-5 w-5 items-center justify-center rounded border border-[#6e6ec8]/20 text-[10px] text-[#9090b8]"></div>
     </div>
   );
 }
@@ -1627,19 +1618,19 @@ function DataTable({ title, rows }: { title: string; rows: any[] }) {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-[24px] border border-black/8 bg-white/75 shadow-[0_12px_40px_rgba(25,20,90,0.06)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_18px_50px_rgba(25,20,90,0.1)]">
-      <div className="border-b border-black/6 px-5 py-4">
-        <div className="flex items-center justify-between gap-4 mb-4">
+    <div className="relative overflow-hidden rounded-[10px] border border-[#6e6ec8]/20 bg-white/85 shadow-sm backdrop-blur-md mb-4">
+      <div className="border-b border-[#6e6ec8]/15 px-4 py-3">
+        <div className="flex items-center justify-between gap-4 mb-2">
           <div>
-            <div className="mb-1 text-[9px] font-black uppercase tracking-[0.18em] text-[#4b3fd1]/60">
+            <div className="mb-[2px] text-[10px] font-bold uppercase tracking-[1px] text-[#9090b8]">
               Data
             </div>
-            <h3 className="text-lg font-light tracking-[-0.05em] text-black">
+            <h3 className="text-[13px] font-medium text-[#1a1a2e]">
               {title}
             </h3>
           </div>
 
-          <div className="shrink-0 rounded-full border border-[#4b3fd1]/15 bg-[#4b3fd1]/6 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-[#4b3fd1]/70">
+          <div className="shrink-0 rounded-[4px] border border-[#6e6ec8]/20 bg-white/80 px-2 py-[2px] text-[10px] font-semibold text-[#4a4a72]">
             {/* CHANGED: Reflect actual visible rows dynamically if paginated */}
             {isRelativePerformanceTable
               ? `${Math.min(visibleCount, filteredAndSorted.length)} / ${filteredAndSorted.length}`
@@ -1652,37 +1643,37 @@ function DataTable({ title, rows }: { title: string; rows: any[] }) {
           placeholder="Search models, assets, or values..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full rounded-[12px] border border-black/10 bg-white px-4 py-2.5 text-xs font-medium text-black placeholder-neutral-400 outline-none transition focus:border-[#4b3fd1] focus:shadow-[0_0_0_3px_rgba(75,63,209,0.1)]"
+          className="w-full border-none border-b border-[#6e6ec8]/15 bg-transparent px-2.5 py-[7px] text-[11px] font-sans text-[#1a1a2e] placeholder-[#9090b8] outline-none transition focus:border-[#4f46e5]"
         />
       </div>
 
       {!safeRows.length || !columns.length ? (
-        <div className="p-6 text-xs leading-5 text-neutral-500">
+        <div className="p-6 text-center text-[12px] text-[#9090b8]">
           No data yet.
         </div>
       ) : filteredAndSorted.length === 0 ? (
-        <div className="p-6 text-xs leading-5 text-neutral-500">
+        <div className="p-6 text-center text-[12px] text-[#9090b8]">
           No results for "{searchTerm}"
         </div>
       ) : (
         <div className="max-w-full overflow-x-auto overflow-y-hidden">
-          <table className="min-w-max border-separate border-spacing-0 text-left text-xs">
+          <table className="w-full min-w-max border-collapse border-spacing-0 text-left text-[11px]">
             <thead>
               <tr>
                 {columns.map((column, index) => (
                   <th
                     key={column}
                     onClick={() => handleSort(column)}
-                    className={`sticky top-0 z-20 border-b border-black/6 bg-[#fbfbfb]/80 px-3 py-3 text-[9px] font-bold uppercase tracking-[0.16em] text-neutral-500 cursor-pointer transition hover:bg-[#fbfbfb]/95 ${
+                    className={`sticky top-0 z-20 border-b border-[#6e6ec8]/20 bg-white/60 px-[10px] py-[8px] text-[10px] font-bold uppercase tracking-[0.6px] text-[#9090b8] cursor-pointer transition hover:bg-white/80 ${
                       index === 0 ? 'left-0 z-30 min-w-[200px]' : 'min-w-[160px]'
                     } ${
-                      sortColumn === column ? 'text-[#4b3fd1]' : ''
+                      sortColumn === column ? 'text-[#4f46e5]' : ''
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span>{prettyColumnName(column)}</span>
                       {sortColumn === column && (
-                        <span className="ml-1 text-[8px]">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                        <span className="ml-[2px] text-[8px]">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                       )}
                     </div>
                   </th>
@@ -1695,21 +1686,21 @@ function DataTable({ title, rows }: { title: string; rows: any[] }) {
                 /* CHANGED: Slice array based on visible component state if it's the target table */
                 .slice(0, isRelativePerformanceTable ? visibleCount : undefined)
                 .map((row, rowIndex) => (
-                <tr key={rowIndex} className="group">
+                <tr key={rowIndex} className="group hover:bg-[#4f46e5]/[0.09]">
                   {columns.map((column, columnIndex) => {
                     const value = formatTableCell(row?.[column]);
 
                     return (
                       <td
                         key={`${rowIndex}-${column}`}
-                        className={`border-b border-black/4 px-3 py-3 align-top text-neutral-600 text-[11px] transition-colors duration-200 group-hover:bg-[#4b3fd1]/[0.04] ${
+                        className={`border-b border-[#6e6ec8]/15 px-[10px] py-[8px] align-middle text-[#1a1a2e] text-[11px] transition-colors duration-200 ${
                           columnIndex === 0
-                            ? 'sticky left-0 z-10 min-w-[200px] bg-white font-semibold text-black group-hover:bg-[#f8f6ff]'
+                            ? 'sticky left-0 z-10 min-w-[200px] bg-white group-hover:bg-[#f6f6fc]'
                             : 'min-w-[160px]'
                         }`}
                         title={value}
                       >
-                        <div className="max-w-[300px] whitespace-normal break-words leading-4">
+                        <div className="max-w-[300px] whitespace-normal break-words leading-[1.4]">
                           {value}
                         </div>
                       </td>
@@ -1723,25 +1714,25 @@ function DataTable({ title, rows }: { title: string; rows: any[] }) {
       )}
 
       {safeRows.length > 0 && columns.length > 6 && (
-        <div className="border-t border-black/6 bg-[#fbfbfb]/60 px-5 py-2 text-[10px] font-medium text-neutral-400">
+        <div className="border-t border-[#6e6ec8]/15 bg-white/40 px-[10px] py-[6px] text-[10px] font-medium text-[#9090b8]">
           Scroll to view all columns
         </div>
       )}
 
       {/* ADDED: "Read More" Pagination logic exclusively for the Relative Performance Table */}
       {isRelativePerformanceTable && filteredAndSorted.length > 10 && (
-        <div className="flex justify-center border-t border-black/6 bg-[#fbfbfb]/60 px-5 py-4">
+        <div className="flex justify-center border-t border-[#6e6ec8]/15 bg-white/40 px-5 py-3">
           {visibleCount < filteredAndSorted.length ? (
             <button
               onClick={() => setVisibleCount((prev) => prev + 10)}
-              className="rounded-full border border-black/10 bg-white px-5 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-[#4b3fd1] transition hover:border-[#4b3fd1]/40 hover:bg-[#4b3fd1]/5"
+              className="rounded-[4px] border border-[#6e6ec8]/20 bg-white/80 px-[14px] py-[6px] text-[11px] font-bold text-[#4a4a72] transition hover:bg-white focus:outline-none"
             >
               Read More
             </button>
           ) : (
             <button
               disabled
-              className="cursor-not-allowed rounded-full border border-transparent bg-transparent px-5 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-400"
+              className="cursor-not-allowed rounded-[4px] border border-transparent bg-transparent px-[14px] py-[6px] text-[11px] font-bold text-[#9090b8]"
             >
               All entries shown
             </button>
