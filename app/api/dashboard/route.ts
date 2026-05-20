@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 const REGISTRY_OWNER = process.env.NEXT_PUBLIC_QSENTIA_REPO_OWNER || 'FinTechEntrepreneurldz';
 const REGISTRY_REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'Base_Model_BR_PPO';
 const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
+const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || 'real_crypto_carry_ibkr';
 
 const BENCHMARKS = [
   { name: 'S&P 500', ticker: 'SPY', color: '#111111' },
@@ -452,7 +453,9 @@ export async function GET(request: Request) {
 
   const requestedModel = searchParams.get('model');
   const selectedModelConfig =
-    registry.find((m) => m.id === requestedModel) || registry[0];
+    registry.find((m) => m.id === requestedModel) ||
+    registry.find((m) => m.id === DEFAULT_MODEL_ID) ||
+    registry[0];
 
   const selectedModel = selectedModelConfig.id;
 

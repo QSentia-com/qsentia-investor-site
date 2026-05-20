@@ -23,6 +23,7 @@ import {
 import { computeStats, fmtDollar, fmtNum, fmtPct } from '@/lib/metrics';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const DEFAULT_ACCOUNT_MODEL_ID = 'real_crypto_carry_ibkr';
 
 function getHighestSharpeModelId(modelComparison: any[]) {
   const candidates = (modelComparison || [])
@@ -268,15 +269,20 @@ export default function DashboardPage() {
   useEffect(() => {
     if (model) return;
 
-    if (bestSharpeModelId) {
-      setModel(bestSharpeModelId);
+    if (data?.registry?.some((m: any) => m.id === DEFAULT_ACCOUNT_MODEL_ID)) {
+      setModel(DEFAULT_ACCOUNT_MODEL_ID);
       return;
     }
 
     if (data?.selectedModel) {
       setModel(data.selectedModel);
+      return;
     }
-  }, [bestSharpeModelId, data?.selectedModel, model]);
+
+    if (bestSharpeModelId) {
+      setModel(bestSharpeModelId);
+    }
+  }, [bestSharpeModelId, data?.registry, data?.selectedModel, model]);
 
   if (isLoading) return <LoadingScreen text="Loading live QSentia research terminal..." />;
   if (error) return <LoadingScreen text="Unable to load GitHub trading logs." />;
