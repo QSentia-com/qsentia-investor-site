@@ -41,6 +41,20 @@ type DailyPoint = {
   raw?: CsvRow;
 };
 
+const ACCOUNT_VALUE_KEYS = [
+  'net_liquidation',
+  'net_liquidation_value',
+  'netliquidation',
+  'netLiquidation',
+  'NetLiquidation',
+  'nlv',
+  'NLV',
+  'portfolio_value',
+  'equity',
+  'account_value',
+  'total_equity',
+];
+
 function rawUrl(repoFullName: string, branch: string, path: string) {
   const cleanPath = path.replace(/^\/+/, '');
   return `https://raw.githubusercontent.com/${repoFullName}/${branch}/${cleanPath}`;
@@ -240,14 +254,21 @@ function timestampSortValue(timestamp: string | undefined) {
   return Number.isNaN(fallback.getTime()) ? 0 : fallback.getTime();
 }
 
+function accountValue(row: CsvRow): number | null {
+  const status = String(row.account_status || row.status || '').toLowerCase();
+  if (status.includes('dry_run') || status.includes('dry-run')) return null;
+
+  for (const key of ACCOUNT_VALUE_KEYS) {
+    const value = num(row[key]);
+    if (value !== null) return value;
+  }
+  return null;
+}
+
 function normalizePortfolioRows(rows: CsvRow[]): PortfolioPoint[] {
   return rows
     .map((row) => {
-      const value =
-        num(row.portfolio_value) ??
-        num(row.equity) ??
-        num(row.account_value) ??
-        num(row.total_equity);
+      const value = accountValue(row);
 
       return {
         timestamp: row.timestamp_utc || row.timestamp || row.date || '',
@@ -256,6 +277,10 @@ function normalizePortfolioRows(rows: CsvRow[]): PortfolioPoint[] {
       };
     })
     .filter((row) => row.timestamp && row.value !== null) as PortfolioPoint[];
+}
+
+function accountValueObservations(groups: CsvRow[][]): PortfolioPoint[] {
+  return groups.flatMap((rows) => normalizePortfolioRows(rows));
 }
 
 function submittedOrderCount(rows: CsvRow[]) {
@@ -463,7 +488,12 @@ export async function GET(request: Request) {
   ]);
 
   const paperStatus = inferPaperStatus(positionsRows, submittedOrdersRows);
-  const portfolio = normalizePortfolioRows(portfolioRows);
+  const portfolio = accountValueObservations([
+    portfolioRows,
+    latestDecisionRows,
+    decisionsRows,
+    signalHistoryRows,
+  ]);
   const dailyPortfolio = toDailyPortfolio(portfolio);
   const values = dailyPortfolio.map((p) => p.value);
   const normalizedValues = normalizeTo100(values);

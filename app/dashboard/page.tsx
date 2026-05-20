@@ -355,9 +355,9 @@ export default function DashboardPage() {
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <MetricTile
-              label="Portfolio Value"
+              label="Net Liquidation"
               value={fmtDollar(latestPortfolioValue)}
-              detail="Latest committed portfolio observation"
+              detail="Latest IBKR/account value observation"
               large
             />
             <MetricTile label="Total P&L" value={fmtDollar(pnl)} detail="Paper trading basis" large />
@@ -1201,7 +1201,7 @@ function ExecutiveOverview({ data }: { data: any }) {
       subtitle="Current model state, portfolio trajectory, latest signal, account state, and live operating posture."
     >
       <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
-        <ChartFrame title="Portfolio Value">
+        <ChartFrame title="Net Liquidation Value">
           <div className="h-[600px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data?.equityCurve || []} margin={{ top: 16, right: 40, bottom: 16, left: 60 }}>
@@ -1225,7 +1225,7 @@ function ExecutiveOverview({ data }: { data: any }) {
                   tick={{ fontSize: 11, fill: '#666', fontWeight: 500 }}
                   tickLine={false}
                   axisLine={{ stroke: 'rgba(0,0,0,0.1)' }}
-                  label={{ value: 'Portfolio Value ($)', angle: -90, position: 'insideLeft', fill: '#999', fontSize: 11 }}
+                  label={{ value: 'Net Liquidation ($)', angle: -90, position: 'insideLeft', fill: '#999', fontSize: 11 }}
                 />
                 <Tooltip
                   contentStyle={{
@@ -1236,7 +1236,7 @@ function ExecutiveOverview({ data }: { data: any }) {
                     padding: '12px 16px',
                     boxShadow: '0 12px 40px rgba(75,63,209,0.15)',
                   }}
-                  formatter={(value: any) => [value ? fmtDollar(value) : 'N/A', 'Portfolio Value']}
+                  formatter={(value: any) => [value ? fmtDollar(value) : 'N/A', 'Net Liquidation']}
                 />
                 <Area
                   type="monotone"
