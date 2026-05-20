@@ -293,9 +293,11 @@ export default function DashboardPage() {
   const firstPortfolioValue = data?.latest?.firstPortfolioValue;
 
   const pnl =
-    latestPortfolioValue !== null && latestPortfolioValue !== undefined && firstPortfolioValue
+    data?.latest?.portfolioPnl ??
+    (latestPortfolioValue !== null && latestPortfolioValue !== undefined && firstPortfolioValue
       ? latestPortfolioValue - firstPortfolioValue
-      : null;
+      : null);
+  const totalReturn = data?.latest?.portfolioReturn ?? stats.totalReturn;
   
   const selectedModelName =
     data?.registry?.find((m: any) => m.id === data?.selectedModel)?.name ||
@@ -369,7 +371,7 @@ export default function DashboardPage() {
             <MetricTile label="Total P&L" value={fmtDollar(pnl)} detail="Paper trading basis" large />
             <MetricTile
               label="Total Return"
-              value={fmtPct(stats.totalReturn, true)}
+              value={fmtPct(totalReturn, true)}
               detail={historyStatus(stats)}
             />
             <MetricTile

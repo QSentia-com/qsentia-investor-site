@@ -8,6 +8,12 @@ const REGISTRY_OWNER = process.env.NEXT_PUBLIC_QSENTIA_REPO_OWNER || 'FinTechEnt
 const REGISTRY_REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'Base_Model_BR_PPO';
 const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || 'real_crypto_carry_ibkr';
+const ACCOUNT_BASELINE_MODEL_IDS = new Set(['real_crypto_carry_ibkr']);
+const DEFAULT_ACCOUNT_STARTING_CAPITAL = Number(
+  process.env.QSENTIA_ACCOUNT_STARTING_CAPITAL ||
+    process.env.NEXT_PUBLIC_QSENTIA_ACCOUNT_STARTING_CAPITAL ||
+    1000000
+);
 
 const BENCHMARKS = [
   { name: 'S&P 500', ticker: 'SPY', color: '#111111' },
@@ -216,6 +222,18 @@ function num(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function startingCapitalForModel(model: ModelConfig): number | null {
+  if (!ACCOUNT_BASELINE_MODEL_IDS.has(model.id)) return null;
+  return Number.isFinite(DEFAULT_ACCOUNT_STARTING_CAPITAL)
+    ? DEFAULT_ACCOUNT_STARTING_CAPITAL
+    : null;
+}
+
+function performanceValues(values: number[], baseline: number | null) {
+  if (!values.length || baseline === null) return values;
+  return values[0] === baseline ? values : [baseline, ...values];
+}
+
 function latest<T>(arr: T[]): T | null {
   return arr.length ? arr[arr.length - 1] : null;
 }
@@ -237,6 +255,16 @@ function timestampToDateKey(timestamp: string | undefined) {
   }
 
   return '';
+}
+
+function previousDateKey(dateKey: string | undefined) {
+  if (!dateKey) return '';
+
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return '';
+
+  date.setUTCDate(date.getUTCDate() - 1);
+  return date.toISOString().slice(0, 10);
 }
 
 function timestampSortValue(timestamp: string | undefined) {
@@ -499,10 +527,12 @@ export async function GET(request: Request) {
   ]);
   const dailyPortfolio = toDailyPortfolio(portfolio);
   const values = dailyPortfolio.map((p) => p.value);
+  const accountBaseline = startingCapitalForModel(selectedModelConfig);
+  const selectedPerformanceValues = performanceValues(values, accountBaseline);
   const normalizedValues = normalizeTo100(values);
   const returns = pctChange(values);
   const drawdowns = calculateDrawdown(values);
-  const stats = computeStats(values);
+  const stats = computeStats(selectedPerformanceValues);
 
   const equityCurve = dailyPortfolio.map((p, i) => ({
     timestamp: p.timestamp,
@@ -520,7 +550,9 @@ export async function GET(request: Request) {
     const rows = await fetchCsvFromModel(model, 'portfolio/portfolio.csv');
     const daily = toDailyPortfolio(normalizePortfolioRows(rows));
     const modelValues = daily.map((p) => p.value);
-    const curve = normalizeTo100(modelValues);
+    const modelBaseline = startingCapitalForModel(model);
+    const modelPerformanceValues = performanceValues(modelValues, modelBaseline);
+    const curve = normalizeTo100(modelPerformanceValues);
 
     const modelInceptionDate = daily.length ? daily[0].timestamp : undefined;
     const modelBenchmarks = await fetchBenchmarks(modelInceptionDate);
@@ -532,12 +564,18 @@ export async function GET(request: Request) {
       repo: model.repo,
       logsPath: model.logs_path,
       color: model.color,
-      points: daily.map((p, i) => ({
-        timestamp: p.timestamp,
+      points: modelPerformanceValues.map((value, i) => ({
+        timestamp:
+          modelBaseline !== null && modelValues[0] !== modelBaseline
+            ? i === 0
+              ? previousDateKey(modelInceptionDate)
+              : daily[i - 1]?.timestamp
+            : daily[i]?.timestamp,
         value: curve[i],
       })),
-      stats: computeStats(modelValues),
+      stats: computeStats(modelPerformanceValues),
       latestValue: modelValues.length ? modelValues[modelValues.length - 1] : null,
+      startingCapital: modelBaseline,
       rowCount: rows.length,
       dailyRowCount: daily.length,
       inceptionDate: modelInceptionDate || null,
@@ -560,16 +598,20 @@ export async function GET(request: Request) {
       
         // SOURCE OF TRUTH: portfolio/portfolio.csv
         portfolioValue: values.length ? values[values.length - 1] : null,
-        firstPortfolioValue: values.length ? values[0] : null,
+        firstPortfolioValue: values.length ? accountBaseline ?? values[0] : null,
+        startingCapital: accountBaseline,
         portfolioPnl:
-          values.length >= 2 ? values[values.length - 1] - values[0] : null,
+          values.length ? values[values.length - 1] - (accountBaseline ?? values[0]) : null,
         portfolioReturn:
-          values.length >= 2 && values[0] !== 0
-            ? values[values.length - 1] / values[0] - 1
+          values.length && (accountBaseline ?? values[0]) !== 0
+            ? values[values.length - 1] / (accountBaseline ?? values[0]) - 1
             : null,
       
         // Do NOT derive P&L from positions market_value.
-        pnlSource: 'portfolio_csv_net_liquidation',
+        pnlSource:
+          accountBaseline !== null
+            ? 'ibkr_net_liquidation_minus_starting_capital'
+            : 'portfolio_csv_net_liquidation',
         isLivePaperActive: paperStatus.isLivePaperActive,
         paperStatus: paperStatus.paperStatus,
         submittedOrderCount: paperStatus.submittedOrderCount,
