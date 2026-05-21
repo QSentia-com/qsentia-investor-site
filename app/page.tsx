@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import useSWR from 'swr';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import QSentiaMotionBackground from '@/components/QSentiaMotionBackground';
 import { fmtNum, fmtPct } from '@/lib/metrics';
 
@@ -82,6 +82,22 @@ const approachCards = [
     desc: 'ML-driven analysis of investor biases, sentiment extremes, and crowd psychology to exploit market mispricing.',
   },
 ];
+
+const benchmarkFallback = [
+  { name: 'S&P 500', ticker: 'SPY', color: '#cbd5f5' },
+  { name: 'Nasdaq 100', ticker: 'QQQ', color: '#a5b4fc' },
+  { name: 'Dow Jones', ticker: 'DIA', color: '#fca5a5' },
+  { name: 'Russell 2000', ticker: 'IWM', color: '#fbbf24' },
+  { name: 'Total US Market', ticker: 'VTI', color: '#67e8f9' },
+];
+
+const benchmarkColorOverrides: Record<string, string> = {
+  SPY: '#cbd5f5',
+  QQQ: '#a5b4fc',
+  DIA: '#fca5a5',
+  IWM: '#fbbf24',
+  VTI: '#67e8f9',
+};
 
 const iconStroke = 'currentColor';
 
@@ -179,6 +195,21 @@ function Icon({ name, className }: { name: string; className?: string }) {
           <path d="M7 13l5 5 5-5" />
         </svg>
       );
+    case 'menu':
+      return (
+        <svg viewBox="0 0 24 24" {...common}>
+          <path d="M4 6h16" />
+          <path d="M4 12h16" />
+          <path d="M4 18h16" />
+        </svg>
+      );
+    case 'close':
+      return (
+        <svg viewBox="0 0 24 24" {...common}>
+          <path d="M6 6l12 12" />
+          <path d="M18 6l-12 12" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -187,7 +218,12 @@ function Icon({ name, className }: { name: string; className?: string }) {
 export default function HomePage() {
   const [activeStep, setActiveStep] = useState(0);
   const [isDark, setIsDark] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { data } = useSWR('/api/dashboard', fetcher, { refreshInterval: 60000 });
+  const statsRef = useRef<HTMLDivElement | null>(null);
+  const chartRef = useRef<HTMLDivElement | null>(null);
+  const [statsInView, setStatsInView] = useState(false);
+  const [chartInView, setChartInView] = useState(false);
 
   const textPrimary = isDark ? 'text-white' : 'text-[#1a1a2e]';
   const textSecondary = isDark ? 'text-[#c4c4e8]' : 'text-[#4a4a72]';
@@ -214,8 +250,56 @@ export default function HomePage() {
   const hitRateLabel = percentLabel(hitRate);
   const drawdownLabel = percentLabel(maxDrawdown);
 
+  const alphaCount = useCountUp(5, statsInView);
+  const sourcesCount = useCountUp(40, statsInView);
+  const pointsCount = useCountUp(12, statsInView);
+
+  useEffect(() => {
+    const statsNode = statsRef.current;
+    const chartNode = chartRef.current;
+    const targets = [statsNode, chartNode].filter(Boolean) as HTMLElement[];
+
+    if (!targets.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          if (entry.target === statsNode) setStatsInView(true);
+          if (entry.target === chartNode) setChartInView(true);
+          observer.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.35 }
+    );
+
+    targets.forEach((target) => observer.observe(target));
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const elements = Array.from(document.querySelectorAll('[data-reveal]')) as HTMLElement[];
+    if (!elements.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('reveal-visible');
+          observer.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.2 }
+    );
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, []);
+
   const benchmarkBars = useMemo(() => {
-    const bench = data?.benchmarks || [];
+    const bench = data?.benchmarks?.length ? data.benchmarks : benchmarkFallback;
     const modelReturn = stats?.totalReturn ?? null;
 
     const rows = [
@@ -224,11 +308,15 @@ export default function HomePage() {
         value: modelReturn,
         color: '#4f46e5',
       },
-      ...bench.map((b: any) => ({
-        name: b?.name || b?.ticker,
-        value: b?.stats?.totalReturn ?? null,
-        color: b?.color || '#6b7280',
-      })),
+      ...bench.map((b: any) => {
+        const ticker = String(b?.ticker || '').toUpperCase();
+
+        return {
+          name: b?.name || ticker || 'Benchmark',
+          value: b?.stats?.totalReturn ?? null,
+          color: benchmarkColorOverrides[ticker] || b?.color || '#6b7280',
+        };
+      }),
     ];
 
     const maxValue = Math.max(
@@ -248,14 +336,14 @@ export default function HomePage() {
 
       {/* NAVIGATION */}
       <nav className={`fixed top-0 left-0 right-0 z-50 border-b ${isDark ? 'border-white/10 bg-[#11102a]/70' : 'border-[#e0e0f7] bg-white/70'} backdrop-blur-xl`}>
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-6">
           <div className="flex items-center">
             <Image
-              src="/logo/Qsentia Logo Bg transparent.png"
+              src="/logo/qsentia-primary.png"
               alt="QSentia Logo"
               width={200}
               height={60}
-              className="h-10 w-auto"
+              className="h-8 w-auto sm:h-10"
               priority
             />
           </div>
@@ -273,11 +361,37 @@ export default function HomePage() {
             </button>
             <a href="mailto:Lucas.Zarzeczny@qsentia.com" className={`rounded-md border px-3 py-1 ${isDark ? 'border-white/20 text-white hover:bg-white/10' : 'border-[#4f46e5] text-[#4f46e5] hover:bg-[#4f46e5] hover:text-white'}`}>Contact</a>
           </div>
+          <button
+            type="button"
+            aria-label="Toggle menu"
+            onClick={() => setIsMenuOpen((prev) => !prev)}
+            className={`md:hidden rounded-md border p-2 ${isDark ? 'border-white/20 text-white' : 'border-[#4f46e5] text-[#4f46e5]'}`}
+          >
+            <Icon name={isMenuOpen ? 'close' : 'menu'} className="h-4 w-4" />
+          </button>
         </div>
+        {isMenuOpen && (
+          <div className={`md:hidden border-t ${isDark ? 'border-white/10 bg-[#11102a]/95' : 'border-[#e0e0f7] bg-white/95'}`}>
+            <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-4 text-sm">
+              <a href="#strategy" className={isDark ? 'text-[#c4c4e8]' : 'text-[#4a4a72]'}>Strategy</a>
+              <a href="#framework" className={isDark ? 'text-[#c4c4e8]' : 'text-[#4a4a72]'}>Framework</a>
+              <a href="#performance" className={isDark ? 'text-[#c4c4e8]' : 'text-[#4a4a72]'}>Performance</a>
+              <a href="#approach" className={isDark ? 'text-[#c4c4e8]' : 'text-[#4a4a72]'}>Approach</a>
+              <button
+                type="button"
+                onClick={() => setIsDark((prev) => !prev)}
+                className={`rounded-md border px-3 py-2 text-left ${isDark ? 'border-white/20 text-white' : 'border-[#4f46e5] text-[#4f46e5]'}`}
+              >
+                {isDark ? 'Light theme' : 'Dark theme'}
+              </button>
+              <a href="mailto:Lucas.Zarzeczny@qsentia.com" className={`rounded-md border px-3 py-2 ${isDark ? 'border-white/20 text-white' : 'border-[#4f46e5] text-[#4f46e5]'}`}>Contact</a>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* HERO SECTION */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 text-center pt-32">
+      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-5 text-center pt-28 sm:pt-32">
         <div className={`mb-8 inline-flex items-center gap-2 rounded-full border px-5 py-2 text-xs font-semibold shadow-sm backdrop-blur-md ${isDark ? 'border-white/10 bg-white/10 text-[#a5b4fc]' : 'border-[#bdbdf7] bg-white/80 text-[#4f46e5]'}`}>
           <Icon name="star" className="h-4 w-4" />
           Where intelligent reinforcement learning meets market perception
@@ -286,10 +400,10 @@ export default function HomePage() {
           More Alpha<br />
           <em className={`not-italic ${accentText}`}>Less Risk</em>
         </h1>
-        <p className={`mx-auto mb-8 max-w-xl text-lg font-light ${textSecondary}`}>
+        <p className={`mx-auto mb-8 max-w-xl text-base sm:text-lg font-light ${textSecondary}`}>
           Qsentia combines advanced BR-PPO reinforcement learning with real-time market intelligence to deliver institutional-grade quantitative alpha to every investor.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-12 w-full max-w-md sm:max-w-none">
           <Link href="/dashboard" className="px-8 py-3 rounded-lg bg-[#4f46e5] text-white font-semibold shadow hover:bg-[#4338ca] transition">View Live Research Terminal</Link>
           <a href="mailto:Lucas.Zarzeczny@qsentia.com?subject=QSentia Investor Information Request" className={`px-8 py-3 rounded-lg border font-semibold transition ${isDark ? 'border-white/30 text-white bg-white/10 hover:bg-white/20' : 'border-[#4f46e5] text-[#4f46e5] bg-white/80 hover:bg-[#f4f4f9]'}`}>Request Information</a>
         </div>
@@ -351,23 +465,32 @@ export default function HomePage() {
       </div>
 
       {/* STRATEGY SECTION */}
-      <section id="strategy" className="relative z-10 py-24 bg-transparent">
+      <section id="strategy" className="relative z-10 py-24 bg-transparent" data-reveal>
         <div className="container mx-auto max-w-5xl px-6">
           <div className={`mb-2 font-bold uppercase tracking-widest text-xs ${accentText}`}>Investment Strategy</div>
           <h2 className={`font-serif text-3xl md:text-5xl mb-8 ${textPrimary}`}>Machine Learning<br />Equity Quant (MLEQ)</h2>
           <div className="grid md:grid-cols-2 gap-12 items-center mt-8">
             <div>
-              <div className="flex gap-8 mb-6">
+              <div ref={statsRef} className="flex gap-8 mb-6">
                 <div>
-                  <div className={`font-serif text-2xl ${textPrimary}`}>5<span className={accentText}>+</span></div>
+                  <div className={`font-serif text-2xl ${textPrimary} ${statsInView ? 'count-up' : ''}`}>
+                    {alphaCount}
+                    <span className={accentText}>+</span>
+                  </div>
                   <div className={`text-xs ${textMuted}`}>Alpha Signal Families</div>
                 </div>
                 <div>
-                  <div className={`font-serif text-2xl ${textPrimary}`}>40<span className={accentText}>+</span></div>
+                  <div className={`font-serif text-2xl ${textPrimary} ${statsInView ? 'count-up' : ''}`}>
+                    {sourcesCount}
+                    <span className={accentText}>+</span>
+                  </div>
                   <div className={`text-xs ${textMuted}`}>Data Sources</div>
                 </div>
                 <div>
-                  <div className={`font-serif text-2xl ${textPrimary}`}>12<span className={accentText}>M</span></div>
+                  <div className={`font-serif text-2xl ${textPrimary} ${statsInView ? 'count-up' : ''}`}>
+                    {pointsCount}
+                    <span className={accentText}>M</span>
+                  </div>
                   <div className={`text-xs ${textMuted}`}>Data Points Daily</div>
                 </div>
               </div>
@@ -383,22 +506,22 @@ export default function HomePage() {
                 <span className={`rounded-full px-4 py-1 text-xs border ${pillClass}`}>NLP Sentiment</span>
               </div>
             </div>
-            <div className={`rounded-2xl p-8 shadow-lg border ${cardClass}`}>
+            <div ref={chartRef} className={`rounded-2xl p-8 shadow-lg border ${cardClass}`}>
               <div className="flex justify-between items-center mb-4">
                 <span className="text-xs font-semibold text-[#4a4a72]">Live Portfolio Terminal</span>
                 <span className="flex items-center gap-2 text-xs font-bold text-green-600"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>LIVE</span>
               </div>
               <div className="h-24 w-full flex items-center justify-center mb-4">
-                <svg viewBox="0 0 400 120" width="100%" height="100%" preserveAspectRatio="none">
+                <svg viewBox="0 0 400 120" width="100%" height="100%" preserveAspectRatio="none" className={chartInView ? 'chart-animate' : ''}>
                   <defs>
                     <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.15" />
                       <stop offset="100%" stopColor="#4f46e5" stopOpacity="0" />
                     </linearGradient>
                   </defs>
-                  <path d="M0,100 L22,96 L44,90 L66,94 L88,84 L110,78 L132,72 L154,76 L176,65 L198,58 L220,52 L242,48 L264,42 L286,36 L308,30 L330,24 L352,18 L374,14 L400,8 L400,120 L0,120Z" fill="url(#g1)" />
-                  <path d="M0,100 L22,96 L44,90 L66,94 L88,84 L110,78 L132,72 L154,76 L176,65 L198,58 L220,52 L242,48 L264,42 L286,36 L308,30 L330,24 L352,18 L374,14 L400,8" fill="none" stroke="#4f46e5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <circle cx="400" cy="8" r="4" fill="#4f46e5" />
+                  <path className="chart-area" d="M0,100 L22,96 L44,90 L66,94 L88,84 L110,78 L132,72 L154,76 L176,65 L198,58 L220,52 L242,48 L264,42 L286,36 L308,30 L330,24 L352,18 L374,14 L400,8 L400,120 L0,120Z" fill="url(#g1)" />
+                  <path className="chart-line" d="M0,100 L22,96 L44,90 L66,94 L88,84 L110,78 L132,72 L154,76 L176,65 L198,58 L220,52 L242,48 L264,42 L286,36 L308,30 L330,24 L352,18 L374,14 L400,8" fill="none" stroke="#4f46e5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle className="chart-dot" cx="400" cy="8" r="4" fill="#4f46e5" />
                 </svg>
               </div>
               <div className="flex flex-col gap-2">
@@ -414,7 +537,7 @@ export default function HomePage() {
       </section>
 
       {/* PILLARS */}
-      <section id="pillars" className={`relative z-10 py-24 ${isDark ? 'bg-[#11102a]' : 'bg-white/40'} backdrop-blur`}>
+      <section id="pillars" className={`relative z-10 py-24 ${isDark ? 'bg-[#11102a]' : 'bg-white/40'} backdrop-blur`} data-reveal>
         <div className="mx-auto max-w-5xl px-6">
           <div className="text-center mb-10">
             <div className={`font-bold uppercase tracking-widest text-xs ${accentText}`}>Investment Framework</div>
@@ -437,7 +560,7 @@ export default function HomePage() {
       </section>
 
       {/* FRAMEWORK */}
-      <section id="framework" className="relative z-10 py-24 bg-transparent">
+      <section id="framework" className="relative z-10 py-24 bg-transparent" data-reveal>
         <div className="mx-auto max-w-5xl px-6">
           <div className={`font-bold uppercase tracking-widest text-xs mb-2 ${accentText}`}>How It Works</div>
           <h2 className={`font-serif text-3xl md:text-5xl mb-8 ${textPrimary}`}>Guided by Insight,<br />Driven by Discipline</h2>
@@ -520,7 +643,7 @@ export default function HomePage() {
       </section>
 
       {/* PERFORMANCE */}
-      <section id="performance" className={`relative z-10 py-24 ${isDark ? 'bg-[#0f0d22] text-white' : 'bg-[#13112a] text-white'}`}>
+      <section id="performance" className={`relative z-10 py-24 ${isDark ? 'bg-[#0f0d22] text-white' : 'bg-[#13112a] text-white'}`} data-reveal>
         <div className="mx-auto max-w-5xl px-6">
           <div className="text-[#a5b4fc] font-bold uppercase tracking-widest text-xs">Track Record</div>
           <h2 className="font-serif text-3xl md:text-5xl mt-2">Numbers that speak<br />for themselves</h2>
@@ -556,7 +679,7 @@ export default function HomePage() {
                     <span>{row.name}</span>
                     <span>{fmtPct(row.value, true)}</span>
                   </div>
-                  <div className="h-2 rounded-full bg-white/10">
+                  <div className="h-2 rounded-full bg-white/15">
                     <div className="h-2 rounded-full" style={{ width: `${row.width}%`, background: row.color }} />
                   </div>
                 </div>
@@ -567,7 +690,7 @@ export default function HomePage() {
       </section>
 
       {/* APPROACH */}
-      <section id="approach" className="relative z-10 py-24 bg-transparent">
+      <section id="approach" className="relative z-10 py-24 bg-transparent" data-reveal>
         <div className="mx-auto max-w-5xl px-6">
           <div className={`font-bold uppercase tracking-widest text-xs ${accentText}`}>Methodology</div>
           <h2 className={`font-serif text-3xl md:text-5xl mt-2 ${textPrimary}`}>Guided by Insight,<br />Built on Science</h2>
@@ -589,31 +712,31 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className={`relative z-10 py-24 text-center ${isDark ? 'bg-[#11102a]' : 'bg-gradient-to-br from-[#eeeeff] via-[#f4f4f9] to-[#ece9fe]'}`}>
+      <section className={`relative z-10 py-24 text-center ${isDark ? 'bg-[#11102a]' : 'bg-gradient-to-br from-[#eeeeff] via-[#f4f4f9] to-[#ece9fe]'}`} data-reveal>
         <div className="mx-auto max-w-3xl px-6">
           <div className={`font-bold uppercase tracking-widest text-xs ${accentText}`}>Get Started</div>
           <h2 className={`font-serif text-3xl md:text-5xl mt-2 ${textPrimary}`}>Start investing with<br />an intelligent edge</h2>
           <p className={`mt-3 ${textSecondary}`}>Join investors who trust Qsentia's reinforcement learning platform. Institutional-grade tools, consumer-grade clarity.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mt-8">
             <Link href="/dashboard" className="px-8 py-3 rounded-lg bg-[#4f46e5] text-white font-semibold shadow hover:bg-[#4338ca] transition">View Live Research Terminal</Link>
-            <a href="mailto:Lucas.Zarzeczny@qsentia.com?subject=QSentia Investor Information Request" className="px-8 py-3 rounded-lg border border-[#4f46e5] text-[#4f46e5] font-semibold bg-white/80 hover:bg-[#f4f4f9] transition">Request Information</a>
+            <a href="mailto:Lucas.Zarzeczny@qsentia.com?subject=QSentia Investor Information Request" className={`px-8 py-3 rounded-lg border font-semibold transition ${isDark ? 'border-white/30 text-white bg-white/10 hover:bg-white/20' : 'border-[#4f46e5] text-[#4f46e5] bg-white/80 hover:bg-[#f4f4f9]'}`}>Request Information</a>
           </div>
           <div className={`text-xs mt-4 ${textMuted}`}>No spam, no pressure.</div>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer className={`relative z-10 py-16 ${isDark ? 'bg-[#0b0a16] text-[#8888aa]' : 'bg-[#0e0c1e] text-[#8888aa]'}`}>
-        <div className="mx-auto max-w-5xl px-6">
+      <footer className="relative z-10 bg-[#0f0d22] text-white">
+        <div className="mx-auto max-w-5xl px-6 py-16">
           <div className="grid md:grid-cols-4 gap-8 border-b border-white/10 pb-8">
             <div className="md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 <Image
-                  src="/logo/Qsentia Logo Bg transparent.png"
+                  src="/logo/qsentia-primary.png"
                   alt="QSentia Logo"
                   width={200}
                   height={60}
-                  className="h-10 w-auto"
+                  className="h-12 w-auto"
                 />
                 <span className="text-sm font-semibold tracking-widest text-white">Qsentia</span>
               </div>
@@ -631,7 +754,6 @@ export default function HomePage() {
               <div className="text-xs uppercase tracking-widest text-white mb-3">Legal</div>
               <a href="#" className="block text-sm text-[#6666aa] mb-2 hover:text-[#a5b4fc]">Privacy Policy</a>
               <a href="#" className="block text-sm text-[#6666aa] mb-2 hover:text-[#a5b4fc]">Disclaimer</a>
-              <a href="#" className="block text-sm text-[#6666aa] hover:text-[#a5b4fc]">Code of Conduct</a>
             </div>
           </div>
           <div className="text-xs text-[#44446a] flex flex-col md:flex-row justify-between items-start md:items-center pt-6">
@@ -646,4 +768,29 @@ export default function HomePage() {
       </footer>
     </main>
   );
+}
+
+function useCountUp(target: number, start: boolean, duration = 900) {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    if (!start) return;
+
+    let rafId = 0;
+    const startTime = performance.now();
+
+    const tick = (now: number) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      setValue(Math.round(target * progress));
+
+      if (progress < 1) {
+        rafId = requestAnimationFrame(tick);
+      }
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [duration, start, target]);
+
+  return value;
 }
