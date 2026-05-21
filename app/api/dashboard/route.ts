@@ -7,6 +7,16 @@ export const dynamic = 'force-dynamic';
 const REGISTRY_OWNER = process.env.NEXT_PUBLIC_QSENTIA_REPO_OWNER || 'FinTechEntrepreneurldz';
 const REGISTRY_REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'Base_Model_BR_PPO';
 const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
+const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || 'real_crypto_carry_ibkr';
+const ACCOUNT_BASELINE_MODEL_IDS = new Set([
+  'real_crypto_carry_ibkr',
+  'delta_neutral_crypto_funding',
+]);
+const DEFAULT_ACCOUNT_STARTING_CAPITAL = Number(
+  process.env.QSENTIA_ACCOUNT_STARTING_CAPITAL ||
+    process.env.NEXT_PUBLIC_QSENTIA_ACCOUNT_STARTING_CAPITAL ||
+    1000000
+);
 
 const BENCHMARKS = [
   { name: 'S&P 500', ticker: 'SPY', color: '#111111' },
@@ -35,11 +45,27 @@ type PortfolioPoint = {
   raw: CsvRow;
 };
 
+type AccountHealthStatus = Record<string, unknown> | null;
+
 type DailyPoint = {
   timestamp: string;
   value: number;
   raw?: CsvRow;
 };
+
+const ACCOUNT_VALUE_KEYS = [
+  'net_liquidation',
+  'net_liquidation_value',
+  'netliquidation',
+  'netLiquidation',
+  'NetLiquidation',
+  'nlv',
+  'NLV',
+  'portfolio_value',
+  'equity',
+  'account_value',
+  'total_equity',
+];
 
 function rawUrl(repoFullName: string, branch: string, path: string) {
   const cleanPath = path.replace(/^\/+/, '');
@@ -201,6 +227,18 @@ function num(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function startingCapitalForModel(model: ModelConfig): number | null {
+  if (!ACCOUNT_BASELINE_MODEL_IDS.has(model.id)) return null;
+  return Number.isFinite(DEFAULT_ACCOUNT_STARTING_CAPITAL)
+    ? DEFAULT_ACCOUNT_STARTING_CAPITAL
+    : null;
+}
+
+function performanceValues(values: number[], baseline: number | null) {
+  if (!values.length || baseline === null) return values;
+  return values[0] === baseline ? values : [baseline, ...values];
+}
+
 function latest<T>(arr: T[]): T | null {
   return arr.length ? arr[arr.length - 1] : null;
 }
@@ -224,6 +262,16 @@ function timestampToDateKey(timestamp: string | undefined) {
   return '';
 }
 
+function previousDateKey(dateKey: string | undefined) {
+  if (!dateKey) return '';
+
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return '';
+
+  date.setUTCDate(date.getUTCDate() - 1);
+  return date.toISOString().slice(0, 10);
+}
+
 function timestampSortValue(timestamp: string | undefined) {
   if (!timestamp) return 0;
 
@@ -240,14 +288,21 @@ function timestampSortValue(timestamp: string | undefined) {
   return Number.isNaN(fallback.getTime()) ? 0 : fallback.getTime();
 }
 
+function accountValue(row: CsvRow): number | null {
+  const status = String(row.account_status || row.status || '').toLowerCase();
+  if (status.includes('dry_run') || status.includes('dry-run')) return null;
+
+  for (const key of ACCOUNT_VALUE_KEYS) {
+    const value = num(row[key]);
+    if (value !== null) return value;
+  }
+  return null;
+}
+
 function normalizePortfolioRows(rows: CsvRow[]): PortfolioPoint[] {
   return rows
     .map((row) => {
-      const value =
-        num(row.portfolio_value) ??
-        num(row.equity) ??
-        num(row.account_value) ??
-        num(row.total_equity);
+      const value = accountValue(row);
 
       return {
         timestamp: row.timestamp_utc || row.timestamp || row.date || '',
@@ -256,6 +311,43 @@ function normalizePortfolioRows(rows: CsvRow[]): PortfolioPoint[] {
       };
     })
     .filter((row) => row.timestamp && row.value !== null) as PortfolioPoint[];
+}
+
+function accountValueObservations(groups: CsvRow[][]): PortfolioPoint[] {
+  return groups.flatMap((rows) => normalizePortfolioRows(rows));
+}
+
+function objectToCsvRow(raw: Record<string, unknown>): CsvRow {
+  return Object.fromEntries(
+    Object.entries(raw).map(([key, value]) => [key, value === null || value === undefined ? '' : String(value)])
+  );
+}
+
+function healthStatusObservation(healthStatus: AccountHealthStatus): PortfolioPoint[] {
+  if (!healthStatus) return [];
+
+  const value = accountValue(objectToCsvRow(healthStatus));
+  const timestamp = String(
+    healthStatus.updated_at_utc ||
+      healthStatus.timestamp_utc ||
+      healthStatus.timestamp ||
+      healthStatus.date ||
+      ''
+  );
+
+  if (!timestamp || value === null) return [];
+
+  return [
+    {
+      timestamp,
+      value,
+      raw: objectToCsvRow({
+        ...healthStatus,
+        account_status: healthStatus.account_status || healthStatus.overall_status || 'connected',
+        source: healthStatus.source || 'health_status_net_liquidation',
+      }),
+    },
+  ];
 }
 
 function submittedOrderCount(rows: CsvRow[]) {
@@ -427,7 +519,9 @@ export async function GET(request: Request) {
 
   const requestedModel = searchParams.get('model');
   const selectedModelConfig =
-    registry.find((m) => m.id === requestedModel) || registry[0];
+    registry.find((m) => m.id === requestedModel) ||
+    registry.find((m) => m.id === DEFAULT_MODEL_ID) ||
+    registry[0];
 
   const selectedModel = selectedModelConfig.id;
 
@@ -463,13 +557,23 @@ export async function GET(request: Request) {
   ]);
 
   const paperStatus = inferPaperStatus(positionsRows, submittedOrdersRows);
-  const portfolio = normalizePortfolioRows(portfolioRows);
+  const portfolio = [
+    ...accountValueObservations([
+      portfolioRows,
+      latestDecisionRows,
+      decisionsRows,
+      signalHistoryRows,
+    ]),
+    ...healthStatusObservation(healthStatus),
+  ];
   const dailyPortfolio = toDailyPortfolio(portfolio);
   const values = dailyPortfolio.map((p) => p.value);
+  const accountBaseline = startingCapitalForModel(selectedModelConfig);
+  const selectedPerformanceValues = performanceValues(values, accountBaseline);
   const normalizedValues = normalizeTo100(values);
   const returns = pctChange(values);
   const drawdowns = calculateDrawdown(values);
-  const stats = computeStats(values);
+  const stats = computeStats(selectedPerformanceValues);
 
   const equityCurve = dailyPortfolio.map((p, i) => ({
     timestamp: p.timestamp,
@@ -485,9 +589,18 @@ export async function GET(request: Request) {
 
   for (const model of registry) {
     const rows = await fetchCsvFromModel(model, 'portfolio/portfolio.csv');
-    const daily = toDailyPortfolio(normalizePortfolioRows(rows));
+    const modelHealthStatus = await fetchJsonFromModel<Record<string, unknown>>(
+      model,
+      'health/health_status.json'
+    );
+    const daily = toDailyPortfolio([
+      ...normalizePortfolioRows(rows),
+      ...healthStatusObservation(modelHealthStatus),
+    ]);
     const modelValues = daily.map((p) => p.value);
-    const curve = normalizeTo100(modelValues);
+    const modelBaseline = startingCapitalForModel(model);
+    const modelPerformanceValues = performanceValues(modelValues, modelBaseline);
+    const curve = normalizeTo100(modelPerformanceValues);
 
     const modelInceptionDate = daily.length ? daily[0].timestamp : undefined;
     const modelBenchmarks = await fetchBenchmarks(modelInceptionDate);
@@ -499,12 +612,18 @@ export async function GET(request: Request) {
       repo: model.repo,
       logsPath: model.logs_path,
       color: model.color,
-      points: daily.map((p, i) => ({
-        timestamp: p.timestamp,
+      points: modelPerformanceValues.map((value, i) => ({
+        timestamp:
+          modelBaseline !== null && modelValues[0] !== modelBaseline
+            ? i === 0
+              ? previousDateKey(modelInceptionDate)
+              : daily[i - 1]?.timestamp
+            : daily[i]?.timestamp,
         value: curve[i],
       })),
-      stats: computeStats(modelValues),
+      stats: computeStats(modelPerformanceValues),
       latestValue: modelValues.length ? modelValues[modelValues.length - 1] : null,
+      startingCapital: modelBaseline,
       rowCount: rows.length,
       dailyRowCount: daily.length,
       inceptionDate: modelInceptionDate || null,
@@ -525,18 +644,26 @@ export async function GET(request: Request) {
     latest: {
         decision: latest(latestDecisionRows),
       
-        // SOURCE OF TRUTH: portfolio/portfolio.csv
+        // SOURCE OF TRUTH: latest IBKR NetLiquidation observation from portfolio logs or health status.
         portfolioValue: values.length ? values[values.length - 1] : null,
-        firstPortfolioValue: values.length ? values[0] : null,
+        portfolioValueTimestamp: dailyPortfolio.length ? dailyPortfolio[dailyPortfolio.length - 1].timestamp : null,
+        portfolioValueSource: dailyPortfolio.length
+          ? dailyPortfolio[dailyPortfolio.length - 1].raw?.source || 'ibkr_net_liquidation'
+          : null,
+        firstPortfolioValue: values.length ? accountBaseline ?? values[0] : null,
+        startingCapital: accountBaseline,
         portfolioPnl:
-          values.length >= 2 ? values[values.length - 1] - values[0] : null,
+          values.length ? values[values.length - 1] - (accountBaseline ?? values[0]) : null,
         portfolioReturn:
-          values.length >= 2 && values[0] !== 0
-            ? values[values.length - 1] / values[0] - 1
+          values.length && (accountBaseline ?? values[0]) !== 0
+            ? values[values.length - 1] / (accountBaseline ?? values[0]) - 1
             : null,
       
         // Do NOT derive P&L from positions market_value.
-        pnlSource: 'portfolio_csv_net_liquidation',
+        pnlSource:
+          accountBaseline !== null
+            ? 'ibkr_net_liquidation_minus_starting_capital'
+            : 'portfolio_csv_net_liquidation',
         isLivePaperActive: paperStatus.isLivePaperActive,
         paperStatus: paperStatus.paperStatus,
         submittedOrderCount: paperStatus.submittedOrderCount,
@@ -579,9 +706,10 @@ export async function GET(request: Request) {
         paperStatus
       })),
       selectedModelConfig,
-      rowCounts: {
-        portfolioRows: portfolioRows.length,
-        dailyPortfolioRows: dailyPortfolio.length,
+        rowCounts: {
+          portfolioRows: portfolioRows.length,
+          healthStatusRows: healthStatus ? 1 : 0,
+          dailyPortfolioRows: dailyPortfolio.length,
         latestDecisionRows: latestDecisionRows.length,
         decisionsRows: decisionsRows.length,
         targetWeightsRows: targetWeightsRows.length,
