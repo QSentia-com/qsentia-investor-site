@@ -224,6 +224,12 @@ export default function HomePage() {
   const chartRef = useRef<HTMLDivElement | null>(null);
   const [statsInView, setStatsInView] = useState(false);
   const [chartInView, setChartInView] = useState(false);
+  const strategyReveal = useReveal(0.25);
+  const pillarsReveal = useReveal(0.2);
+  const frameworkReveal = useReveal(0.2);
+  const performanceReveal = useReveal(0.2);
+  const approachReveal = useReveal(0.2);
+  const ctaReveal = useReveal(0.2);
 
   const textPrimary = isDark ? 'text-white' : 'text-[#1a1a2e]';
   const textSecondary = isDark ? 'text-[#c4c4e8]' : 'text-[#4a4a72]';
@@ -278,25 +284,6 @@ export default function HomePage() {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    const elements = Array.from(document.querySelectorAll('[data-reveal]')) as HTMLElement[];
-    if (!elements.length) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          entry.target.classList.add('reveal-visible');
-          observer.unobserve(entry.target);
-        });
-      },
-      { threshold: 0.2 }
-    );
-
-    elements.forEach((element) => observer.observe(element));
-
-    return () => observer.disconnect();
-  }, []);
 
   const benchmarkBars = useMemo(() => {
     const bench = data?.benchmarks?.length ? data.benchmarks : benchmarkFallback;
@@ -465,7 +452,12 @@ export default function HomePage() {
       </div>
 
       {/* STRATEGY SECTION */}
-      <section id="strategy" className="relative z-10 py-24 bg-transparent" data-reveal>
+      <section
+        id="strategy"
+        ref={strategyReveal.ref}
+        className={`relative z-10 py-24 bg-transparent ${strategyReveal.visible ? 'reveal-visible' : ''}`}
+        data-reveal
+      >
         <div className="container mx-auto max-w-5xl px-6">
           <div className={`mb-2 font-bold uppercase tracking-widest text-xs ${accentText}`}>Investment Strategy</div>
           <h2 className={`font-serif text-3xl md:text-5xl mb-8 ${textPrimary}`}>Machine Learning<br />Equity Quant (MLEQ)</h2>
@@ -537,7 +529,12 @@ export default function HomePage() {
       </section>
 
       {/* PILLARS */}
-      <section id="pillars" className={`relative z-10 py-24 ${isDark ? 'bg-[#11102a]' : 'bg-white/40'} backdrop-blur`} data-reveal>
+      <section
+        id="pillars"
+        ref={pillarsReveal.ref}
+        className={`relative z-10 py-24 ${isDark ? 'bg-[#11102a]' : 'bg-white/40'} backdrop-blur ${pillarsReveal.visible ? 'reveal-visible' : ''}`}
+        data-reveal
+      >
         <div className="mx-auto max-w-5xl px-6">
           <div className="text-center mb-10">
             <div className={`font-bold uppercase tracking-widest text-xs ${accentText}`}>Investment Framework</div>
@@ -560,7 +557,12 @@ export default function HomePage() {
       </section>
 
       {/* FRAMEWORK */}
-      <section id="framework" className="relative z-10 py-24 bg-transparent" data-reveal>
+      <section
+        id="framework"
+        ref={frameworkReveal.ref}
+        className={`relative z-10 py-24 bg-transparent ${frameworkReveal.visible ? 'reveal-visible' : ''}`}
+        data-reveal
+      >
         <div className="mx-auto max-w-5xl px-6">
           <div className={`font-bold uppercase tracking-widest text-xs mb-2 ${accentText}`}>How It Works</div>
           <h2 className={`font-serif text-3xl md:text-5xl mb-8 ${textPrimary}`}>Guided by Insight,<br />Driven by Discipline</h2>
@@ -643,7 +645,12 @@ export default function HomePage() {
       </section>
 
       {/* PERFORMANCE */}
-      <section id="performance" className={`relative z-10 py-24 ${isDark ? 'bg-[#0f0d22] text-white' : 'bg-[#13112a] text-white'}`} data-reveal>
+      <section
+        id="performance"
+        ref={performanceReveal.ref}
+        className={`relative z-10 py-24 ${isDark ? 'bg-[#0f0d22] text-white' : 'bg-[#13112a] text-white'} ${performanceReveal.visible ? 'reveal-visible' : ''}`}
+        data-reveal
+      >
         <div className="mx-auto max-w-5xl px-6">
           <div className="text-[#a5b4fc] font-bold uppercase tracking-widest text-xs">Track Record</div>
           <h2 className="font-serif text-3xl md:text-5xl mt-2">Numbers that speak<br />for themselves</h2>
@@ -690,7 +697,12 @@ export default function HomePage() {
       </section>
 
       {/* APPROACH */}
-      <section id="approach" className="relative z-10 py-24 bg-transparent" data-reveal>
+      <section
+        id="approach"
+        ref={approachReveal.ref}
+        className={`relative z-10 py-24 bg-transparent ${approachReveal.visible ? 'reveal-visible' : ''}`}
+        data-reveal
+      >
         <div className="mx-auto max-w-5xl px-6">
           <div className={`font-bold uppercase tracking-widest text-xs ${accentText}`}>Methodology</div>
           <h2 className={`font-serif text-3xl md:text-5xl mt-2 ${textPrimary}`}>Guided by Insight,<br />Built on Science</h2>
@@ -712,7 +724,11 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className={`relative z-10 py-24 text-center ${isDark ? 'bg-[#11102a]' : 'bg-gradient-to-br from-[#eeeeff] via-[#f4f4f9] to-[#ece9fe]'}`} data-reveal>
+      <section
+        ref={ctaReveal.ref}
+        className={`relative z-10 py-24 text-center ${isDark ? 'bg-[#11102a]' : 'bg-gradient-to-br from-[#eeeeff] via-[#f4f4f9] to-[#ece9fe]'} ${ctaReveal.visible ? 'reveal-visible' : ''}`}
+        data-reveal
+      >
         <div className="mx-auto max-w-3xl px-6">
           <div className={`font-bold uppercase tracking-widest text-xs ${accentText}`}>Get Started</div>
           <h2 className={`font-serif text-3xl md:text-5xl mt-2 ${textPrimary}`}>Start investing with<br />an intelligent edge</h2>
@@ -793,4 +809,31 @@ function useCountUp(target: number, start: boolean, duration = 900) {
   }, [duration, start, target]);
 
   return value;
+}
+
+function useReveal(threshold = 0.2) {
+  const ref = useRef<HTMLElement | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || visible) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          setVisible(true);
+          observer.unobserve(entry.target);
+        });
+      },
+      { threshold }
+    );
+
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, [threshold, visible]);
+
+  return { ref, visible };
 }
