@@ -10,7 +10,6 @@ const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
 const BTC_ETH_PERP_BASIS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || BTC_ETH_PERP_BASIS_MODEL_ID;
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
-  BTC_ETH_PERP_BASIS_MODEL_ID,
   'real_crypto_carry_ibkr',
   'delta_neutral_crypto_funding',
 ]);
