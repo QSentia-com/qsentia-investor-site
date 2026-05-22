@@ -8,6 +8,7 @@ const REGISTRY_OWNER = process.env.NEXT_PUBLIC_QSENTIA_REPO_OWNER || 'FinTechEnt
 const REGISTRY_REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'Base_Model_BR_PPO';
 const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
 const BTC_ETH_PERP_BASIS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
+const BRPPO_MACRO_ALPACA_MODEL_ID = 'qsentia_brppo_macro_rotation_alpaca';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || BTC_ETH_PERP_BASIS_MODEL_ID;
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   'real_crypto_carry_ibkr',
@@ -38,6 +39,17 @@ const REQUIRED_MODELS: ModelConfig[] = [
     branch: 'main',
     enabled: true,
     color: '#14b8a6',
+  },
+  {
+    id: BRPPO_MACRO_ALPACA_MODEL_ID,
+    name: 'QSentia BR-PPO Macro Rotation — Alpaca',
+    description:
+      'Frozen BR-PPO macro rotation Sharpe 2 research-family candidate with Alpaca paper execution and canonical QSentia dashboard logs.',
+    repo: 'FinTechEntrepreneurldz/qsentia-brppo-macro-rotation-alpaca',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#2563eb',
   },
 ];
 
