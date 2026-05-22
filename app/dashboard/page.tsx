@@ -23,7 +23,8 @@ import {
 import { computeStats, fmtDollar, fmtNum, fmtPct } from '@/lib/metrics';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
-const DEFAULT_ACCOUNT_MODEL_ID = 'real_crypto_carry_ibkr';
+const DEFAULT_ACCOUNT_MODEL_ID =
+  process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || 'qsentia_btc_eth_perp_basis_alpha';
 
 function getHighestSharpeModelId(modelComparison: any[]) {
   const candidates = (modelComparison || [])
@@ -354,7 +355,7 @@ export default function DashboardPage() {
 
             <div className="relative mt-6 flex flex-wrap gap-2">
               <Pill>GitHub Logs</Pill>
-              <Pill>Alpaca Paper Trading</Pill>
+              <Pill>Broker Paper Trading</Pill>
               <Pill>BR-PPO</Pill>
               <Pill>Auto Refresh 120s</Pill>
               <Pill>{selectedModelName}</Pill>
@@ -381,9 +382,13 @@ export default function DashboardPage() {
             />
             <MetricTile label="Max Drawdown" value={fmtPct(stats.maxDrawdown, true)} detail="Peak to trough" />
             <MetricTile
-              label="Current Signal"
-              value={latestDecision?.action || 'Pending'}
-              detail="Latest model allocation"
+              label="Paper Gate"
+              value={data?.latest?.paperReplayStatus || data?.latest?.paperStatus || 'Pending'}
+              detail={
+                data?.latest?.latestSignalDate
+                  ? `Signal ${data.latest.latestSignalDate}`
+                  : 'Latest execution-readiness state'
+              }
             />
           </div>
         </section>
@@ -1267,7 +1272,17 @@ function ExecutiveOverview({ data }: { data: any }) {
           <h3 className="mb-6 text-4xl font-light tracking-[-0.07em]">Live Status</h3>
           <InfoRow label="Account Status" value={latestDecision.account_status || 'Pending'} />
           <InfoRow label="Submit Orders" value={String(latestDecision.submit_orders ?? 'Pending')} />
-          <InfoRow label="Current Signal" value={latestDecision.action || 'Pending'} />
+          <InfoRow label="Paper Gate" value={data?.latest?.paperReplayStatus || 'Pending'} />
+          <InfoRow
+            label="Signal Gross"
+            value={
+              data?.latest?.latestSignalGrossWeight === null || data?.latest?.latestSignalGrossWeight === undefined
+                ? 'Pending'
+                : fmtNum(Number(data.latest.latestSignalGrossWeight), 4)
+            }
+          />
+          <InfoRow label="Latest Signal Date" value={data?.latest?.latestSignalDate || 'Pending'} />
+          <InfoRow label="Last Active Signal" value={data?.latest?.lastActiveSignalDate || 'Pending'} />
           <InfoRow label="Last Run" value={data?.latest?.lastRun || 'Pending'} />
           <InfoRow label="Health" value={data?.healthStatus?.overall_status || 'Pending'} />
           <InfoRow label="Observations" value={String(data?.stats?.nObservations ?? 'Pending')} />
@@ -1380,12 +1395,19 @@ function PortfolioExposure({ data }: { data: any }) {
 
 function ExecutionMonitor({ data }: { data: any }) {
   return (
-    <Panel eyebrow="Execution Intelligence" title="Execution Monitor" subtitle="Planned orders, submitted orders, and full execution history from the paper trading workflow.">
+    <Panel eyebrow="Execution Intelligence" title="Execution Monitor" subtitle="Planned orders, submitted orders, readiness checks, and full execution history from the paper trading workflow.">
+      <div className="mb-6 grid gap-4 md:grid-cols-4">
+        <MetricTile label="Paper Replay" value={data?.latest?.paperReplayStatus || 'Pending'} detail="Execution realism gate" />
+        <MetricTile label="Hard Fail" value={String(data?.latest?.realismHardFail ?? 'Pending')} detail="Readiness blocker" />
+        <MetricTile label="Warnings" value={String(data?.latest?.realismWarningCount ?? 'Pending')} detail="Gate warnings" />
+        <MetricTile label="Signal Gross" value={String(data?.latest?.latestSignalGrossWeight ?? 'Pending')} detail="Latest target gross weight" />
+      </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <DataTable title="Latest Planned Orders" rows={data?.plannedOrders || []} />
         <DataTable title="Latest Submitted Orders" rows={data?.submittedOrders || []} />
       </div>
-      <div className="mt-6">
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <DataTable title="Execution Readiness Checks" rows={data?.readinessChecks || []} />
         <DataTable title="Submitted Orders History" rows={data?.ordersHistory || []} />
       </div>
     </Panel>
@@ -1458,8 +1480,8 @@ function ModelHealth({ data }: { data: any }) {
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <MetricTile label="Health Status" value={data?.healthStatus?.overall_status || 'Pending'} detail="Current monitor state" />
         <MetricTile label="Decision Count" value={String(data?.healthStatus?.n_decisions ?? 'Pending')} detail="Logged decisions" />
-        <MetricTile label="Signal Rows" value={String(data?.signalHistory?.length || 0)} detail="Health observations" />
-        <MetricTile label="Portfolio Rows" value={String(data?.equityCurve?.length || 0)} detail="Equity records" />
+        <MetricTile label="Readiness Checks" value={String(data?.readinessChecks?.length || 0)} detail="Execution gate rows" />
+        <MetricTile label="Portfolio Rows" value={String(data?.equityCurve?.length || 0)} detail="Net liquidation records" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -1471,6 +1493,21 @@ function ModelHealth({ data }: { data: any }) {
             {JSON.stringify(data?.healthStatus || {}, null, 2)}
           </pre>
         </div>
+        <div className="rounded-[34px] border border-black/10 bg-white/82 p-6 shadow-[0_28px_100px_rgba(25,20,90,0.12)] backdrop-blur-2xl">
+          <div className="mb-2 text-xs font-black uppercase tracking-[0.22em] text-[#4b3fd1]">
+            Execution Realism Summary
+          </div>
+          <pre className="max-h-[520px] overflow-auto rounded-2xl border border-black/10 bg-[#fbfbfb] p-4 text-xs text-neutral-700">
+            {JSON.stringify(data?.executionRealism || {}, null, 2)}
+          </pre>
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <DataTable title="Readiness Checks" rows={data?.readinessChecks || []} />
+      </div>
+
+      <div className="mt-6">
         <DataTable title="Signal History" rows={data?.signalHistory || []} />
       </div>
 
@@ -1487,6 +1524,7 @@ function ModelHealth({ data }: { data: any }) {
               positionsRows: data?.debug?.rowCounts?.positionsRows,
               ordersRows: data?.debug?.rowCounts?.ordersHistoryRows,
               signalRows: data?.debug?.rowCounts?.signalHistoryRows,
+              readinessChecksRows: data?.debug?.rowCounts?.readinessChecksRows,
             },
           ]}
         />

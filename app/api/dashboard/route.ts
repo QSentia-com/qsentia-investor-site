@@ -7,8 +7,10 @@ export const dynamic = 'force-dynamic';
 const REGISTRY_OWNER = process.env.NEXT_PUBLIC_QSENTIA_REPO_OWNER || 'FinTechEntrepreneurldz';
 const REGISTRY_REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'Base_Model_BR_PPO';
 const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
-const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || 'real_crypto_carry_ibkr';
+const BTC_ETH_PERP_BASIS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
+const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || BTC_ETH_PERP_BASIS_MODEL_ID;
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
+  BTC_ETH_PERP_BASIS_MODEL_ID,
   'real_crypto_carry_ibkr',
   'delta_neutral_crypto_funding',
 ]);
@@ -24,6 +26,20 @@ const BENCHMARKS = [
   { name: 'Dow Jones', ticker: 'DIA', color: '#737373' },
   { name: 'Russell 2000', ticker: 'IWM', color: '#b45309' },
   { name: 'Total US Market', ticker: 'VTI', color: '#0f766e' },
+];
+
+const REQUIRED_MODELS: ModelConfig[] = [
+  {
+    id: BTC_ETH_PERP_BASIS_MODEL_ID,
+    name: 'QSentia BTC/ETH Perp Basis Alpha — IBKR',
+    description:
+      'BTC/ETH spot-versus-perpetual-style futures basis alpha strategy using IBKR paper execution and canonical QSentia dashboard logs.',
+    repo: 'FinTechEntrepreneurldz/qsentia-btc-eth-perp-basis-alpha',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#14b8a6',
+  },
 ];
 
 type CsvRow = Record<string, string>;
@@ -104,10 +120,39 @@ async function fetchCsvFromModel(model: ModelConfig, relativePath: string): Prom
   }
 }
 
+async function fetchCsvFromRepo(model: ModelConfig, path: string): Promise<CsvRow[]> {
+  try {
+    const text = await fetchTextFromRaw(model.repo, model.branch || 'main', path);
+
+    if (!text.trim()) return [];
+
+    const parsed = Papa.parse<CsvRow>(text, {
+      header: true,
+      skipEmptyLines: true,
+    });
+
+    return parsed.data || [];
+  } catch {
+    return [];
+  }
+}
+
 async function fetchJsonFromModel<T>(model: ModelConfig, relativePath: string): Promise<T | null> {
   try {
     const fullPath = `${model.logs_path.replace(/\/+$/, '')}/${relativePath.replace(/^\/+/, '')}`;
     const text = await fetchTextFromRaw(model.repo, model.branch || 'main', fullPath);
+
+    if (!text.trim()) return null;
+
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchJsonFromRepo<T>(model: ModelConfig, path: string): Promise<T | null> {
+  try {
+    const text = await fetchTextFromRaw(model.repo, model.branch || 'main', path);
 
     if (!text.trim()) return null;
 
@@ -125,21 +170,35 @@ async function fetchModelsRegistry(): Promise<ModelConfig[]> {
   );
 
   const parsed = parseSimpleModelsYaml(text);
+  const fallback = [
+    {
+      id: 'model_a',
+      name: 'BR-PPO V10 (original)',
+      description: 'Fallback model from Base_Model_BR_PPO.',
+      repo: 'FinTechEntrepreneurldz/Base_Model_BR_PPO',
+      logs_path: 'logs/model_a',
+      branch: 'main',
+      enabled: true,
+      color: '#00d4aa',
+    },
+  ];
+  const registry = parsed.length ? parsed : fallback;
 
-  return parsed.length
-    ? parsed.filter((m) => m.enabled !== false)
-    : [
-        {
-          id: 'model_a',
-          name: 'BR-PPO V10 (original)',
-          description: 'Fallback model from Base_Model_BR_PPO.',
-          repo: 'FinTechEntrepreneurldz/Base_Model_BR_PPO',
-          logs_path: 'logs/model_a',
-          branch: 'main',
-          enabled: true,
-          color: '#00d4aa',
-        },
-      ];
+  return mergeRequiredModels(registry).filter((m) => m.enabled !== false);
+}
+
+function mergeRequiredModels(models: ModelConfig[]) {
+  const byId = new Map<string, ModelConfig>();
+
+  for (const model of REQUIRED_MODELS) {
+    byId.set(model.id, model);
+  }
+
+  for (const model of models) {
+    byId.set(model.id, model);
+  }
+
+  return Array.from(byId.values());
 }
 
 function parseSimpleModelsYaml(text: string): ModelConfig[] {
@@ -537,6 +596,8 @@ export async function GET(request: Request) {
     ordersHistoryRows,
     signalHistoryRows,
     healthStatus,
+    executionRealism,
+    readinessChecksRows,
     benchmarkStartDate,
   ] = await Promise.all([
     fetchCsvFromModel(selectedModelConfig, 'portfolio/portfolio.csv'),
@@ -553,10 +614,28 @@ export async function GET(request: Request) {
       selectedModelConfig,
       'health/health_status.json'
     ),
+    fetchJsonFromRepo<Record<string, unknown>>(
+      selectedModelConfig,
+      'execution_realism_gate_results/execution_realism_summary.json'
+    ),
+    fetchCsvFromRepo(
+      selectedModelConfig,
+      'execution_realism_gate_results/readiness_checks.csv'
+    ),
     benchmarkStartDateFromFirstModel(registry),
   ]);
 
   const paperStatus = inferPaperStatus(positionsRows, submittedOrdersRows);
+  const latestRealismStatus =
+    typeof executionRealism?.paper_replay_status === 'string'
+      ? executionRealism.paper_replay_status
+      : null;
+  const latestRunTimestamp =
+    healthStatus?.updated_at_utc ||
+    latest(latestDecisionRows)?.timestamp_utc ||
+    latest(decisionsRows)?.timestamp_utc ||
+    latest(portfolioRows)?.timestamp_utc ||
+    null;
   const portfolio = [
     ...accountValueObservations([
       portfolioRows,
@@ -667,7 +746,14 @@ export async function GET(request: Request) {
         isLivePaperActive: paperStatus.isLivePaperActive,
         paperStatus: paperStatus.paperStatus,
         submittedOrderCount: paperStatus.submittedOrderCount,
-        hasLivePositions: paperStatus.hasLivePositions
+        hasLivePositions: paperStatus.hasLivePositions,
+        lastRun: latestRunTimestamp,
+        paperReplayStatus: latestRealismStatus,
+        latestSignalDate: executionRealism?.latest_signal_date || null,
+        latestSignalGrossWeight: executionRealism?.latest_signal_gross_weight ?? null,
+        lastActiveSignalDate: executionRealism?.last_active_signal_date || null,
+        realismWarningCount: executionRealism?.warning_count ?? null,
+        realismHardFail: executionRealism?.hard_fail ?? null,
           },
     stats,
     equityCurve,
@@ -691,6 +777,8 @@ export async function GET(request: Request) {
     ordersHistory: ordersHistoryRows,
     signalHistory: signalHistoryRows,
     healthStatus,
+    executionRealism,
+    readinessChecks: readinessChecksRows,
     debug: {
       requestedModel,
       selectedModel,
@@ -719,6 +807,7 @@ export async function GET(request: Request) {
         submittedOrdersRows: submittedOrdersRows.length,
         ordersHistoryRows: ordersHistoryRows.length,
         signalHistoryRows: signalHistoryRows.length,
+        readinessChecksRows: readinessChecksRows.length,
       },
       modelComparisonRows: modelComparison.map((m) => ({
         id: m.id,
