@@ -9,6 +9,7 @@ const REGISTRY_REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'Base_Model_B
 const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
 const BTC_ETH_PERP_BASIS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const BRPPO_MACRO_ALPACA_MODEL_ID = 'qsentia_brppo_macro_rotation_alpaca';
+const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || BTC_ETH_PERP_BASIS_MODEL_ID;
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   'real_crypto_carry_ibkr',
@@ -50,6 +51,17 @@ const REQUIRED_MODELS: ModelConfig[] = [
     branch: 'main',
     enabled: true,
     color: '#2563eb',
+  },
+  {
+    id: CRYPTO_SENTIMENT_MLP_MODEL_ID,
+    name: 'Crypto Sentiment MLP/PPO — IBKR',
+    description:
+      'Live BTC sentiment ensemble using CryptoBERT-scored news, MLP/PPO stackers, and IBKR CME Micro Bitcoin futures paper execution. Current portfolio value is sourced from IBKR NetLiquidation.',
+    repo: 'FinTechEntrepreneurldz/crypto_sentiment_MLP',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#f59e0b',
   },
 ];
 
