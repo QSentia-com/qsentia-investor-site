@@ -83,6 +83,84 @@ const approachCards = [
   },
 ];
 
+const leaderboardCards = [
+  {
+    title: 'Best of Today',
+    date: 'May 25, 2026',
+    model: 'BR-PPO V1.0 Original Base',
+    return: 0.086,
+    sharpe: 1.9,
+    hitRate: 0.68,
+    badge: 'LIVE NOW',
+  },
+  {
+    title: 'Best of All Time',
+    date: 'Jan 2023 - Present',
+    model: 'ML Alpha 30/30 - Original Model C',
+    return: 0.402,
+    sharpe: 1.85,
+    hitRate: 0.74,
+    badge: 'ALL TIME',
+  },
+];
+
+const todayLeaders = [
+  { label: 'Qsentia MLEQ', value: 0.086, color: '#16a34a' },
+  { label: 'Alpha X.18', value: 0.062, color: '#4f46e5' },
+  { label: 'Macro Cycle 4M', value: 0.044, color: '#0ea5e9' },
+  { label: 'Value Core Z', value: -0.012, color: '#dc2626' },
+  { label: 'Global Neutral', value: -0.018, color: '#f59e0b' },
+];
+
+const todayTiles = [
+  { label: 'Top Signals Today', value: '28 / 120', delta: '+12%', tone: 'good' },
+  { label: 'Winning Positions', value: '19', delta: '+4', tone: 'good' },
+  { label: 'Avg. Holding', value: '3.2d', delta: '-0.4d', tone: 'neutral' },
+  { label: 'Downside Guard', value: '0.92', delta: '+0.08', tone: 'good' },
+  { label: 'Drawdown Alert', value: 'Stable', delta: '0', tone: 'neutral' },
+  { label: 'Execution Score', value: 'A-', delta: '+1', tone: 'good' },
+];
+
+const heatmapDays = [
+  { date: 'May 04, 2026', value: -0.005 },
+  { date: 'May 05, 2026', value: -0.0005 },
+  { date: 'May 06, 2026', value: 0.0233 },
+  { date: 'May 07, 2026', value: 0.0022 },
+  { date: 'May 08, 2026', value: 0.0009 },
+  { date: 'May 11, 2026', value: -0.0158 },
+  { date: 'May 12, 2026', value: -0.0063 },
+  { date: 'May 13, 2026', value: -0.0213 },
+  { date: 'May 14, 2026', value: -0.0005 },
+  { date: 'May 15, 2026', value: -0.0058 },
+  { date: 'May 18, 2026', value: 0.0208 },
+  { date: 'May 19, 2026', value: 0.0008 },
+  { date: 'May 20, 2026', value: 0.0169 },
+  { date: 'May 21, 2026', value: 0.0047 },
+  { date: 'May 22, 2026', value: 0.0069 },
+];
+
+const heatmapModels = [
+  'Best Of All Time (MLP Alpha 130/30 - Original Model C)',
+  'Best Of Today (BR-PPO V1.0 Original Base)',
+  'Qsentia MLEQ',
+];
+
+const heatmapMonths = [
+  'All Months',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
 const benchmarkFallback = [
   { name: 'S&P 500', ticker: 'SPY', color: '#cbd5f5' },
   { name: 'Nasdaq 100', ticker: 'QQQ', color: '#a5b4fc' },
@@ -215,16 +293,29 @@ function Icon({ name, className }: { name: string; className?: string }) {
   }
 }
 
+function heatClass(value: number, isDark: boolean) {
+  if (value >= 0.02) return isDark ? 'bg-emerald-500/30 text-emerald-200' : 'bg-emerald-200 text-emerald-700';
+  if (value >= 0.01) return isDark ? 'bg-emerald-400/25 text-emerald-200' : 'bg-emerald-100 text-emerald-700';
+  if (value > 0) return isDark ? 'bg-emerald-300/20 text-emerald-200' : 'bg-emerald-50 text-emerald-700';
+  if (value <= -0.02) return isDark ? 'bg-rose-500/30 text-rose-200' : 'bg-rose-200 text-rose-700';
+  if (value <= -0.01) return isDark ? 'bg-rose-400/25 text-rose-200' : 'bg-rose-100 text-rose-700';
+  return isDark ? 'bg-rose-300/15 text-rose-200' : 'bg-rose-50 text-rose-700';
+}
+
 export default function HomePage() {
   const [activeStep, setActiveStep] = useState(0);
   const [isDark, setIsDark] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [heatmapModel, setHeatmapModel] = useState(heatmapModels[0]);
+  const [heatmapMonth, setHeatmapMonth] = useState('All Months');
+  const [heatmapYear, setHeatmapYear] = useState('All Years');
   const { data } = useSWR('/api/dashboard', fetcher, { refreshInterval: 60000 });
   const statsRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<HTMLDivElement | null>(null);
   const [statsInView, setStatsInView] = useState(false);
   const [chartInView, setChartInView] = useState(false);
   const strategyReveal = useReveal(0.25);
+  const leadersReveal = useReveal(0.2);
   const pillarsReveal = useReveal(0.2);
   const frameworkReveal = useReveal(0.2);
   const performanceReveal = useReveal(0.2);
@@ -316,6 +407,49 @@ export default function HomePage() {
       width: row.value === null ? 8 : Math.max(8, Math.round((Math.abs(row.value) / maxValue) * 100)),
     }));
   }, [data, selectedModel, stats]);
+
+  const heatmapYears = useMemo(() => {
+    const years = new Set(
+      heatmapDays.map((day) => new Date(day.date).getFullYear().toString())
+    );
+    return ['All Years', ...Array.from(years).sort()];
+  }, []);
+
+  const filteredHeatmapDays = useMemo(() => {
+    return heatmapDays.filter((day) => {
+      const date = new Date(day.date);
+      const matchesMonth =
+        heatmapMonth === 'All Months' ||
+        date.toLocaleString('en-US', { month: 'long' }) === heatmapMonth;
+      const matchesYear =
+        heatmapYear === 'All Years' ||
+        date.getFullYear().toString() === heatmapYear;
+      return matchesMonth && matchesYear;
+    });
+  }, [heatmapMonth, heatmapYear]);
+
+  const heatStats = useMemo(() => {
+    const values = filteredHeatmapDays.map((day) => day.value);
+    if (!values.length) {
+      return {
+        min: null,
+        max: null,
+        avg: null,
+        positive: 0,
+      };
+    }
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
+    const positive = values.filter((v) => v > 0).length;
+
+    return {
+      min,
+      max,
+      avg,
+      positive,
+    };
+  }, [filteredHeatmapDays]);
 
   return (
     <main className={`relative min-h-screen overflow-x-hidden ${isDark ? 'bg-[#0e0c1e] text-white' : 'bg-[#fbfbfb] text-black'}`}>
@@ -522,6 +656,204 @@ export default function HomePage() {
                 <div className="flex justify-between text-sm"><span className="text-[#4a4a72]">Max Drawdown</span><span className="text-red-600 font-mono font-semibold">{fmtPct(maxDrawdown, true)}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-[#4a4a72]">Win Rate</span><span className="text-green-600 font-mono font-semibold">{fmtPct(hitRate)}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-[#4a4a72]">Active Signals</span><span className="text-[#4f46e5] font-mono font-semibold">{stats?.nReturns ?? 'Pending'} / 100</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* LEADERBOARD */}
+      <section
+        id="leaders"
+        ref={leadersReveal.ref}
+        className={`relative z-10 py-20 ${isDark ? 'bg-[#11102a]/60' : 'bg-white/60'} backdrop-blur ${leadersReveal.visible ? 'reveal-visible' : ''}`}
+        data-reveal
+      >
+        <div className="mx-auto max-w-5xl px-6">
+          <div className={`font-bold uppercase tracking-widest text-xs ${accentText}`}>Performance Highlights</div>
+          <h2 className={`font-serif text-3xl md:text-5xl mt-2 ${textPrimary}`}>Best of Today and Best of All Time</h2>
+          <p className={`mt-3 max-w-2xl ${textSecondary}`}>
+            Curated leaderboards spotlight the strategies delivering the strongest risk-adjusted outcomes right now and across the full record.
+          </p>
+
+          <div className="grid gap-6 mt-10 md:grid-cols-2">
+            {leaderboardCards.map((card) => (
+              <div key={card.title} className={`rounded-2xl border p-6 shadow-sm ${cardClass}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className={`text-xs uppercase tracking-widest ${textMuted}`}>{card.title}</div>
+                    <div className={`text-xs mt-1 ${textSecondary}`}>{card.date}</div>
+                  </div>
+                  <span className={`text-[11px] rounded-full border px-2 py-1 ${pillClass}`}>{card.badge}</span>
+                </div>
+                <div className={`mt-5 font-serif text-xl ${textPrimary}`}>{card.model}</div>
+                <div className="mt-5 grid grid-cols-3 gap-4">
+                  <div>
+                    <div className={`text-xs ${textMuted}`}>Total Return</div>
+                    <div className={`text-lg font-semibold ${accentText}`}>{fmtPct(card.return, true)}</div>
+                  </div>
+                  <div>
+                    <div className={`text-xs ${textMuted}`}>Sharpe</div>
+                    <div className={`text-lg font-semibold ${textPrimary}`}>{fmtNum(card.sharpe, 2)}</div>
+                  </div>
+                  <div>
+                    <div className={`text-xs ${textMuted}`}>Hit Rate</div>
+                    <div className={`text-lg font-semibold ${textPrimary}`}>{fmtPct(card.hitRate)}</div>
+                  </div>
+                </div>
+                <div className={`mt-5 h-2 rounded-full ${isDark ? 'bg-white/10' : 'bg-[#e8e8f8]'}`}>
+                  <div
+                    className="h-2 rounded-full"
+                    style={{
+                      width: `${Math.min(100, Math.max(18, Math.round(card.return * 200)))}%`,
+                      background: isDark ? '#a5b4fc' : '#4f46e5',
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className={`rounded-2xl border p-6 ${cardClass}`}>
+              <div className={`text-xs uppercase tracking-widest ${textMuted}`}>Top Positions Today</div>
+              <div className="mt-4 space-y-4">
+                {todayLeaders.map((row) => (
+                  <div key={row.label} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className={textSecondary}>{row.label}</span>
+                      <span className={`font-mono ${row.value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {fmtPct(row.value, true)}
+                      </span>
+                    </div>
+                    <div className={`h-2 rounded-full ${isDark ? 'bg-white/10' : 'bg-[#e8e8f8]'}`}>
+                      <div
+                        className="h-2 rounded-full"
+                        style={{
+                          width: `${Math.min(100, Math.max(8, Math.round(Math.abs(row.value) * 1200)))}%`,
+                          background: row.color,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className={`rounded-2xl border p-6 ${cardClass}`}>
+              <div className={`text-xs uppercase tracking-widest ${textMuted}`}>Strategy Pulse</div>
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                {todayTiles.map((tile) => (
+                  <div key={tile.label} className={`rounded-xl border p-3 ${isDark ? 'border-white/10 bg-white/5' : 'border-[#e0e0f7] bg-white/70'}`}>
+                    <div className={`text-[11px] uppercase tracking-widest ${textMuted}`}>{tile.label}</div>
+                    <div className={`mt-2 text-lg font-semibold ${textPrimary}`}>{tile.value}</div>
+                    <div className={`text-xs mt-1 ${tile.tone === 'good' ? 'text-green-600' : tile.tone === 'bad' ? 'text-red-600' : textMuted}`}>
+                      {tile.delta} vs avg
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* RETURN HEATMAP */}
+      <section
+        id="heatmap"
+        className={`relative z-10 pb-24 ${isDark ? 'bg-[#11102a]/60' : 'bg-white/60'} backdrop-blur`}
+      >
+        <div className="mx-auto max-w-5xl px-6">
+          <div className={`rounded-3xl border p-6 md:p-8 ${cardClass}`}>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className={`text-xs uppercase tracking-widest ${textMuted}`}>Return Heat Map</div>
+                <div className={`mt-2 font-serif text-2xl ${textPrimary}`}>
+                  MLP Alpha 130/30 - Original Model C
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3 text-xs">
+                <label className={`flex items-center gap-2 rounded-full border px-3 py-2 ${pillClass}`}>
+                  <span className={textMuted}>Model</span>
+                  <select
+                    value={heatmapModel}
+                    onChange={(event) => setHeatmapModel(event.target.value)}
+                    className={`bg-transparent outline-none ${textPrimary}`}
+                  >
+                    {heatmapModels.map((model) => (
+                      <option key={model} value={model} className="text-black">
+                        {model}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className={`flex items-center gap-2 rounded-full border px-3 py-2 ${pillClass}`}>
+                  <span className={textMuted}>Month</span>
+                  <select
+                    value={heatmapMonth}
+                    onChange={(event) => setHeatmapMonth(event.target.value)}
+                    className={`bg-transparent outline-none ${textPrimary}`}
+                  >
+                    {heatmapMonths.map((month) => (
+                      <option key={month} value={month} className="text-black">
+                        {month}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className={`flex items-center gap-2 rounded-full border px-3 py-2 ${pillClass}`}>
+                  <span className={textMuted}>Year</span>
+                  <select
+                    value={heatmapYear}
+                    onChange={(event) => setHeatmapYear(event.target.value)}
+                    className={`bg-transparent outline-none ${textPrimary}`}
+                  >
+                    {heatmapYears.map((year) => (
+                      <option key={year} value={year} className="text-black">
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {filteredHeatmapDays.map((day) => (
+                <div
+                  key={day.date}
+                  className={`rounded-xl border px-3 py-4 text-center ${isDark ? 'border-white/10' : 'border-[#e0e0f7]'} ${heatClass(day.value, isDark)}`}
+                >
+                  <div className="text-[11px] uppercase tracking-widest opacity-70">{day.date}</div>
+                  <div className="mt-2 text-sm font-semibold">{fmtPct(day.value, true)}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 grid gap-6 text-xs md:grid-cols-2">
+              <div className="flex items-center justify-between">
+                <div className={textMuted}>Start</div>
+                <div className={textPrimary}>{filteredHeatmapDays[0]?.date ?? 'Pending'}</div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className={textMuted}>End</div>
+                <div className={textPrimary}>{filteredHeatmapDays[filteredHeatmapDays.length - 1]?.date ?? 'Pending'}</div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className={textMuted}>Min</div>
+                <div className={textPrimary}>{fmtPct(heatStats.min ?? undefined, true)}</div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className={textMuted}>Max</div>
+                <div className={textPrimary}>{fmtPct(heatStats.max ?? undefined, true)}</div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className={textMuted}>Average Session</div>
+                <div className={textPrimary}>{fmtPct(heatStats.avg ?? undefined, true)}</div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className={textMuted}>Positive Sessions</div>
+                <div className={textPrimary}>{heatStats.positive}/{filteredHeatmapDays.length}</div>
               </div>
             </div>
           </div>
