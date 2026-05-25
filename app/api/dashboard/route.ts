@@ -7,10 +7,10 @@ export const dynamic = 'force-dynamic';
 const REGISTRY_OWNER = process.env.NEXT_PUBLIC_QSENTIA_REPO_OWNER || 'FinTechEntrepreneurldz';
 const REGISTRY_REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'Base_Model_BR_PPO';
 const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
-const BTC_ETH_PERP_BASIS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const BRPPO_MACRO_ALPACA_MODEL_ID = 'qsentia_brppo_macro_rotation_alpaca';
 const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
-const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || BTC_ETH_PERP_BASIS_MODEL_ID;
+const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || BRPPO_MACRO_ALPACA_MODEL_ID;
+const RETIRED_MODEL_IDS = new Set(['qsentia_btc_eth_perp_basis_alpha']);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   'real_crypto_carry_ibkr',
   'delta_neutral_crypto_funding',
@@ -30,17 +30,6 @@ const BENCHMARKS = [
 ];
 
 const REQUIRED_MODELS: ModelConfig[] = [
-  {
-    id: BTC_ETH_PERP_BASIS_MODEL_ID,
-    name: 'QSentia BTC/ETH Perp Basis Alpha — IBKR',
-    description:
-      'BTC/ETH spot-versus-perpetual-style futures basis alpha strategy using IBKR paper execution and canonical QSentia dashboard logs.',
-    repo: 'FinTechEntrepreneurldz/qsentia-btc-eth-perp-basis-alpha',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#14b8a6',
-  },
   {
     id: BRPPO_MACRO_ALPACA_MODEL_ID,
     name: 'QSentia BR-PPO Macro Rotation — Alpaca',
@@ -207,7 +196,9 @@ async function fetchModelsRegistry(): Promise<ModelConfig[]> {
   ];
   const registry = parsed.length ? parsed : fallback;
 
-  return mergeRequiredModels(registry).filter((m) => m.enabled !== false);
+  return mergeRequiredModels(registry).filter(
+    (m) => m.enabled !== false && !RETIRED_MODEL_IDS.has(m.id)
+  );
 }
 
 function mergeRequiredModels(models: ModelConfig[]) {

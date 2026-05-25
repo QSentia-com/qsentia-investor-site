@@ -23,7 +23,26 @@ import { computeStats, fmtDollar, fmtNum, fmtPct } from '@/lib/metrics';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 const DEFAULT_ACCOUNT_MODEL_ID =
-  process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || 'qsentia_btc_eth_perp_basis_alpha';
+  process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || 'qsentia_brppo_macro_rotation_alpaca';
+
+type FundSummaryRow = {
+  id: string;
+  name: string;
+  color: string;
+  latestValue: number | null;
+  dayReturn?: number | null;
+  totalReturn?: number | null;
+  inceptionDate?: string;
+  observations?: number;
+  sparkline?: number[];
+};
+
+type FundGridRow = FundSummaryRow & {
+  totalReturn: number | null;
+  dayReturn: number | null;
+  observations: number;
+  sparkline: number[];
+};
 
 function getHighestSharpeModelId(modelComparison: any[]) {
   const candidates = (modelComparison || [])
@@ -267,7 +286,7 @@ function commonWindowLeaderboardRows(data: any) {
 
 export default function DashboardPage() {
   const [model, setModel] = useState<string | null>(null);
-  const [selectedFundDetail, setSelectedFundDetail] = useState<any>(null);
+  const [selectedFundDetail, setSelectedFundDetail] = useState<FundSummaryRow | null>(null);
 
   const { data, error, isLoading } = useSWR(
     `/api/dashboard${model ? `?model=${model}` : ''}`,
@@ -297,7 +316,7 @@ export default function DashboardPage() {
     }
   }, [bestSharpeModelId, data?.registry, data?.selectedModel, model]);
 
-  const fundGridRows = useMemo(() => {
+  const fundGridRows = useMemo<FundGridRow[]>(() => {
     return (data?.modelComparison || [])
       .map((model: any) => {
         const totalReturn = Number(model?.stats?.totalReturn);
@@ -313,14 +332,14 @@ export default function DashboardPage() {
         const pointCount = Number(model?.stats?.nObservations ?? model?.points?.length ?? 0);
 
         return {
-          id: model.id,
-          name: model.name || model.id,
+          id: String(model.id || model.name || 'model'),
+          name: String(model.name || model.id || 'Model'),
           color: model.color || '#3b35d4',
           totalReturn: Number.isFinite(totalReturn) ? totalReturn : null,
           dayReturn,
           inceptionDate: model?.inceptionDate || model?.points?.[0]?.timestamp,
           observations: pointCount,
-          latestValue: model?.latestValue ?? null,
+          latestValue: Number.isFinite(Number(model?.latestValue)) ? Number(model.latestValue) : null,
           sparkline: sparklineBars(points),
         };
       })
@@ -610,7 +629,7 @@ function TopNav({
   );
 }
 
-function FundDetailModal({ fund, onClose }: { fund: any | null; onClose: () => void }) {
+function FundDetailModal({ fund, onClose }: { fund: FundSummaryRow | null; onClose: () => void }) {
   const [timePeriod, setTimePeriod] = useState('1Y');
 
   if (!fund) return null;

@@ -9,6 +9,25 @@ import { fmtNum, fmtPct } from '@/lib/metrics';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+type HeatmapDay = {
+  dateKey: string;
+  label: string;
+  value: number;
+};
+
+type BenchmarkBar = {
+  name: string;
+  value: number | null;
+  color: string;
+  width?: number;
+};
+
+type LeaderRow = {
+  label: string;
+  value: number;
+  color: string;
+};
+
 function percentLabel(value: number | null | undefined) {
   const formatted = fmtPct(value);
   return formatted === 'Pending' ? formatted : formatted.replace('%', '');
@@ -326,11 +345,11 @@ export default function HomePage() {
   }, []);
 
 
-  const benchmarkBars = useMemo(() => {
+  const benchmarkBars = useMemo<BenchmarkBar[]>(() => {
     const bench = data?.benchmarks?.length ? data.benchmarks : benchmarkFallback;
-    const modelReturn = stats?.totalReturn ?? null;
+    const modelReturn = Number.isFinite(Number(stats?.totalReturn)) ? Number(stats.totalReturn) : null;
 
-    const rows = [
+    const rows: BenchmarkBar[] = [
       {
         name: selectedModel?.name || 'Qsentia MLEQ',
         value: modelReturn,
@@ -341,7 +360,7 @@ export default function HomePage() {
 
         return {
           name: b?.name || ticker || 'Benchmark',
-          value: b?.stats?.totalReturn ?? null,
+          value: Number.isFinite(Number(b?.stats?.totalReturn)) ? Number(b.stats.totalReturn) : null,
           color: benchmarkColorOverrides[ticker] || b?.color || '#6b7280',
         };
       }),
@@ -349,10 +368,10 @@ export default function HomePage() {
 
     const maxValue = Math.max(
       0.05,
-      ...rows.map((row) => (Number.isFinite(row.value) ? Math.abs(row.value) : 0))
+      ...rows.map((row) => (row.value !== null ? Math.abs(row.value) : 0))
     );
 
-    return rows.map((row) => ({
+    return rows.map((row): BenchmarkBar => ({
       ...row,
       width: row.value === null ? 8 : Math.max(8, Math.round((Math.abs(row.value) / maxValue) * 100)),
     }));
@@ -366,11 +385,12 @@ export default function HomePage() {
 
   const heatmapModelOptions = useMemo(() => data?.registry ?? [], [data]);
 
-  const heatmapDays = useMemo(() => {
-    const source = heatmapData?.returns ?? data?.returns ?? [];
+  const heatmapDays = useMemo<HeatmapDay[]>(() => {
+    const source: Array<{ timestamp?: string; return?: number | string | null }> =
+      heatmapData?.returns ?? data?.returns ?? [];
 
     return source
-      .map((point: { timestamp?: string; return?: number }) => {
+      .map((point) => {
         const dateKey = String(point.timestamp || '').slice(0, 10);
         const date = new Date(`${dateKey}T00:00:00Z`);
 
@@ -388,12 +408,8 @@ export default function HomePage() {
           value: Number(point.return) || 0,
         };
       })
-      .filter(Boolean)
-      .sort((a, b) => (a?.dateKey || '').localeCompare(b?.dateKey || '')) as Array<{
-      dateKey: string;
-      label: string;
-      value: number;
-    }>;
+      .filter((day): day is HeatmapDay => day !== null)
+      .sort((a, b) => a.dateKey.localeCompare(b.dateKey));
   }, [data, heatmapData]);
 
   const heatmapYears = useMemo(() => {
@@ -469,14 +485,14 @@ export default function HomePage() {
     ];
   }, [data]);
 
-  const todayLeaders = useMemo(() => {
+  const todayLeaders = useMemo<LeaderRow[]>(() => {
     const models = (data?.modelComparison || [])
       .map((model: any) => ({
         label: model?.name || model?.id,
-        value: model?.stats?.totalReturn ?? null,
+        value: Number(model?.stats?.totalReturn),
         color: model?.color || '#4f46e5',
       }))
-      .filter((row: any) => Number.isFinite(row.value))
+      .filter((row: LeaderRow) => Number.isFinite(row.value))
       .sort((a: any, b: any) => (b.value ?? 0) - (a.value ?? 0))
       .slice(0, 5);
 
