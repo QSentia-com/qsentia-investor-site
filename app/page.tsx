@@ -14,6 +14,13 @@ function percentLabel(value: number | null | undefined) {
   return formatted === 'Pending' ? formatted : formatted.replace('%', '');
 }
 
+function formatDateLabel(dateKey?: string | null) {
+  if (!dateKey) return 'Pending';
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return dateKey;
+  return date.toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+}
+
 const frameworkSteps = [
   {
     title: 'Signal Generation',
@@ -81,68 +88,6 @@ const approachCards = [
     title: 'Behavioral Sciences',
     desc: 'ML-driven analysis of investor biases, sentiment extremes, and crowd psychology to exploit market mispricing.',
   },
-];
-
-const leaderboardCards = [
-  {
-    title: 'Best of Today',
-    date: 'May 25, 2026',
-    model: 'BR-PPO V1.0 Original Base',
-    return: 0.086,
-    sharpe: 1.9,
-    hitRate: 0.68,
-    badge: 'LIVE NOW',
-  },
-  {
-    title: 'Best of All Time',
-    date: 'Jan 2023 - Present',
-    model: 'ML Alpha 30/30 - Original Model C',
-    return: 0.402,
-    sharpe: 1.85,
-    hitRate: 0.74,
-    badge: 'ALL TIME',
-  },
-];
-
-const todayLeaders = [
-  { label: 'Qsentia MLEQ', value: 0.086, color: '#16a34a' },
-  { label: 'Alpha X.18', value: 0.062, color: '#4f46e5' },
-  { label: 'Macro Cycle 4M', value: 0.044, color: '#0ea5e9' },
-  { label: 'Value Core Z', value: -0.012, color: '#dc2626' },
-  { label: 'Global Neutral', value: -0.018, color: '#f59e0b' },
-];
-
-const todayTiles = [
-  { label: 'Top Signals Today', value: '28 / 120', delta: '+12%', tone: 'good' },
-  { label: 'Winning Positions', value: '19', delta: '+4', tone: 'good' },
-  { label: 'Avg. Holding', value: '3.2d', delta: '-0.4d', tone: 'neutral' },
-  { label: 'Downside Guard', value: '0.92', delta: '+0.08', tone: 'good' },
-  { label: 'Drawdown Alert', value: 'Stable', delta: '0', tone: 'neutral' },
-  { label: 'Execution Score', value: 'A-', delta: '+1', tone: 'good' },
-];
-
-const heatmapDays = [
-  { date: 'May 04, 2026', value: -0.005 },
-  { date: 'May 05, 2026', value: -0.0005 },
-  { date: 'May 06, 2026', value: 0.0233 },
-  { date: 'May 07, 2026', value: 0.0022 },
-  { date: 'May 08, 2026', value: 0.0009 },
-  { date: 'May 11, 2026', value: -0.0158 },
-  { date: 'May 12, 2026', value: -0.0063 },
-  { date: 'May 13, 2026', value: -0.0213 },
-  { date: 'May 14, 2026', value: -0.0005 },
-  { date: 'May 15, 2026', value: -0.0058 },
-  { date: 'May 18, 2026', value: 0.0208 },
-  { date: 'May 19, 2026', value: 0.0008 },
-  { date: 'May 20, 2026', value: 0.0169 },
-  { date: 'May 21, 2026', value: 0.0047 },
-  { date: 'May 22, 2026', value: 0.0069 },
-];
-
-const heatmapModels = [
-  'Best Of All Time (MLP Alpha 130/30 - Original Model C)',
-  'Best Of Today (BR-PPO V1.0 Original Base)',
-  'Qsentia MLEQ',
 ];
 
 const heatmapMonths = [
@@ -306,10 +251,15 @@ export default function HomePage() {
   const [activeStep, setActiveStep] = useState(0);
   const [isDark, setIsDark] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [heatmapModel, setHeatmapModel] = useState(heatmapModels[0]);
+  const [heatmapModel, setHeatmapModel] = useState('');
   const [heatmapMonth, setHeatmapMonth] = useState('All Months');
   const [heatmapYear, setHeatmapYear] = useState('All Years');
   const { data } = useSWR('/api/dashboard', fetcher, { refreshInterval: 60000 });
+  const { data: heatmapData } = useSWR(
+    () => (heatmapModel ? `/api/dashboard?model=${encodeURIComponent(heatmapModel)}` : null),
+    fetcher,
+    { refreshInterval: 60000 }
+  );
   const statsRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<HTMLDivElement | null>(null);
   const [statsInView, setStatsInView] = useState(false);
@@ -408,16 +358,54 @@ export default function HomePage() {
     }));
   }, [data, selectedModel, stats]);
 
+  useEffect(() => {
+    if (!heatmapModel && data?.selectedModel) {
+      setHeatmapModel(data.selectedModel);
+    }
+  }, [data, heatmapModel]);
+
+  const heatmapModelOptions = useMemo(() => data?.registry ?? [], [data]);
+
+  const heatmapDays = useMemo(() => {
+    const source = heatmapData?.returns ?? data?.returns ?? [];
+
+    return source
+      .map((point: { timestamp?: string; return?: number }) => {
+        const dateKey = String(point.timestamp || '').slice(0, 10);
+        const date = new Date(`${dateKey}T00:00:00Z`);
+
+        if (!dateKey || Number.isNaN(date.getTime())) {
+          return null;
+        }
+
+        return {
+          dateKey,
+          label: date.toLocaleString('en-US', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric',
+          }),
+          value: Number(point.return) || 0,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => (a?.dateKey || '').localeCompare(b?.dateKey || '')) as Array<{
+      dateKey: string;
+      label: string;
+      value: number;
+    }>;
+  }, [data, heatmapData]);
+
   const heatmapYears = useMemo(() => {
     const years = new Set(
-      heatmapDays.map((day) => new Date(day.date).getFullYear().toString())
+      heatmapDays.map((day) => new Date(`${day.dateKey}T00:00:00Z`).getFullYear().toString())
     );
     return ['All Years', ...Array.from(years).sort()];
-  }, []);
+  }, [heatmapDays]);
 
   const filteredHeatmapDays = useMemo(() => {
     return heatmapDays.filter((day) => {
-      const date = new Date(day.date);
+      const date = new Date(`${day.dateKey}T00:00:00Z`);
       const matchesMonth =
         heatmapMonth === 'All Months' ||
         date.toLocaleString('en-US', { month: 'long' }) === heatmapMonth;
@@ -426,7 +414,7 @@ export default function HomePage() {
         date.getFullYear().toString() === heatmapYear;
       return matchesMonth && matchesYear;
     });
-  }, [heatmapMonth, heatmapYear]);
+  }, [heatmapDays, heatmapMonth, heatmapYear]);
 
   const heatStats = useMemo(() => {
     const values = filteredHeatmapDays.map((day) => day.value);
@@ -450,6 +438,106 @@ export default function HomePage() {
       positive,
     };
   }, [filteredHeatmapDays]);
+
+  const leaderboardCards = useMemo(() => {
+    const latestReturn = data?.returns?.length ? data.returns[data.returns.length - 1] : null;
+    const latestDate = latestReturn?.timestamp ? formatDateLabel(latestReturn.timestamp) : 'Today';
+    const selectedConfig = data?.selectedModelConfig;
+    const allTime = (data?.modelComparison || [])
+      .filter((model: any) => Number.isFinite(model?.stats?.totalReturn))
+      .sort((a: any, b: any) => (b.stats.totalReturn ?? 0) - (a.stats.totalReturn ?? 0))[0];
+
+    return [
+      {
+        title: 'Best of Today',
+        date: latestDate,
+        model: selectedConfig?.name || 'Selected Model',
+        return: latestReturn?.return ?? data?.stats?.totalReturn ?? null,
+        sharpe: data?.stats?.sharpe ?? null,
+        hitRate: data?.stats?.hitRate ?? null,
+        badge: 'LIVE NOW',
+      },
+      {
+        title: 'Best of All Time',
+        date: allTime?.inceptionDate ? `${formatDateLabel(allTime.inceptionDate)} - Present` : 'All Time',
+        model: allTime?.name || 'Top Model',
+        return: allTime?.stats?.totalReturn ?? null,
+        sharpe: allTime?.stats?.sharpe ?? null,
+        hitRate: allTime?.stats?.hitRate ?? null,
+        badge: 'ALL TIME',
+      },
+    ];
+  }, [data]);
+
+  const todayLeaders = useMemo(() => {
+    const models = (data?.modelComparison || [])
+      .map((model: any) => ({
+        label: model?.name || model?.id,
+        value: model?.stats?.totalReturn ?? null,
+        color: model?.color || '#4f46e5',
+      }))
+      .filter((row: any) => Number.isFinite(row.value))
+      .sort((a: any, b: any) => (b.value ?? 0) - (a.value ?? 0))
+      .slice(0, 5);
+
+    return models;
+  }, [data]);
+
+  const todayTiles = useMemo(() => {
+    const stats = data?.stats;
+    const latest = data?.latest;
+    const actions = Array.isArray(data?.actionCounts)
+      ? data.actionCounts.reduce((sum: number, row: any) => sum + (row?.count ?? 0), 0)
+      : null;
+
+    return [
+      {
+        label: 'Portfolio Return',
+        value: fmtPct(latest?.portfolioReturn ?? null, true),
+        subLabel: latest?.paperStatus || 'Pending',
+        tone: 'good',
+      },
+      {
+        label: 'Sharpe Ratio',
+        value: fmtNum(stats?.sharpe ?? null, 2),
+        subLabel: stats?.status === 'ready' ? 'Ready' : 'Partial',
+        tone: 'neutral',
+      },
+      {
+        label: 'Hit Rate',
+        value: fmtPct(stats?.hitRate ?? null),
+        subLabel: `${stats?.nReturns ?? 0} returns`,
+        tone: 'good',
+      },
+      {
+        label: 'Max Drawdown',
+        value: fmtPct(stats?.maxDrawdown ?? null, true),
+        subLabel: 'Peak-to-trough',
+        tone: 'bad',
+      },
+      {
+        label: 'Volatility',
+        value: fmtPct(stats?.volatility ?? null),
+        subLabel: 'Annualized',
+        tone: 'neutral',
+      },
+      {
+        label: 'Signals Logged',
+        value: actions !== null ? String(actions) : 'Pending',
+        subLabel: 'Actions tracked',
+        tone: 'neutral',
+      },
+    ];
+  }, [data]);
+
+  const heatmapModelName = useMemo(() => {
+    return (
+      heatmapModelOptions.find((model: { id: string; name: string }) => model.id === heatmapModel)
+        ?.name ||
+      data?.selectedModelConfig?.name ||
+      'Return Heat Map'
+    );
+  }, [data, heatmapModel, heatmapModelOptions]);
 
   return (
     <main className={`relative min-h-screen overflow-x-hidden ${isDark ? 'bg-[#0e0c1e] text-white' : 'bg-[#fbfbfb] text-black'}`}>
@@ -718,25 +806,31 @@ export default function HomePage() {
             <div className={`rounded-2xl border p-6 ${cardClass}`}>
               <div className={`text-xs uppercase tracking-widest ${textMuted}`}>Top Positions Today</div>
               <div className="mt-4 space-y-4">
-                {todayLeaders.map((row) => (
-                  <div key={row.label} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className={textSecondary}>{row.label}</span>
-                      <span className={`font-mono ${row.value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {fmtPct(row.value, true)}
-                      </span>
+                {todayLeaders.length ? (
+                  todayLeaders.map((row) => (
+                    <div key={row.label} className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className={textSecondary}>{row.label}</span>
+                        <span className={`font-mono ${row.value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {fmtPct(row.value, true)}
+                        </span>
+                      </div>
+                      <div className={`h-2 rounded-full ${isDark ? 'bg-white/10' : 'bg-[#e8e8f8]'}`}>
+                        <div
+                          className="h-2 rounded-full"
+                          style={{
+                            width: `${Math.min(100, Math.max(8, Math.round(Math.abs(row.value) * 1200)))}%`,
+                            background: row.color,
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div className={`h-2 rounded-full ${isDark ? 'bg-white/10' : 'bg-[#e8e8f8]'}`}>
-                      <div
-                        className="h-2 rounded-full"
-                        style={{
-                          width: `${Math.min(100, Math.max(8, Math.round(Math.abs(row.value) * 1200)))}%`,
-                          background: row.color,
-                        }}
-                      />
-                    </div>
+                  ))
+                ) : (
+                  <div className={`rounded-xl border p-4 text-sm ${isDark ? 'border-white/10 text-[#c4c4e8]' : 'border-[#e0e0f7] text-[#4a4a72]'}`}>
+                    Waiting for model data to populate.
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
@@ -748,7 +842,7 @@ export default function HomePage() {
                     <div className={`text-[11px] uppercase tracking-widest ${textMuted}`}>{tile.label}</div>
                     <div className={`mt-2 text-lg font-semibold ${textPrimary}`}>{tile.value}</div>
                     <div className={`text-xs mt-1 ${tile.tone === 'good' ? 'text-green-600' : tile.tone === 'bad' ? 'text-red-600' : textMuted}`}>
-                      {tile.delta} vs avg
+                      {tile.subLabel}
                     </div>
                   </div>
                 ))}
@@ -769,7 +863,7 @@ export default function HomePage() {
               <div>
                 <div className={`text-xs uppercase tracking-widest ${textMuted}`}>Return Heat Map</div>
                 <div className={`mt-2 font-serif text-2xl ${textPrimary}`}>
-                  MLP Alpha 130/30 - Original Model C
+                  {heatmapModelName}
                 </div>
               </div>
               <div className="flex flex-wrap gap-3 text-xs">
@@ -780,9 +874,9 @@ export default function HomePage() {
                     onChange={(event) => setHeatmapModel(event.target.value)}
                     className={`bg-transparent outline-none ${textPrimary}`}
                   >
-                    {heatmapModels.map((model) => (
-                      <option key={model} value={model} className="text-black">
-                        {model}
+                    {heatmapModelOptions.map((model: { id: string; name: string }) => (
+                      <option key={model.id} value={model.id} className="text-black">
+                        {model.name}
                       </option>
                     ))}
                   </select>
@@ -821,10 +915,10 @@ export default function HomePage() {
             <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {filteredHeatmapDays.map((day) => (
                 <div
-                  key={day.date}
+                  key={day.dateKey}
                   className={`rounded-xl border px-3 py-4 text-center ${isDark ? 'border-white/10' : 'border-[#e0e0f7]'} ${heatClass(day.value, isDark)}`}
                 >
-                  <div className="text-[11px] uppercase tracking-widest opacity-70">{day.date}</div>
+                  <div className="text-[11px] uppercase tracking-widest opacity-70">{day.label}</div>
                   <div className="mt-2 text-sm font-semibold">{fmtPct(day.value, true)}</div>
                 </div>
               ))}
@@ -833,11 +927,11 @@ export default function HomePage() {
             <div className="mt-6 grid gap-6 text-xs md:grid-cols-2">
               <div className="flex items-center justify-between">
                 <div className={textMuted}>Start</div>
-                <div className={textPrimary}>{filteredHeatmapDays[0]?.date ?? 'Pending'}</div>
+                <div className={textPrimary}>{filteredHeatmapDays[0]?.label ?? 'Pending'}</div>
               </div>
               <div className="flex items-center justify-between">
                 <div className={textMuted}>End</div>
-                <div className={textPrimary}>{filteredHeatmapDays[filteredHeatmapDays.length - 1]?.date ?? 'Pending'}</div>
+                <div className={textPrimary}>{filteredHeatmapDays[filteredHeatmapDays.length - 1]?.label ?? 'Pending'}</div>
               </div>
               <div className="flex items-center justify-between">
                 <div className={textMuted}>Min</div>
