@@ -115,8 +115,7 @@ function rawUrl(repoFullName: string, branch: string, path: string) {
 
 async function fetchTextFromRaw(repoFullName: string, branch: string, path: string) {
   try {
-    const url = `${rawUrl(repoFullName, branch, path)}?cb=${Date.now()}`;
-    const response = await fetch(url, {
+    const response = await fetch(rawUrl(repoFullName, branch, path), {
       cache: 'no-store',
       headers: { 'Cache-Control': 'no-cache' },
     });
