@@ -9,6 +9,7 @@ const REGISTRY_REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'Base_Model_B
 const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
 const BRPPO_MACRO_ALPACA_MODEL_ID = 'qsentia_brppo_macro_rotation_alpaca';
 const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
+const MODEL_C_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_model_c_sentiment_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || BRPPO_MACRO_ALPACA_MODEL_ID;
 const RETIRED_MODEL_IDS = new Set(['qsentia_btc_eth_perp_basis_alpha']);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
@@ -51,6 +52,17 @@ const REQUIRED_MODELS: ModelConfig[] = [
     branch: 'main',
     enabled: true,
     color: '#f59e0b',
+  },
+  {
+    id: MODEL_C_SENTIMENT_ALPHA_MODEL_ID,
+    name: 'QSentia Model C Sentiment Alpha',
+    description:
+      'Sector-neutral Model C equity MLP with live FinBERT news sentiment overlay and Alpaca paper execution.',
+    repo: 'FinTechEntrepreneurldz/qsentia-model-c-sentiment-alpha',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#6366f1',
   },
 ];
 
@@ -606,7 +618,8 @@ export async function GET(request: Request) {
     targetWeightHistoryRows,
     positionsRows,
     plannedOrdersRows,
-    submittedOrdersRows,
+    submittedOrdersPrimaryRows,
+    submittedOrdersFallbackRows,
     ordersHistoryRows,
     signalHistoryRows,
     healthStatus,
@@ -622,6 +635,7 @@ export async function GET(request: Request) {
     fetchCsvFromModel(selectedModelConfig, 'positions/latest_positions.csv'),
     fetchCsvFromModel(selectedModelConfig, 'orders/latest_planned_orders.csv'),
     fetchCsvFromModel(selectedModelConfig, 'orders/latest_submitted_orders.csv'),
+    fetchCsvFromModel(selectedModelConfig, 'orders/latest_orders.csv'),
     fetchCsvFromModel(selectedModelConfig, 'orders/submitted_orders.csv'),
     fetchCsvFromModel(selectedModelConfig, 'health/signal_history.csv'),
     fetchJsonFromModel<Record<string, unknown>>(
@@ -639,6 +653,9 @@ export async function GET(request: Request) {
     benchmarkStartDateFromFirstModel(registry),
   ]);
 
+  const submittedOrdersRows = submittedOrdersPrimaryRows.length
+    ? submittedOrdersPrimaryRows
+    : submittedOrdersFallbackRows;
   const paperStatus = inferPaperStatus(positionsRows, submittedOrdersRows);
   const latestRealismStatus =
     typeof executionRealism?.paper_replay_status === 'string'
