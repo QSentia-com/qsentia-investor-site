@@ -573,11 +573,11 @@ export default function HomePage() {
             />
           </div>
           <div className="hidden items-center gap-6 text-sm font-medium md:flex">
-            <Link href="/marketplace" className={isDark ? 'text-[#c4c4e8] hover:text-white' : 'text-[#4a4a72] hover:text-[#4f46e5]'}>Marketplace</Link>
             <a href="#strategy" className={isDark ? 'text-[#c4c4e8] hover:text-white' : 'text-[#4a4a72] hover:text-[#4f46e5]'}>Strategy</a>
             <a href="#framework" className={isDark ? 'text-[#c4c4e8] hover:text-white' : 'text-[#4a4a72] hover:text-[#4f46e5]'}>Framework</a>
             <a href="#performance" className={isDark ? 'text-[#c4c4e8] hover:text-white' : 'text-[#4a4a72] hover:text-[#4f46e5]'}>Performance</a>
             <a href="#approach" className={isDark ? 'text-[#c4c4e8] hover:text-white' : 'text-[#4a4a72] hover:text-[#4f46e5]'}>Approach</a>
+            <Link href="/marketplace" className={`font-bold ${isDark ? 'text-[#a5b4fc] hover:text-white' : 'text-[#4f46e5] hover:text-[#4338ca]'}`}>Marketplace</Link>
             <button
               type="button"
               onClick={() => setIsDark((prev) => !prev)}
@@ -599,11 +599,11 @@ export default function HomePage() {
         {isMenuOpen && (
           <div className={`md:hidden border-t ${isDark ? 'border-white/10 bg-[#11102a]/95' : 'border-[#e0e0f7] bg-white/95'}`}>
             <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-4 text-sm">
-              <Link href="/marketplace" className={isDark ? 'text-[#c4c4e8]' : 'text-[#4a4a72]'}>Marketplace</Link>
               <a href="#strategy" className={isDark ? 'text-[#c4c4e8]' : 'text-[#4a4a72]'}>Strategy</a>
               <a href="#framework" className={isDark ? 'text-[#c4c4e8]' : 'text-[#4a4a72]'}>Framework</a>
               <a href="#performance" className={isDark ? 'text-[#c4c4e8]' : 'text-[#4a4a72]'}>Performance</a>
               <a href="#approach" className={isDark ? 'text-[#c4c4e8]' : 'text-[#4a4a72]'}>Approach</a>
+              <Link href="/marketplace" className={`font-bold ${isDark ? 'text-[#a5b4fc]' : 'text-[#4f46e5]'}`}>Marketplace</Link>
               <button
                 type="button"
                 onClick={() => setIsDark((prev) => !prev)}
@@ -690,104 +690,6 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-
-      {/* AI MODELS MARKETPLACE SECTION */}
-      <section className={`relative z-10 py-24 ${isDark ? 'bg-transparent' : 'bg-transparent'}`}>
-        <div className="container mx-auto max-w-5xl px-6">
-          <div className="text-center mb-12">
-            <div className={`mb-2 font-bold uppercase tracking-widest text-xs ${accentText}`}>AI Trading Models</div>
-            <h2 className={`font-serif text-3xl md:text-5xl mb-4 ${textPrimary}`}>Institutional-Grade<br />Model Marketplace</h2>
-            <p className={`mx-auto max-w-2xl text-base ${textSecondary}`}>
-              Browse our collection of production-ready AI trading models. Each model is battle-tested, optimized for real-time execution, and available via simple API access.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6 mb-10">
-            <div className={`p-6 rounded-xl border ${cardClass}`}>
-              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-4 ${isDark ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-100 text-emerald-700'}`}>
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                LIVE
-              </div>
-              <h3 className={`text-xl font-bold mb-2 ${textPrimary}`}>QSentia BTC/ETH Perp Basis Alpha</h3>
-              <p className={`text-sm mb-4 ${textSecondary}`}>Market-neutral basis trading with IBKR execution</p>
-              <div className={`grid grid-cols-2 gap-3 mb-4 text-xs ${textMuted}`}>
-                <div>
-                  <div className={`text-lg font-bold ${textPrimary}`}>2.34</div>
-                  <div>Sharpe Ratio</div>
-                </div>
-                <div>
-                  <div className={`text-lg font-bold text-emerald-500`}>+42.7%</div>
-                  <div>Annual Return</div>
-                </div>
-              </div>
-              <Link href="/marketplace/qsentia-btc-eth-perp-basis-alpha" className={`block text-center py-2 px-4 rounded-lg border font-medium text-sm transition ${isDark ? 'border-white/20 text-white hover:bg-white/10' : 'border-[#4f46e5] text-[#4f46e5] hover:bg-[#4f46e5] hover:text-white'}`}>
-                View Details →
-              </Link>
-            </div>
-
-            <div className={`p-6 rounded-xl border ${cardClass}`}>
-              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-4 ${isDark ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-100 text-emerald-700'}`}>
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                LIVE
-              </div>
-              <h3 className={`text-xl font-bold mb-2 ${textPrimary}`}>MLP Alpha 130/30 — Model C</h3>
-              <p className={`text-sm mb-4 ${textSecondary}`}>Long-short equity strategy with neural network alpha generation</p>
-              <div className={`grid grid-cols-2 gap-3 mb-4 text-xs ${textMuted}`}>
-                <div>
-                  <div className={`text-lg font-bold ${textPrimary}`}>2.93</div>
-                  <div>Sharpe Ratio</div>
-                </div>
-                <div>
-                  <div className={`text-lg font-bold text-emerald-500`}>+45.8%</div>
-                  <div>Annual Return</div>
-                </div>
-              </div>
-              <Link href="/marketplace/mlp-alpha-130-30" className={`block text-center py-2 px-4 rounded-lg border font-medium text-sm transition ${isDark ? 'border-white/20 text-white hover:bg-white/10' : 'border-[#4f46e5] text-[#4f46e5] hover:bg-[#4f46e5] hover:text-white'}`}>
-                View Details →
-              </Link>
-            </div>
-
-            <div className={`p-6 rounded-xl border ${cardClass}`}>
-              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-4 ${isDark ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>
-                <Icon name="star" className="w-3 h-3" />
-                +7 MORE
-              </div>
-              <h3 className={`text-xl font-bold mb-2 ${textPrimary}`}>Explore All Models</h3>
-              <p className={`text-sm mb-4 ${textSecondary}`}>Macro forecasting, sentiment analysis, crypto strategies & more</p>
-              <div className={`grid grid-cols-2 gap-3 mb-4 text-xs ${textMuted}`}>
-                <div>
-                  <div className={`text-lg font-bold ${textPrimary}`}>9</div>
-                  <div>Total Models</div>
-                </div>
-                <div>
-                  <div className={`text-lg font-bold ${textPrimary}`}>Free</div>
-                  <div>Demo Calls</div>
-                </div>
-              </div>
-              <Link href="/marketplace" className={`block text-center py-2 px-4 rounded-lg font-medium text-sm transition ${isDark ? 'bg-[#4f46e5] text-white hover:bg-[#4338ca]' : 'bg-[#4f46e5] text-white hover:bg-[#4338ca]'}`}>
-                Browse Marketplace →
-              </Link>
-            </div>
-          </div>
-
-          <div className={`text-center p-6 rounded-xl border ${cardClass}`}>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <Icon name="star" className={`w-5 h-5 ${accentText}`} />
-                <span className={textSecondary}>Try any model free — no signup required</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Icon name="star" className={`w-5 h-5 ${accentText}`} />
-                <span className={textSecondary}>API access in under 68ms</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Icon name="star" className={`w-5 h-5 ${accentText}`} />
-                <span className={textSecondary}>Cancel anytime</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* STRATEGY SECTION */}
       <section
@@ -1265,6 +1167,76 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* MARKETPLACE CTA */}
+      <section className={`relative z-10 py-24 border-y ${isDark ? 'bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] border-white/10' : 'bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] border-[#4f46e5]'}`}>
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="text-white">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-semibold mb-6">
+                <Icon name="star" className="h-4 w-4" />
+                AI Trading Models
+              </div>
+              <h2 className="font-serif text-4xl md:text-5xl font-normal mb-4">
+                Browse Our AI Model Marketplace
+              </h2>
+              <p className="text-lg text-white/90 mb-8">
+                Access institutional-grade AI trading models. No infrastructure setup—just API access to production-ready signals in under 68ms.
+              </p>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-white flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>6+ AI models covering momentum, sentiment, macro, and options strategies</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-white flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Free demo calls to test models before subscribing (no signup required)</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-white flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Compatible with IBKR, Alpaca, TD Ameritrade, and other major brokers</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-white flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Transparent performance metrics: Sharpe ratios, returns, drawdown stats</span>
+                </li>
+              </ul>
+              <Link
+                href="/marketplace"
+                className="inline-block px-8 py-4 bg-white text-[#4f46e5] font-bold rounded-lg shadow-lg hover:bg-gray-100 transition-colors"
+              >
+                Explore AI Models →
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                <div className="text-3xl font-bold text-white mb-2">2.34</div>
+                <div className="text-sm text-white/80">Avg Sharpe Ratio</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                <div className="text-3xl font-bold text-white mb-2">42%</div>
+                <div className="text-sm text-white/80">Avg Annual Return</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                <div className="text-3xl font-bold text-white mb-2">68ms</div>
+                <div className="text-sm text-white/80">API Response Time</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                <div className="text-3xl font-bold text-white mb-2">$299</div>
+                <div className="text-sm text-white/80">Starting Price/mo</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section
         ref={ctaReveal.ref}
@@ -1303,6 +1275,7 @@ export default function HomePage() {
             </div>
             <div>
               <div className="text-xs uppercase tracking-widest text-white mb-3">Product</div>
+              <Link href="/marketplace" className="block text-sm text-[#6666aa] mb-2 hover:text-[#a5b4fc]">AI Model Marketplace</Link>
               <a href="#strategy" className="block text-sm text-[#6666aa] mb-2 hover:text-[#a5b4fc]">Research Terminal</a>
               <a href="#pillars" className="block text-sm text-[#6666aa] mb-2 hover:text-[#a5b4fc]">Investment Thesis</a>
               <a href="#performance" className="block text-sm text-[#6666aa] mb-2 hover:text-[#a5b4fc]">Performance</a>
