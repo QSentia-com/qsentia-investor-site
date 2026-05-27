@@ -13,6 +13,7 @@ const MODEL_C_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_model_c_sentiment_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || BRPPO_MACRO_ALPACA_MODEL_ID;
 const RETIRED_MODEL_IDS = new Set(['qsentia_btc_eth_perp_basis_alpha']);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
+  MODEL_C_SENTIMENT_ALPHA_MODEL_ID,
   'real_crypto_carry_ibkr',
   'delta_neutral_crypto_funding',
 ]);
