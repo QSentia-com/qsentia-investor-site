@@ -420,7 +420,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid gap-3 px-6 py-6 sm:grid-cols-2 lg:grid-cols-3">
-            <MetricTile label="Net Liquidation" value={fmtDollar(latestPortfolioValue)} detail="Latest IBKR account value" large />
+            <MetricTile label="Net Liquidation" value={fmtDollar(latestPortfolioValue)} detail="Latest broker account value" large />
             <MetricTile label="Total P&L" value={fmtDollar(pnl)} detail="Paper trading basis" large />
             <MetricTile label="Total Return" value={fmtPct(totalReturn, true)} detail={historyStatus(stats)} />
             <MetricTile label="Sharpe Ratio" value={fmtNum(stats.sharpe)} detail={stats?.status === 'partial' ? 'More observations needed' : 'Annualized'} />

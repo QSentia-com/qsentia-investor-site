@@ -680,6 +680,8 @@ export async function GET(request: Request) {
   const dailyPortfolio = toDailyPortfolio(portfolio);
   const values = dailyPortfolio.map((p) => p.value);
   const accountBaseline = startingCapitalForModel(selectedModelConfig);
+  const latestPortfolioValue = values.length ? values[values.length - 1] : accountBaseline;
+  const firstPortfolioValue = accountBaseline ?? (values.length ? values[0] : null);
   const selectedPerformanceValues = performanceValues(values, accountBaseline);
   const normalizedValues = normalizeTo100(values);
   const returns = pctChange(values);
@@ -755,19 +757,24 @@ export async function GET(request: Request) {
     latest: {
         decision: latest(latestDecisionRows),
       
-        // SOURCE OF TRUTH: latest IBKR NetLiquidation observation from portfolio logs or health status.
-        portfolioValue: values.length ? values[values.length - 1] : null,
+        // SOURCE OF TRUTH: latest broker account observation from portfolio logs or health status.
+        // For new account-backed models, fall back to configured starting capital until first log lands.
+        portfolioValue: latestPortfolioValue,
         portfolioValueTimestamp: dailyPortfolio.length ? dailyPortfolio[dailyPortfolio.length - 1].timestamp : null,
         portfolioValueSource: dailyPortfolio.length
-          ? dailyPortfolio[dailyPortfolio.length - 1].raw?.source || 'ibkr_net_liquidation'
-          : null,
-        firstPortfolioValue: values.length ? accountBaseline ?? values[0] : null,
+          ? dailyPortfolio[dailyPortfolio.length - 1].raw?.source || 'broker_account_value'
+          : accountBaseline !== null
+            ? 'starting_capital_baseline'
+            : null,
+        firstPortfolioValue,
         startingCapital: accountBaseline,
         portfolioPnl:
-          values.length ? values[values.length - 1] - (accountBaseline ?? values[0]) : null,
+          latestPortfolioValue !== null && firstPortfolioValue !== null
+            ? latestPortfolioValue - firstPortfolioValue
+            : null,
         portfolioReturn:
-          values.length && (accountBaseline ?? values[0]) !== 0
-            ? values[values.length - 1] / (accountBaseline ?? values[0]) - 1
+          latestPortfolioValue !== null && firstPortfolioValue !== null && firstPortfolioValue !== 0
+            ? latestPortfolioValue / firstPortfolioValue - 1
             : null,
       
         // Do NOT derive P&L from positions market_value.
