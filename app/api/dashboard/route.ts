@@ -115,16 +115,10 @@ function rawUrl(repoFullName: string, branch: string, path: string) {
 
 async function fetchTextFromRaw(repoFullName: string, branch: string, path: string) {
   try {
-    const cleanPath = path.replace(/^\/+/, '');
-    const url = `https://api.github.com/repos/${repoFullName}/contents/${cleanPath}?ref=${encodeURIComponent(branch)}&cb=${Date.now()}`;
-    const token = process.env.QSENTIA_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+    const url = `${rawUrl(repoFullName, branch, path)}?cb=${Date.now()}`;
     const response = await fetch(url, {
       cache: 'no-store',
-      headers: {
-        'Accept': 'application/vnd.github.raw',
-        'Cache-Control': 'no-cache',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+      headers: { 'Cache-Control': 'no-cache' },
     });
 
     if (!response.ok) return '';
