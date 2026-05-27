@@ -584,7 +584,7 @@ export default function HomePage() {
             >
               {isDark ? 'Light' : 'Dark'}
             </button>
-            <a href="mailto:Lucas.Zarzeczny@qsentia.com" className={`rounded-md border px-3 py-1 ${isDark ? 'border-white/20 text-white hover:bg-white/10' : 'border-[#4f46e5] text-[#4f46e5] hover:bg-[#4f46e5] hover:text-white'}`}>Contact</a>
+            <a href="mailto:inquiries@qsentia.com" className={`rounded-md border px-3 py-1 ${isDark ? 'border-white/20 text-white hover:bg-white/10' : 'border-[#4f46e5] text-[#4f46e5] hover:bg-[#4f46e5] hover:text-white'}`}>Contact</a>
           </div>
           <button
             type="button"
@@ -609,7 +609,7 @@ export default function HomePage() {
               >
                 {isDark ? 'Light theme' : 'Dark theme'}
               </button>
-              <a href="mailto:Lucas.Zarzeczny@qsentia.com" className={`rounded-md border px-3 py-2 ${isDark ? 'border-white/20 text-white' : 'border-[#4f46e5] text-[#4f46e5]'}`}>Contact</a>
+              <a href="mailto:inquiries@qsentia.com" className={`rounded-md border px-3 py-2 ${isDark ? 'border-white/20 text-white' : 'border-[#4f46e5] text-[#4f46e5]'}`}>Contact</a>
             </div>
           </div>
         )}
@@ -630,7 +630,7 @@ export default function HomePage() {
         </p>
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-12 w-full max-w-md sm:max-w-none">
           <Link href="/dashboard" className="px-8 py-3 rounded-lg bg-[#4f46e5] text-white font-semibold shadow hover:bg-[#4338ca] transition">View Live Research Terminal</Link>
-          <a href="mailto:Lucas.Zarzeczny@qsentia.com?subject=QSentia Investor Information Request" className={`px-8 py-3 rounded-lg border font-semibold transition ${isDark ? 'border-white/30 text-white bg-white/10 hover:bg-white/20' : 'border-[#4f46e5] text-[#4f46e5] bg-white/80 hover:bg-[#f4f4f9]'}`}>Request Information</a>
+          <a href="mailto:inquiries@qsentia.com?subject=QSentia Investor Information Request" className={`px-8 py-3 rounded-lg border font-semibold transition ${isDark ? 'border-white/30 text-white bg-white/10 hover:bg-white/20' : 'border-[#4f46e5] text-[#4f46e5] bg-white/80 hover:bg-[#f4f4f9]'}`}>Request Information</a>
         </div>
         <div className={`absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center text-xs ${textMuted} animate-bounce`}>
           <div className="w-8 h-8 flex items-center justify-center border border-[#bdbdf7] rounded-full mb-1">
@@ -1177,7 +1177,7 @@ export default function HomePage() {
           <p className={`mt-3 ${textSecondary}`}>Join investors who trust Qsentia's reinforcement learning platform. Institutional-grade tools, consumer-grade clarity.</p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mt-8">
             <Link href="/dashboard" className="px-8 py-3 rounded-lg bg-[#4f46e5] text-white font-semibold shadow hover:bg-[#4338ca] transition">View Live Research Terminal</Link>
-            <a href="mailto:Lucas.Zarzeczny@qsentia.com?subject=QSentia Investor Information Request" className={`px-8 py-3 rounded-lg border font-semibold transition ${isDark ? 'border-white/30 text-white bg-white/10 hover:bg-white/20' : 'border-[#4f46e5] text-[#4f46e5] bg-white/80 hover:bg-[#f4f4f9]'}`}>Request Information</a>
+            <a href="mailto:inquiries@qsentia.com?subject=QSentia Investor Information Request" className={`px-8 py-3 rounded-lg border font-semibold transition ${isDark ? 'border-white/30 text-white bg-white/10 hover:bg-white/20' : 'border-[#4f46e5] text-[#4f46e5] bg-white/80 hover:bg-[#f4f4f9]'}`}>Request Information</a>
           </div>
           <div className={`text-xs mt-4 ${textMuted}`}>No spam, no pressure.</div>
         </div>
@@ -1219,7 +1219,7 @@ export default function HomePage() {
             <div className="flex gap-4 mt-3 md:mt-0">
               <a href="#" className="hover:text-[#a5b4fc]">Privacy</a>
               <a href="#" className="hover:text-[#a5b4fc]">Terms</a>
-              <a href="mailto:Lucas.Zarzeczny@qsentia.com" className="hover:text-[#a5b4fc]">Contact</a>
+              <a href="mailto:inquiries@qsentia.com" className="hover:text-[#a5b4fc]">Contact</a>
             </div>
           </div>
         </div>

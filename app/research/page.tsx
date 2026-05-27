@@ -47,7 +47,7 @@ export default function HomePage() {
 </button>
 
           <a
-            href="mailto:Lucas.Zarzeczny@qsentia.com?subject=QSentia Investor Information Request"
+            href="mailto:inquiries@qsentia.com?subject=QSentia Investor Information Request"
             className="border border-black/20 bg-white/70 px-14 py-5 text-lg font-medium text-black shadow-[0_18px_70px_rgba(25,20,90,0.08)] backdrop-blur-xl transition hover:border-[#4b3fd1] hover:text-[#4b3fd1]"
           >
             Request Information
