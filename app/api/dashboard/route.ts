@@ -735,7 +735,7 @@ export async function GET(request: Request) {
         value: curve[i],
       })),
       stats: computeStats(modelPerformanceValues),
-      latestValue: modelValues.length ? modelValues[modelValues.length - 1] : null,
+      latestValue: modelValues.length ? modelValues[modelValues.length - 1] : modelBaseline,
       startingCapital: modelBaseline,
       rowCount: rows.length,
       dailyRowCount: daily.length,
