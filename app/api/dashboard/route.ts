@@ -10,10 +10,12 @@ const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
 const BRPPO_MACRO_ALPACA_MODEL_ID = 'qsentia_brppo_macro_rotation_alpaca';
 const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
 const MODEL_C_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_model_c_sentiment_alpha';
+const RL_ALPHA_ALLOCATOR_MODEL_ID = 'qsentia_rl_alpha_allocator';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || BRPPO_MACRO_ALPACA_MODEL_ID;
 const RETIRED_MODEL_IDS = new Set(['qsentia_btc_eth_perp_basis_alpha']);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   MODEL_C_SENTIMENT_ALPHA_MODEL_ID,
+  RL_ALPHA_ALLOCATOR_MODEL_ID,
   'real_crypto_carry_ibkr',
   'delta_neutral_crypto_funding',
 ]);
@@ -65,6 +67,18 @@ const REQUIRED_MODELS: ModelConfig[] = [
     enabled: true,
     color: '#6366f1',
   },
+  {
+    id: RL_ALPHA_ALLOCATOR_MODEL_ID,
+    name: 'QSentia RL Alpha Allocator',
+    description:
+      'Offline RL meta-allocator that assigns capital across QSentia alpha sleeves and writes IBKR paper allocation tickets from account NetLiquidation.',
+    repo: 'FinTechEntrepreneurldz/qsentia-rl-alpha-allocator',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#0ea5e9',
+    starting_capital: 1034017,
+  },
 ];
 
 type CsvRow = Record<string, string>;
@@ -78,6 +92,7 @@ type ModelConfig = {
   branch: string;
   enabled: boolean;
   color: string;
+  starting_capital?: number;
 };
 
 type PortfolioPoint = {
@@ -252,6 +267,7 @@ function parseSimpleModelsYaml(text: string): ModelConfig[] {
       branch: current.branch || 'main',
       enabled: current.enabled !== false,
       color: current.color || '#4b3fd1',
+      starting_capital: current.starting_capital,
     });
   }
 
@@ -295,6 +311,14 @@ function setYamlValue(target: Partial<ModelConfig>, key: keyof ModelConfig, valu
     return;
   }
 
+  if (key === 'starting_capital') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      target.starting_capital = parsed;
+    }
+    return;
+  }
+
   if (
     key === 'id' ||
     key === 'name' ||
@@ -314,6 +338,10 @@ function num(v: unknown): number | null {
 }
 
 function startingCapitalForModel(model: ModelConfig): number | null {
+  if (typeof model.starting_capital === 'number' && Number.isFinite(model.starting_capital)) {
+    return model.starting_capital;
+  }
+
   if (!ACCOUNT_BASELINE_MODEL_IDS.has(model.id)) return null;
   return Number.isFinite(DEFAULT_ACCOUNT_STARTING_CAPITAL)
     ? DEFAULT_ACCOUNT_STARTING_CAPITAL
@@ -830,6 +858,7 @@ export async function GET(request: Request) {
         logs_path: m.logs_path,
         branch: m.branch,
         enabled: m.enabled,
+        startingCapital: m.starting_capital ?? null,
         paperStatus
       })),
       selectedModelConfig,
