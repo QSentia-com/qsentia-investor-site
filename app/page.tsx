@@ -1116,7 +1116,7 @@ export default function HomePage() {
                     ))}
                   </select>
                 </label>
-                
+
                 <label className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${pillClass}`}>
                   <span className="text-slate-500">Month</span>
                   <select
@@ -1204,8 +1204,28 @@ export default function HomePage() {
       <section
         id="pillars"
         ref={pillarsReveal.ref}
-        className={`relative z-10 py-24 md:py-32 border-t transition-colors duration-300 ${isDark ? 'border-slate-900 bg-slate-950/20' : 'border-slate-200 bg-white/60'} backdrop-blur-xl`}
+        className={`relative z-10 py-24 md:py-32 border-t transition-colors duration-300 overflow-hidden ${isDark ? 'border-slate-900 bg-slate-950/20' : 'border-slate-200 bg-white/60'} backdrop-blur-xl`}
       >
+        <div className="absolute inset-0 -z-10 pointer-events-none">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            className="h-full w-full object-cover opacity-25"
+            aria-hidden="true"
+          >
+            <source src="/video/13904783_3840_2160_25fps.mp4" type="video/mp4" />
+          </video>
+          <div
+            className={`absolute inset-0 ${
+              isDark
+                ? 'bg-[#050817]/70'
+                : 'bg-white/70'
+            }`}
+          />
+        </div>
         <div className="mx-auto max-w-7xl px-6">
           <div className="text-center mb-16 max-w-2xl mx-auto">
             <div className="text-xs font-mono uppercase tracking-widest text-indigo-400 mb-2">Core Philosophy</div>
