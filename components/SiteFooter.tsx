@@ -23,6 +23,7 @@ export default function SiteFooter() {
             <Link href="/marketplace" className="mb-2.5 block text-slate-500 transition-colors hover:text-white">AI Marketplace</Link>
             <Link href="/dashboard" className="mb-2.5 block text-slate-500 transition-colors hover:text-white">Telemetry Board</Link>
             <Link href="/research" className="mb-2.5 block text-slate-500 transition-colors hover:text-white">Metrics Ledger</Link>
+            <Link href="/docs" className="mb-2.5 block text-slate-500 transition-colors hover:text-white">API Integration Docs</Link>
             <Link href="/" className="block text-slate-500 transition-colors hover:text-white">Pipeline Workflow</Link>
           </div>
 
@@ -40,8 +41,9 @@ export default function SiteFooter() {
             Important: Quantitative trading systems involve considerable capital risks. Model execution parameters and historical data do not assure future outcomes. Run query checks.
           </span>
           <div className="flex shrink-0 gap-4 font-mono">
-            <a href="#" className="hover:text-white">Privacy</a>
-            <a href="#" className="hover:text-white">Terms SLA</a>
+            <Link href="/privacy-policy" className="hover:text-white">Privacy</Link>
+            <Link href="/terms-and-conditions" className="hover:text-white">Terms</Link>
+            <Link href="/disclaimer" className="hover:text-white">Disclaimer</Link>
           </div>
         </div>
       </div>
