@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "Qsentia - Investor Intelligence Platform",
@@ -16,7 +17,10 @@ export default function RootLayout({
       lang="en"
       className="h-full antialiased"
     >
-      <body className="min-h-full font-sans antialiased bg-[#eeeef6] flex flex-col">{children}</body>
+      <body className="min-h-full font-sans antialiased bg-[#eeeef6] flex flex-col">
+        {children}
+        <SiteFooter />
+      </body>
     </html>
   );
 }

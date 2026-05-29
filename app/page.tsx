@@ -70,6 +70,14 @@ type BlotterRow = {
   detail: string;
 };
 
+type ShowcaseModel = {
+  id: string;
+  name: string;
+  description: string;
+  sharpe: number | null;
+  totalReturn: number | null;
+};
+
 function percentLabel(value: number | null | undefined) {
   const formatted = fmtPct(value);
   return formatted === 'Pending' ? formatted : formatted.replace('%', '');
@@ -87,6 +95,17 @@ function formatTimeLabel(timestamp?: string | null) {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return String(timestamp).slice(11, 19) || 'Pending';
   return date.toLocaleTimeString('en-US', { hour12: false });
+}
+
+function modelSlugFromId(id?: string | null) {
+  if (!id) return null;
+  return String(id)
+    .toLowerCase()
+    .trim()
+    .replace(/[_\s]+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 const frameworkSteps = [
@@ -478,6 +497,44 @@ export default function HomePage() {
     ];
   }, [data]);
 
+  const showcaseModels = useMemo<ShowcaseModel[]>(() => {
+    const rows: ShowcaseModel[] = (data?.modelComparison || [])
+      .map((model: any) => ({
+        id: model?.id || model?.name,
+        name: model?.name || 'Model stream pending',
+        description: model?.description || 'Model description is not yet available from the live registry.',
+        sharpe: Number.isFinite(Number(model?.stats?.sharpe)) ? Number(model.stats.sharpe) : null,
+        totalReturn: Number.isFinite(Number(model?.stats?.totalReturn))
+          ? Number(model.stats.totalReturn)
+          : null,
+      }))
+      .sort((a: any, b: any) => {
+        const scoreA = a.totalReturn ?? a.sharpe ?? -999;
+        const scoreB = b.totalReturn ?? b.sharpe ?? -999;
+        return scoreB - scoreA;
+      })
+      .slice(0, 2);
+
+    while (rows.length < 2) {
+      rows.push({
+        id: `pending-${rows.length}`,
+        name: 'Model stream pending',
+        description: 'Waiting for live model rows from the API registry.',
+        sharpe: null,
+        totalReturn: null,
+      });
+    }
+
+    return rows;
+  }, [data]);
+
+  const registryCount = Array.isArray(data?.registry) ? data.registry.length : null;
+  const telemetryStatus = data?.latest?.paperStatus || 'Pending';
+  const latencyValue = Number(data?.latest?.decision?.latency_ms ?? data?.latest?.decision?.latency);
+  const inferenceRateLabel = Number.isFinite(latencyValue)
+    ? `${Math.round(latencyValue)}ms Avg`
+    : 'Pending';
+
   const liveBlotterRows = useMemo<BlotterRow[]>(() => {
     const submittedOrders = Array.isArray(data?.submittedOrders) ? data.submittedOrders : [];
     const latestDecision = data?.latest?.decision || null;
@@ -567,6 +624,7 @@ export default function HomePage() {
             <a href="#performance" className={`transition-colors duration-200 ${isDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-indigo-600'}`}>Performance</a>
             <a href="#framework" className={`transition-colors duration-200 ${isDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-indigo-600'}`}>Framework</a>
             <a href="#pillars" className={`transition-colors duration-200 ${isDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-indigo-600'}`}>Thesis</a>
+            <Link href="/signin" className={`transition-colors duration-200 ${isDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-indigo-600'}`}>Sign In</Link>
             <Link href="/contact" className={`transition-colors duration-200 ${isDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-indigo-600'}`}>Contact</Link>
 
             <div className="h-4 w-[1px] bg-slate-800" />
@@ -580,8 +638,8 @@ export default function HomePage() {
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
 
-            <Link href="/contact" className={`rounded-lg px-4 py-2 font-medium text-xs tracking-wider uppercase transition-all duration-200 border ${isDark ? 'border-slate-800 text-slate-300 hover:bg-slate-900 hover:border-slate-700' : 'border-slate-200 text-slate-700 hover:bg-slate-100'}`}>
-              Institutional Access
+            <Link href="/create-account" className={`rounded-lg px-4 py-2 font-medium text-xs tracking-wider uppercase transition-all duration-200 border ${isDark ? 'border-slate-800 text-slate-300 hover:bg-slate-900 hover:border-slate-700' : 'border-slate-200 text-slate-700 hover:bg-slate-100'}`}>
+              Create Account
             </Link>
           </div>
 
@@ -599,6 +657,7 @@ export default function HomePage() {
           <div className={`md:hidden border-t ${isDark ? 'border-slate-900 bg-[#060814]/95 backdrop-blur-xl' : 'border-slate-200 bg-white/95'}`}>
             <div className="flex flex-col gap-4 px-6 py-6 text-sm">
               <Link href="/marketplace" className={`transition-colors ${isDark ? 'text-slate-300' : 'text-slate-700'}`} onClick={() => setIsMenuOpen(false)}>Marketplace</Link>
+              <Link href="/signin" className={`transition-colors ${isDark ? 'text-slate-300' : 'text-slate-700'}`} onClick={() => setIsMenuOpen(false)}>Sign In</Link>
               <Link href="/contact" className={`transition-colors ${isDark ? 'text-slate-300' : 'text-slate-700'}`} onClick={() => setIsMenuOpen(false)}>Contact</Link>
               <a href="#strategy" className={`transition-colors ${isDark ? 'text-slate-300' : 'text-slate-700'}`} onClick={() => setIsMenuOpen(false)}>Strategy</a>
               <a href="#performance" className={`transition-colors ${isDark ? 'text-slate-300' : 'text-slate-700'}`} onClick={() => setIsMenuOpen(false)}>Performance</a>
@@ -617,8 +676,8 @@ export default function HomePage() {
                 {isDark ? <><Sun className="h-4 w-4" /> Light Mode</> : <><Moon className="h-4 w-4" /> Dark Mode</>}
               </button>
               
-              <Link href="/contact" className="rounded-lg bg-indigo-600 px-4 py-2.5 text-center text-white font-semibold shadow hover:bg-indigo-500 transition">
-                Email Inquiries
+              <Link href="/create-account" className="rounded-lg bg-indigo-600 px-4 py-2.5 text-center text-white font-semibold shadow hover:bg-indigo-500 transition" onClick={() => setIsMenuOpen(false)}>
+                Create Account
               </Link>
             </div>
           </div>
@@ -687,12 +746,12 @@ export default function HomePage() {
         <div className={`mt-16 flex items-center gap-6 text-xs font-mono px-5 py-2.5 rounded-full border ${isDark ? 'border-slate-900/80 bg-slate-950/30 text-slate-400' : 'border-slate-200/80 bg-white/40 text-slate-600'}`}>
           <div className="flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Telemetry: Online</span>
+            <span>Telemetry: {telemetryStatus}</span>
           </div>
           <div className="h-3 w-[1px] bg-slate-800" />
-          <div className="hidden sm:block">Models Operational: <span className="text-white font-semibold">9/9</span></div>
+          <div className="hidden sm:block">Models Operational: <span className="text-white font-semibold">{registryCount === null ? 'Pending' : `${registryCount}/${registryCount}`}</span></div>
           <div className="h-3 w-[1px] bg-slate-800 hidden sm:block" />
-          <div>Inference Rate: <span className="text-indigo-400 font-semibold">68ms Avg</span></div>
+          <div>Inference Rate: <span className="text-indigo-400 font-semibold">{inferenceRateLabel}</span></div>
         </div>
 
         {/* Scroll cues */}
@@ -758,64 +817,40 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6 mb-12">
-            
-            {/* Model Card 1 */}
-            <div className={`group relative rounded-2xl border p-6 flex flex-col justify-between overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:border-slate-800 ${cardClass}`}>
-              <div className="absolute top-0 right-0 h-24 w-24 bg-indigo-500/5 rounded-full blur-2xl group-hover:bg-indigo-500/10 transition-all pointer-events-none" />
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] tracking-wider font-mono px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">CRYPTO BASIS · LIVE</span>
-                  <Activity className="h-4 w-4 text-emerald-400" />
-                </div>
-                <h3 className={`text-xl font-semibold mb-2 group-hover:text-indigo-400 transition-colors ${textPrimary}`}>QSentia Perp Basis Alpha</h3>
-                <p className={`text-xs ${textSecondary} mb-4`}>Market-neutral futures & spot funding basis capture on BTC/ETH. Custom institutional integration.</p>
-              </div>
-              
-              <div>
-                <div className="grid grid-cols-2 gap-4 border-t border-slate-900/60 pt-4 mb-4 text-xs font-mono">
-                  <div>
-                    <div className="text-[10px] text-slate-500">Sharpe Ratio</div>
-                    <div className={`text-base font-semibold mt-0.5 ${textPrimary}`}>2.34</div>
+            {showcaseModels.map((model, index) => (
+              <div key={model.id} className={`group relative rounded-2xl border p-6 flex flex-col justify-between overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:border-slate-800 ${cardClass}`}>
+                <div className={`absolute top-0 right-0 h-24 w-24 rounded-full blur-2xl transition-all pointer-events-none ${index === 0 ? 'bg-indigo-500/5 group-hover:bg-indigo-500/10' : 'bg-purple-500/5 group-hover:bg-purple-500/10'}`} />
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className={`text-[10px] tracking-wider font-mono px-2 py-0.5 rounded ${index === 0 ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-amber-500/10 border border-amber-500/20 text-amber-400'}`}>
+                      {index === 0 ? 'BEST PERFORMING · LIVE' : 'SECOND MODEL · LIVE'}
+                    </span>
+                    {index === 0 ? <Activity className="h-4 w-4 text-emerald-400" /> : <Brain className="h-4 w-4 text-amber-400" />}
                   </div>
-                  <div>
-                    <div className="text-[10px] text-slate-500">Target APY</div>
-                    <div className="text-base font-semibold text-emerald-400 mt-0.5">+42.7%</div>
-                  </div>
+                  <h3 className={`text-xl font-semibold mb-2 group-hover:text-indigo-400 transition-colors ${textPrimary}`}>{model.name}</h3>
+                  <p className={`text-xs ${textSecondary} mb-4`}>{model.description}</p>
                 </div>
-                <Link href="/marketplace/qsentia-btc-eth-perp-basis-alpha" className={`block text-center py-2.5 px-4 rounded-xl text-xs font-medium transition-all duration-200 border ${isDark ? 'border-slate-800 text-slate-300 hover:bg-slate-900 hover:border-slate-705 bg-slate-950/40' : 'border-indigo-100 text-indigo-700 bg-indigo-50/50 hover:bg-indigo-50'}`}>
-                  View Model Spec →
-                </Link>
-              </div>
-            </div>
 
-            {/* Model Card 2 */}
-            <div className={`group relative rounded-2xl border p-6 flex flex-col justify-between overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:border-slate-800 ${cardClass}`}>
-              <div className="absolute top-0 right-0 h-24 w-24 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 transition-all pointer-events-none" />
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] tracking-wider font-mono px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400">NLP SENTIMENT · LIVE</span>
-                  <Brain className="h-4 w-4 text-amber-400" />
-                </div>
-                <h3 className={`text-xl font-semibold mb-2 group-hover:text-indigo-400 transition-colors ${textPrimary}`}>Model C Sentiment Alpha</h3>
-                <p className={`text-xs ${textSecondary} mb-4`}>NLP earnings caller & social pipeline parser generating tactical long-short equity signals.</p>
-              </div>
-              
-              <div>
-                <div className="grid grid-cols-2 gap-4 border-t border-slate-900/60 pt-4 mb-4 text-xs font-mono">
-                  <div>
-                    <div className="text-[10px] text-slate-500">Sharpe Ratio</div>
-                    <div className={`text-base font-semibold mt-0.5 ${textPrimary}`}>2.93</div>
+                <div>
+                  <div className="grid grid-cols-2 gap-4 border-t border-slate-900/60 pt-4 mb-4 text-xs font-mono">
+                    <div>
+                      <div className="text-[10px] text-slate-500">Sharpe Ratio</div>
+                      <div className={`text-base font-semibold mt-0.5 ${textPrimary}`}>{fmtNum(model.sharpe, 2)}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-500">Total Return</div>
+                      <div className="text-base font-semibold text-emerald-400 mt-0.5">{fmtPct(model.totalReturn, true)}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-[10px] text-slate-500">Target return</div>
-                    <div className="text-base font-semibold text-emerald-400 mt-0.5">+45.8%</div>
-                  </div>
+                  <Link
+                    href={modelSlugFromId(model.id) ? `/marketplace/${modelSlugFromId(model.id)}` : '/marketplace'}
+                    className={`block text-center py-2.5 px-4 rounded-xl text-xs font-medium transition-all duration-200 border ${isDark ? 'border-slate-800 text-slate-300 hover:bg-slate-900 hover:border-slate-705 bg-slate-950/40' : 'border-indigo-100 text-indigo-700 bg-indigo-50/50 hover:bg-indigo-50'}`}
+                  >
+                    {index === 0 ? 'Open Best Model →' : 'View Model →'}
+                  </Link>
                 </div>
-                <Link href="/marketplace/mlp-alpha-130-30" className={`block text-center py-2.5 px-4 rounded-xl text-xs font-medium transition-all duration-200 border ${isDark ? 'border-slate-800 text-slate-300 hover:bg-slate-900 hover:border-slate-705 bg-slate-950/40' : 'border-indigo-100 text-indigo-700 bg-indigo-50/50 hover:bg-indigo-50'}`}>
-                  View Model Spec →
-                </Link>
               </div>
-            </div>
+            ))}
 
             {/* Model Card 3 / Dynamic redirect */}
             <div className={`group relative rounded-2xl border p-6 flex flex-col justify-between overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:border-indigo-500/20 ${cardClass}`}>
@@ -833,11 +868,11 @@ export default function HomePage() {
                 <div className="grid grid-cols-2 gap-4 border-t border-slate-900/60 pt-4 mb-4 text-xs font-mono">
                   <div>
                     <div className="text-[10px] text-slate-500">Total Models</div>
-                    <div className={`text-base font-semibold mt-0.5 ${textPrimary}`}>9 Modules</div>
+                    <div className={`text-base font-semibold mt-0.5 ${textPrimary}`}>{registryCount === null ? 'Pending' : `${registryCount} Modules`}</div>
                   </div>
                   <div>
                     <div className="text-[10px] text-slate-500">API Speed</div>
-                    <div className="text-base font-semibold text-cyan-400 mt-0.5">&lt; 68ms</div>
+                    <div className="text-base font-semibold text-cyan-400 mt-0.5">{inferenceRateLabel}</div>
                   </div>
                 </div>
                 <Link href="/marketplace" className="block text-center py-2.5 px-4 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 transition-all duration-200 shadow-md shadow-indigo-500/10 group-hover:shadow-indigo-500/20">
@@ -1477,52 +1512,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* FOOTER */}
-      <footer className="relative z-10 bg-[#02040a] text-white border-t border-slate-950">
-        <div className="mx-auto max-w-7xl px-6 py-16">
-          <div className="grid md:grid-cols-4 gap-12 border-b border-slate-900 pb-12">
-            <div className="md:col-span-2">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="font-mono text-lg font-black tracking-tight text-white flex items-center gap-2">
-                  <span className="h-6 w-6 rounded bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-xs font-serif italic text-white">Q</span>
-                  QSentia
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
-                Systematic asset management and self-improving deep learning architectures. Where high complexity meets complete execution transparency.
-              </p>
-              <p className="text-[10px] text-slate-600 font-mono mt-6">© 2026 QSentia Core Systems. All rights registered.</p>
-            </div>
-            
-            <div className="font-mono text-xs">
-              <div className="text-slate-400 font-bold uppercase tracking-wider mb-4 text-[10px]">Product Engine</div>
-              <Link href="/marketplace" className="block text-slate-500 mb-2.5 hover:text-white transition-colors">AI Marketplace</Link>
-              <a href="#strategy" className="block text-slate-500 mb-2.5 hover:text-white transition-colors">Telemetry Board</a>
-              <a href="#performance" className="block text-slate-500 mb-2.5 hover:text-white transition-colors">Metrics Ledger</a>
-              <a href="#framework" className="block text-slate-500 hover:text-white transition-colors">Pipeline Workflow</a>
-            </div>
-
-            <div className="font-mono text-xs">
-              <div className="text-slate-400 font-bold uppercase tracking-wider mb-4 text-[10px]">Technical SLA</div>
-              <a href="#" className="block text-slate-500 mb-2.5 hover:text-white">Security Bounds</a>
-              <a href="#" className="block text-slate-500 mb-2.5 hover:text-white">API References</a>
-              <a href="#" className="block text-slate-500 mb-2.5 hover:text-white">Disclaimer Limits</a>
-              <Link href="/contact" className="block text-slate-500 hover:text-white">Quant Query</Link>
-            </div>
-          </div>
-
-          <div className="text-[10px] text-slate-600 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-8">
-            <span className="leading-relaxed max-w-3xl">
-              Important: Quantitative trading systems involve considerable capital risks. Model execution parameters and historical data do not assure future outcomes. Run query checks.
-            </span>
-            <div className="flex gap-4 shrink-0 font-mono">
-              <a href="#" className="hover:text-white">Privacy</a>
-              <a href="#" className="hover:text-white">Terms SLA</a>
-            </div>
-          </div>
-        </div>
-      </footer>
 
     </main>
   );
