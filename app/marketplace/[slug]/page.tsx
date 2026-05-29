@@ -30,11 +30,22 @@ interface ModelDetailPageProps {
 export default function ModelDetailPage({ params }: ModelDetailPageProps) {
   const { slug } = use(params);
   const { data, error, isLoading } = useSWR(`/api/models/${slug}`, fetcher);
-  const [selectedTier, setSelectedTier] = useState('pro');
   const [demoLoading, setDemoLoading] = useState(false);
   const [demoResult, setDemoResult] = useState<any>(null);
   
   const model = data?.model;
+
+  const metricNum = (value: number | null | undefined, digits = 2) => {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return 'Pending';
+    return Number(value).toFixed(digits);
+  };
+
+  const metricPct = (value: number | null | undefined, digits = 1, forceSign = false) => {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return 'Pending';
+    const n = Number(value);
+    const prefix = forceSign && n > 0 ? '+' : '';
+    return `${prefix}${n.toFixed(digits)}%`;
+  };
 
   const handleFreeDemo = async () => {
     setDemoLoading(true);
@@ -197,36 +208,36 @@ export default function ModelDetailPage({ params }: ModelDetailPageProps) {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="p-4 bg-[#0a0d28]/60 border border-white/5 rounded-xl hover:border-indigo-500/20 transition-all duration-300">
                   <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Sharpe Ratio</p>
-                  <p className="text-2xl font-bold text-white">{model.performance.sharpeRatio.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-white">{metricNum(model.performance.sharpeRatio, 2)}</p>
                 </div>
                 
                 <div className="p-4 bg-[#0a0d28]/60 border border-white/5 rounded-xl hover:border-indigo-500/20 transition-all duration-300">
                   <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Annualized Return</p>
-                  <p className="text-2xl font-bold text-emerald-400">
-                    +{model.performance.annualizedReturn.toFixed(1)}%
-                  </p>
+                  <p className="text-2xl font-bold text-emerald-400">{metricPct(model.performance.annualizedReturn, 1, true)}</p>
                 </div>
                 
                 <div className="p-4 bg-[#0a0d28]/60 border border-white/5 rounded-xl hover:border-indigo-500/20 transition-all duration-300">
                   <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Max Drawdown</p>
-                  <p className="text-2xl font-bold text-rose-500">
-                    {model.performance.maxDrawdown.toFixed(1)}%
-                  </p>
+                  <p className="text-2xl font-bold text-rose-500">{metricPct(model.performance.maxDrawdown, 1, false)}</p>
                 </div>
                 
                 <div className="p-4 bg-[#0a0d28]/60 border border-white/5 rounded-xl hover:border-indigo-500/20 transition-all duration-300">
                   <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Win Rate</p>
-                  <p className="text-2xl font-bold text-white">{model.performance.winRate.toFixed(1)}%</p>
+                  <p className="text-2xl font-bold text-white">{metricPct(model.performance.winRate, 1, false)}</p>
                 </div>
                 
                 <div className="p-4 bg-[#0a0d28]/60 border border-white/5 rounded-xl hover:border-indigo-500/20 transition-all duration-300">
                   <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Average Hold Period</p>
-                  <p className="text-2xl font-bold text-white">{model.performance.avgHoldingPeriod}</p>
+                  <p className="text-2xl font-bold text-white">{model.performance.avgHoldingPeriod || 'Pending'}</p>
                 </div>
                 
                 <div className="p-4 bg-[#0a0d28]/60 border border-white/5 rounded-xl hover:border-indigo-500/20 transition-all duration-300">
                   <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Inference Signals</p>
-                  <p className="text-2xl font-bold text-white">{model.performance.totalSignals.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-white">
+                    {model.performance.totalSignals === null || model.performance.totalSignals === undefined
+                      ? 'Pending'
+                      : model.performance.totalSignals.toLocaleString()}
+                  </p>
                 </div>
               </div>
             </div>
@@ -240,7 +251,7 @@ export default function ModelDetailPage({ params }: ModelDetailPageProps) {
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-white">Neural Endpoint Sandbox</h2>
-                    <p className="text-xs text-gray-400">Trigger live single-inference mock calls to test payload structure</p>
+                    <p className="text-xs text-gray-400">Preview the latest committed signal snapshot from live model telemetry</p>
                   </div>
                 </div>
                 
@@ -250,7 +261,7 @@ export default function ModelDetailPage({ params }: ModelDetailPageProps) {
               </div>
               
               <p className="text-gray-400 text-sm mb-6">
-                Receive the latest trading signal generation vector. Endpoints are strictly rate-limited to 5 free trials per hour per client session.
+                Fetch the latest decision state captured by the dashboard source-of-truth. Requests are rate-limited to 5 previews per hour per client session.
               </p>
               
               <button
@@ -291,9 +302,9 @@ export default function ModelDetailPage({ params }: ModelDetailPageProps) {
   "latency": "${demoResult.latency}ms",
   "inference_timestamp": "${new Date().toISOString()}",
   "signal": {
-    "action": "${demoResult.signal?.action || demoResult.action || 'HOLD'}",
-    "confidence": ${demoResult.signal?.confidence || demoResult.confidence || 0.742},
-    "allocation_weight": ${demoResult.signal?.positionSize || demoResult.positionSize || 0.100},
+    "action": "${demoResult.signal?.action || demoResult.action || 'PENDING'}",
+    "confidence": ${demoResult.signal?.confidence ?? demoResult.confidence ?? null},
+    "allocation_weight": ${demoResult.signal?.positionSize ?? demoResult.positionSize ?? null},
     "risk_mitigation": {
       "stop_loss_trigger": "price_offset_0_02",
       "vol_cap_multiplier": 0.85
@@ -378,48 +389,26 @@ export default function ModelDetailPage({ params }: ModelDetailPageProps) {
             )}
           </div>
 
-          {/* Pricing Sidebar Column */}
+          {/* Access Sidebar Column */}
           <div className="lg:col-span-1">
             <div className="sticky top-28 bg-[#080c22]/50 backdrop-blur-xl rounded-2xl border border-indigo-500/20 p-6 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
               <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-indigo-450" />
-                Select Licensing Plan
+                Live Access
               </h2>
-              
-              {/* Plan Tabs */}
-              <div className="flex gap-1.5 p-1 bg-[#040614]/80 rounded-xl border border-white/5 mb-6">
-                {Object.keys(model.pricing).map((tier) => (
-                  <button
-                    key={tier}
-                    onClick={() => setSelectedTier(tier)}
-                    className={`flex-1 py-2 text-xs font-semibold rounded-lg cursor-pointer transition-all duration-300 ${
-                      selectedTier === tier
-                        ? 'bg-indigo-600 text-white shadow-md border border-indigo-400/20'
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    {tier.charAt(0).toUpperCase() + tier.slice(1)}
-                  </button>
-                ))}
-              </div>
 
-              {/* Price Details */}
+              {/* Access Details */}
               <div className="space-y-6">
                 <div className="p-4 bg-[#0a0d28]/80 border border-white/5 rounded-xl">
                   <div className="flex items-baseline gap-1.5 mb-1.5">
-                    <span className="text-4xl font-bold text-white tracking-tight">${model.pricing[selectedTier].price}</span>
-                    <span className="text-sm text-gray-500 font-medium">/month</span>
+                    <span className="text-lg font-bold text-white tracking-tight">Commercial terms on request</span>
                   </div>
                   <p className="text-xs text-indigo-300 font-mono">
-                    {model.pricing[selectedTier].calls} API inference calls/mo
+                    Pricing metadata is intentionally not synthesized when no live licensing record is published.
                   </p>
                 </div>
 
                 <div className="space-y-3.5 pt-2">
-                  <div className="flex items-center gap-3 text-sm text-gray-300">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span>{model.pricing[selectedTier].support}</span>
-                  </div>
                   <div className="flex items-center gap-3 text-sm text-gray-300">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                     <span>Real-time live-vector signals</span>
@@ -435,7 +424,7 @@ export default function ModelDetailPage({ params }: ModelDetailPageProps) {
                 </div>
 
                 <button className="w-full px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(79,70,229,0.5)] transition-all transform hover:-translate-y-0.5 cursor-pointer">
-                  Activate Endpoint Now
+                  Request Access
                 </button>
 
                 <p className="text-[10px] text-gray-500 text-center uppercase tracking-wider font-mono">

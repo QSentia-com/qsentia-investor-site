@@ -62,6 +62,14 @@ type LeaderRow = {
   color: string;
 };
 
+type BlotterRow = {
+  id: string;
+  label: string;
+  tone: 'buy' | 'sell' | 'hold';
+  time: string;
+  detail: string;
+};
+
 function percentLabel(value: number | null | undefined) {
   const formatted = fmtPct(value);
   return formatted === 'Pending' ? formatted : formatted.replace('%', '');
@@ -72,6 +80,13 @@ function formatDateLabel(dateKey?: string | null) {
   const date = new Date(`${dateKey}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return dateKey;
   return date.toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+}
+
+function formatTimeLabel(timestamp?: string | null) {
+  if (!timestamp) return 'Pending';
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return String(timestamp).slice(11, 19) || 'Pending';
+  return date.toLocaleTimeString('en-US', { hour12: false });
 }
 
 const frameworkSteps = [
@@ -456,9 +471,58 @@ export default function HomePage() {
       },
       {
         label: 'Signals Logged',
-        value: actions !== null ? String(actions) : '6,142',
+        value: actions !== null ? String(actions) : 'Pending',
         subLabel: 'Processed API Logs',
         tone: 'neutral',
+      },
+    ];
+  }, [data]);
+
+  const liveBlotterRows = useMemo<BlotterRow[]>(() => {
+    const submittedOrders = Array.isArray(data?.submittedOrders) ? data.submittedOrders : [];
+    const latestDecision = data?.latest?.decision || null;
+
+    const rowsFromOrders = submittedOrders
+      .slice(-2)
+      .reverse()
+      .map((row: any, index: number) => {
+        const side = String(row?.side || row?.action || row?.signal || '').toUpperCase();
+        const symbol = row?.symbol || row?.asset || row?.ticker || 'Instrument';
+        const qty = row?.qty || row?.quantity || row?.shares || 'n/a';
+        const px = row?.limit_price || row?.avg_fill_price || row?.price || 'n/a';
+        const status = row?.status || row?.submitted || 'submitted';
+
+        let tone: BlotterRow['tone'] = 'hold';
+        if (side.includes('BUY')) tone = 'buy';
+        if (side.includes('SELL')) tone = 'sell';
+
+        return {
+          id: `${row?.timestamp_utc || row?.timestamp || row?.id || index}`,
+          label: side ? `${side} ORDER STATUS` : 'ORDER STATUS',
+          tone,
+          time: formatTimeLabel(row?.timestamp_utc || row?.timestamp || null),
+          detail: `${symbol} qty ${qty} @ ${px}. ${String(status)}.`,
+        };
+      });
+
+    if (rowsFromOrders.length) {
+      return rowsFromOrders;
+    }
+
+    const decisionAction = String(
+      latestDecision?.action || latestDecision?.signal || latestDecision?.decision || 'Pending'
+    ).toUpperCase();
+    let tone: BlotterRow['tone'] = 'hold';
+    if (decisionAction.includes('BUY')) tone = 'buy';
+    if (decisionAction.includes('SELL')) tone = 'sell';
+
+    return [
+      {
+        id: 'latest-decision',
+        label: 'LATEST MODEL DECISION',
+        tone,
+        time: formatTimeLabel(data?.latest?.lastRun || null),
+        detail: `Signal state ${decisionAction}. Awaiting submitted order rows.`,
       },
     ];
   }, [data]);
@@ -561,19 +625,29 @@ export default function HomePage() {
 
       {/* HERO SECTION */}
       <section className="relative flex min-h-[95vh] flex-col items-center justify-center overflow-hidden px-6 pt-32 pb-20 text-center z-10">
+        <QSentiaMotionBackground />
         
         {/* Decorative Grid Mesh */}
-        <div className="absolute inset-0 bg-[#060814] -z-10 bg-radial-[circle_800px_at_50%_200px] from-slate-900/40 via-transparent to-transparent opacity-70" />
+        <div
+          className={`absolute inset-0 -z-10 transition-colors duration-300 ${
+            isDark
+              ? 'bg-[#060814] bg-radial-[circle_800px_at_50%_200px] from-slate-900/40 via-transparent to-transparent opacity-70'
+              : 'bg-transparent bg-radial-[circle_900px_at_50%_180px] from-indigo-100/50 via-white/20 to-transparent opacity-100'
+          }`}
+        />
 
         {/* Floating tech badge */}
         <div className={`mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[11px] font-mono tracking-wider uppercase transition-all duration-300 ${isDark ? 'border-indigo-500/10 bg-indigo-500/5 text-indigo-400' : 'border-indigo-100 bg-indigo-50 text-indigo-700'}`}>
           <Sparkles className="h-3 w-3 animate-pulse" />
-          Neural Predictive Alpha & Execution Infrastructure
+          Neural Predictive Risk & Execution Infrastructure
         </div>
 
         {/* Hero Heading */}
         <h1 className={`font-serif text-5xl md:text-8xl tracking-tight leading-[1.1] mb-6 font-medium max-w-5xl ${textPrimary}`}>
-          Deep Learning Engineered for <span className={`${accentText}`}>Absolute Alpha</span>
+          <span className="text-white">More</span>{' '}
+          <span className={`${accentText}`}>Alpha</span>{' '}
+          <span className="text-white">Less</span>{' '}
+          <span className={`${accentText}`}>Risk</span>
         </h1>
 
         {/* Subcopy */}
@@ -615,7 +689,10 @@ export default function HomePage() {
 
       {/* CORE STAT STRIP */}
       <div className={`relative z-10 border-y transition-colors duration-300 ${isDark ? 'bg-slate-950/40 border-slate-900/80' : 'bg-white border-slate-200'}`}>
-        <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
+        <div className={`absolute inset-0 pointer-events-none ${isDark ? 'opacity-15' : 'opacity-30'}`}>
+          <QSentiaMotionBackground />
+        </div>
+        <div className="relative z-10 mx-auto max-w-7xl px-6 py-12 md:py-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
             <div className="text-center md:text-left">
               <div className="text-xs uppercase tracking-wider text-slate-500 font-mono mb-2">Platform Returns (12M)</div>
@@ -650,7 +727,10 @@ export default function HomePage() {
       </div>
 
       {/* QUICK SHOWCASE */}
-      <section className="relative z-10 py-24 md:py-32">
+      <section className="relative z-10 py-24 md:py-32 overflow-hidden">
+        <div className={`absolute inset-0 pointer-events-none ${isDark ? 'opacity-10' : 'opacity-20'}`}>
+          <QSentiaMotionBackground />
+        </div>
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
             <div>
@@ -881,8 +961,11 @@ export default function HomePage() {
       <section
         id="performance"
         ref={leadersReveal.ref}
-        className={`relative z-10 py-24 md:py-32 border-t transition-colors duration-300 ${isDark ? 'border-slate-900 bg-slate-950/20' : 'border-slate-200 bg-white/60'} backdrop-blur-xl`}
+        className={`relative z-10 py-24 md:py-32 border-t transition-colors duration-300 overflow-hidden ${isDark ? 'border-slate-900 bg-slate-950/20' : 'border-slate-200 bg-white/60'} backdrop-blur-xl`}
       >
+        <div className={`absolute inset-0 pointer-events-none ${isDark ? 'opacity-12' : 'opacity-22'}`}>
+          <QSentiaMotionBackground />
+        </div>
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-14">
             <div className="text-xs font-mono uppercase tracking-widest text-indigo-400 mb-2">Metrics Ledger</div>
@@ -1156,8 +1239,11 @@ export default function HomePage() {
       <section
         id="framework"
         ref={frameworkReveal.ref}
-        className={`relative z-10 py-24 md:py-32 border-t border-slate-900/60 bg-transparent`}
+        className={`relative z-10 py-24 md:py-32 border-t border-slate-900/60 bg-transparent overflow-hidden`}
       >
+        <div className={`absolute inset-0 pointer-events-none ${isDark ? 'opacity-10' : 'opacity-18'}`}>
+          <QSentiaMotionBackground />
+        </div>
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-16">
             <span className="text-xs font-mono uppercase tracking-widest text-indigo-400">Execution Pipeline</span>
@@ -1264,20 +1350,25 @@ export default function HomePage() {
               {activeStep === 3 && (
                 <div className="space-y-3">
                   <div className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 font-bold">Live Executing blotters logs</div>
-                  <div className="rounded-lg bg-slate-950 p-3 border border-slate-900/60 font-mono">
-                    <div className="flex justify-between text-[10px] mb-1 font-bold">
-                      <span className="text-emerald-400">BUY ORDER STATUS</span>
-                      <span className="text-slate-500">09:32:14</span>
+                  {liveBlotterRows.map((row) => (
+                    <div key={row.id} className="rounded-lg bg-slate-950 p-3 border border-slate-900/60 font-mono">
+                      <div className="flex justify-between text-[10px] mb-1 font-bold">
+                        <span
+                          className={
+                            row.tone === 'buy'
+                              ? 'text-emerald-400'
+                              : row.tone === 'sell'
+                                ? 'text-rose-400'
+                                : 'text-indigo-400'
+                          }
+                        >
+                          {row.label}
+                        </span>
+                        <span className="text-slate-500">{row.time}</span>
+                      </div>
+                      <div className="text-slate-400 text-[11px]">{row.detail}</div>
                     </div>
-                    <div className="text-slate-400 text-[11px]">HDFC Bank Equities qty 150 @ 1,642.50. Convergence 88/100.</div>
-                  </div>
-                  <div className="rounded-lg bg-slate-950 p-3 border border-slate-900/60 font-mono">
-                    <div className="flex justify-between text-[10px] mb-1 font-bold">
-                      <span className="text-rose-400">STOP LOSS STATUS</span>
-                      <span className="text-slate-500">10:15:08</span>
-                    </div>
-                    <div className="text-slate-400 text-[11px]">Wipro Equities limit trigger. Position closed at limit offset.</div>
-                  </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -1289,8 +1380,11 @@ export default function HomePage() {
       <section
         id="approach"
         ref={approachReveal.ref}
-        className={`relative z-10 py-24 md:py-32 border-t transition-colors duration-300 ${isDark ? 'border-slate-900/80 bg-slate-950/20' : 'border-slate-200 bg-slate-50'}`}
+        className={`relative z-10 py-24 md:py-32 border-t transition-colors duration-300 overflow-hidden ${isDark ? 'border-slate-900/80 bg-slate-950/20' : 'border-slate-200 bg-slate-50'}`}
       >
+        <div className={`absolute inset-0 pointer-events-none ${isDark ? 'opacity-10' : 'opacity-18'}`}>
+          <QSentiaMotionBackground />
+        </div>
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-14">
             <span className="text-xs font-mono uppercase tracking-widest text-indigo-400">Research Grounding</span>

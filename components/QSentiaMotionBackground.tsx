@@ -17,7 +17,7 @@ const shapeData = [
 
 export default function QSentiaMotionBackground() {
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
       <div className="absolute inset-0 bg-[linear-gradient(var(--grid)_1px,transparent_1px),linear-gradient(90deg,var(--grid)_1px,transparent_1px)] bg-[length:48px_48px] opacity-60" />
       {shapeData.map((shape, idx) => (
         <div

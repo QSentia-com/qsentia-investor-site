@@ -16,18 +16,25 @@ type Model = {
   description: string;
   category: string;
   performance: {
-    sharpeRatio: number;
-    annualizedReturn: number;
-    maxDrawdown: number;
-    winRate: number;
+    sharpeRatio: number | null;
+    annualizedReturn: number | null;
+    maxDrawdown: number | null;
+    winRate: number | null;
   };
-  pricing: {
-    starter: number;
-    pro: number;
-    enterprise: number;
-  };
+  pricing: null;
   tags: string[];
 };
+
+function numLabel(value: number | null, digits = 2) {
+  if (value === null || value === undefined || Number.isNaN(value)) return 'Pending';
+  return value.toFixed(digits);
+}
+
+function pctLabel(value: number | null, digits = 1, forceSign = false) {
+  if (value === null || value === undefined || Number.isNaN(value)) return 'Pending';
+  const prefix = forceSign && value > 0 ? '+' : '';
+  return `${prefix}${value.toFixed(digits)}%`;
+}
 
 // Distinct premium sparkline path data to give an institutional charting viz for each model
 const sparklineCoords: Record<string, string> = {
@@ -278,21 +285,19 @@ export default function MarketplacePage() {
                     <div className="grid grid-cols-2 gap-3 mb-6 p-4 bg-[#0a0d28]/60 border border-white/5 rounded-xl">
                       <div>
                         <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-0.5">Sharpe Ratio</p>
-                        <p className="text-lg font-bold text-white tracking-tight">{model.performance.sharpeRatio.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-white tracking-tight">{numLabel(model.performance.sharpeRatio, 2)}</p>
                       </div>
                       <div>
                         <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-0.5">Annualized Return</p>
-                        <p className="text-lg font-bold text-emerald-400 tracking-tight">
-                          +{model.performance.annualizedReturn.toFixed(1)}%
-                        </p>
+                        <p className="text-lg font-bold text-emerald-400 tracking-tight">{pctLabel(model.performance.annualizedReturn, 1, true)}</p>
                       </div>
                       <div>
                         <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-0.5">Max Drawdown</p>
-                        <p className="text-lg font-bold text-rose-500 tracking-tight">{model.performance.maxDrawdown.toFixed(1)}%</p>
+                        <p className="text-lg font-bold text-rose-500 tracking-tight">{pctLabel(model.performance.maxDrawdown, 1, false)}</p>
                       </div>
                       <div>
                         <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-0.5">Win Rate</p>
-                        <p className="text-lg font-bold text-white tracking-tight">{model.performance.winRate.toFixed(1)}%</p>
+                        <p className="text-lg font-bold text-white tracking-tight">{pctLabel(model.performance.winRate, 1, false)}</p>
                       </div>
                     </div>
 
@@ -332,10 +337,9 @@ export default function MarketplacePage() {
                   {/* Actions / Pricing Footer */}
                   <div className="pt-4 border-t border-white/5 flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">Deploy API From</p>
+                      <p className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">Access</p>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-semibold text-white tracking-tight">${model.pricing.starter}</span>
-                        <span className="text-xs text-gray-400">/mo</span>
+                        <span className="text-sm font-semibold text-white tracking-tight">Contact for live licensing</span>
                       </div>
                     </div>
                     

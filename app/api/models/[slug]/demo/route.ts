@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
+import {
+  actionFromDecision,
+  confidenceFromDecision,
+  getLiveMarketplaceModels,
+  getLiveSignalPreview,
+  positionSizeFromDecision,
+} from '@/lib/modelCatalog';
 
-// Rate limiting would be implemented with Redis in production
-// Simple in-memory store for demo (not production-ready)
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 
 function checkRateLimit(ip: string): boolean {
@@ -9,70 +14,71 @@ function checkRateLimit(ip: string): boolean {
   const limit = rateLimitStore.get(ip);
 
   if (!limit || now > limit.resetAt) {
-    rateLimitStore.set(ip, { count: 1, resetAt: now + 3600000 }); // 1 hour
+    rateLimitStore.set(ip, { count: 1, resetAt: now + 3600000 });
     return true;
   }
 
   if (limit.count >= 5) {
-    return false; // Exceeded 5 calls per hour
+    return false;
   }
 
-  limit.count++;
+  limit.count += 1;
   return true;
 }
 
-export async function POST(request: Request, { params }: { params: Promise<{ slug: string }> }) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ slug: string }> }
+) {
   try {
     const { slug } = await params;
     const ip = request.headers.get('x-forwarded-for') || 'unknown';
 
-    // Rate limiting check
     if (!checkRateLimit(ip)) {
       return NextResponse.json(
-        { error: 'Rate limit exceeded. Demo calls limited to 5 per hour.' },
+        { error: 'Rate limit exceeded. Preview calls are limited to 5 per hour.' },
         { status: 429 }
       );
     }
 
-    // Parse body or use defaults
-    let ticker = 'AAPL';
-    try {
-      const body = await request.json();
-      ticker = body.ticker || ticker;
-    } catch (e) {
-      // No body provided, use defaults
+    const models = await getLiveMarketplaceModels(request);
+    const selectedModel = models.find((model) => model.slug === slug);
+
+    if (!selectedModel) {
+      return NextResponse.json({ error: 'Model not found.' }, { status: 404 });
     }
 
-    // Simulate ML worker processing time
     const startTime = Date.now();
+    const payload = await getLiveSignalPreview(request, selectedModel.id);
+    const decision = payload?.latest?.decision || null;
+    const action = actionFromDecision(decision);
+    const confidence = confidenceFromDecision(decision);
+    const positionSize = positionSizeFromDecision(decision, payload);
+    const latency = Date.now() - startTime;
 
-    // Mock signal generation - in production this would call FastAPI ML worker
-    const signals = ['BUY', 'SELL', 'HOLD'];
-    const action = signals[Math.floor(Math.random() * signals.length)];
-    const confidence = 0.6 + Math.random() * 0.35; // 0.6 to 0.95
-    const positionSize = Math.min(confidence * 0.15, 0.1); // Max 10% position
-
-    const latency = Date.now() - startTime + Math.floor(Math.random() * 60) + 40; // Simulate 40-100ms
-
-    // In production:
-    // const result = await fetch('http://ml-worker:8000/predict', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ model: slug, ticker, timestamp: Date.now() }),
-    // });
+    if (!action) {
+      return NextResponse.json(
+        {
+          error: 'No live decision was available for this model at request time.',
+          status: payload?.latest?.paperStatus || 'Pending',
+        },
+        { status: 503 }
+      );
+    }
 
     return NextResponse.json({
-      model: slug,
-      ticker,
+      model: selectedModel.id,
+      slug: selectedModel.slug,
       action,
       confidence,
       positionSize,
       latency,
       timestamp: new Date().toISOString(),
-      note: 'This is a demo signal. Real signals available after subscription.',
+      source: 'latest_decision_log',
+      note: 'Preview is sourced from the latest committed dashboard telemetry.',
     });
   } catch (error) {
-    console.error('Demo error:', error);
-    return NextResponse.json({ error: 'Demo failed. Please try again.' }, { status: 500 });
+    console.error('Signal preview error:', error);
+    return NextResponse.json({ error: 'Preview failed. Please try again.' }, { status: 500 });
   }
 }
