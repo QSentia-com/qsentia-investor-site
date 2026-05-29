@@ -627,6 +627,19 @@ export default function HomePage() {
 
       {/* HERO SECTION */}
       <section className="relative flex min-h-[95vh] flex-col items-center justify-center overflow-hidden px-6 pt-32 pb-20 text-center z-10">
+        <div className="absolute inset-0 -z-20 pointer-events-none">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            className="h-full w-full object-cover"
+            aria-hidden="true"
+          >
+            <source src="/video/15165674_3840_2160_25fps.mp4" type="video/mp4" />
+          </video>
+        </div>
         <QSentiaMotionBackground />
         
         {/* Decorative Grid Mesh */}
@@ -730,7 +743,7 @@ export default function HomePage() {
 
       {/* QUICK SHOWCASE */}
       <section className="relative z-10 py-24 md:py-32 overflow-hidden">
-        <div className={`absolute inset-0 pointer-events-none ${isDark ? 'opacity-10' : 'opacity-20'}`}>
+        <div className={`absolute inset-0 -z-10 pointer-events-none ${isDark ? 'opacity-10' : 'opacity-20'}`}>
           <QSentiaMotionBackground />
         </div>
         <div className="mx-auto max-w-7xl px-6">
