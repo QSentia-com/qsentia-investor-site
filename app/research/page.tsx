@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import QSentiaMotionBackground from '@/components/QSentiaMotionBackground';
 
 export default function HomePage() {
@@ -46,12 +47,12 @@ export default function HomePage() {
   View Live Research Terminal
 </button>
 
-          <a
-            href="mailto:inquiries@qsentia.com?subject=QSentia Investor Information Request"
+          <Link
+            href="/contact"
             className="border border-black/20 bg-white/70 px-14 py-5 text-lg font-medium text-black shadow-[0_18px_70px_rgba(25,20,90,0.08)] backdrop-blur-xl transition hover:border-[#4b3fd1] hover:text-[#4b3fd1]"
           >
             Request Information
-          </a>
+          </Link>
         </div>
 
         <div className="absolute bottom-8 text-4xl font-light text-neutral-500">⌄</div>

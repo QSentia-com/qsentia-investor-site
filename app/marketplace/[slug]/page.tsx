@@ -129,10 +129,13 @@ export default function ModelDetailPage({ params }: ModelDetailPageProps) {
             <Link href="/research" className="text-gray-400 hover:text-white transition-colors">
               Research
             </Link>
+            <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">
+              Contact
+            </Link>
             <div className="h-4 w-px bg-white/10"></div>
-            <button className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white rounded-lg transition-all font-medium shadow-[0_0_20px_rgba(79,70,229,0.3)]">
-              Sign In
-            </button>
+            <Link href="/contact" className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white rounded-lg transition-all font-medium shadow-[0_0_20px_rgba(79,70,229,0.3)]">
+              Contact Us
+            </Link>
           </nav>
         </div>
       </header>

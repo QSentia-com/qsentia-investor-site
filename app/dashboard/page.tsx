@@ -569,7 +569,7 @@ export default function DashboardPage() {
               <ul className="space-y-2 text-xs text-[#6b6b82]">
                 <li><a href="/dashboard" className="hover:text-[#4b3fd1] transition">Live Dashboard</a></li>
                 <li><a href="/" className="hover:text-[#4b3fd1] transition">Home</a></li>
-                <li><a href="mailto:inquiries@qsentia.com" className="hover:text-[#4b3fd1] transition">Contact</a></li>
+                <li><a href="/contact" className="hover:text-[#4b3fd1] transition">Contact</a></li>
               </ul>
             </div>
             <div className="text-right">

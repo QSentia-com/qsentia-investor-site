@@ -567,6 +567,7 @@ export default function HomePage() {
             <a href="#performance" className={`transition-colors duration-200 ${isDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-indigo-600'}`}>Performance</a>
             <a href="#framework" className={`transition-colors duration-200 ${isDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-indigo-600'}`}>Framework</a>
             <a href="#pillars" className={`transition-colors duration-200 ${isDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-indigo-600'}`}>Thesis</a>
+            <Link href="/contact" className={`transition-colors duration-200 ${isDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-indigo-600'}`}>Contact</Link>
 
             <div className="h-4 w-[1px] bg-slate-800" />
 
@@ -579,9 +580,9 @@ export default function HomePage() {
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
 
-            <a href="mailto:inquiries@qsentia.com" className={`rounded-lg px-4 py-2 font-medium text-xs tracking-wider uppercase transition-all duration-200 border ${isDark ? 'border-slate-800 text-slate-300 hover:bg-slate-900 hover:border-slate-700' : 'border-slate-200 text-slate-700 hover:bg-slate-100'}`}>
+            <Link href="/contact" className={`rounded-lg px-4 py-2 font-medium text-xs tracking-wider uppercase transition-all duration-200 border ${isDark ? 'border-slate-800 text-slate-300 hover:bg-slate-900 hover:border-slate-700' : 'border-slate-200 text-slate-700 hover:bg-slate-100'}`}>
               Institutional Access
-            </a>
+            </Link>
           </div>
 
           <button
@@ -598,6 +599,7 @@ export default function HomePage() {
           <div className={`md:hidden border-t ${isDark ? 'border-slate-900 bg-[#060814]/95 backdrop-blur-xl' : 'border-slate-200 bg-white/95'}`}>
             <div className="flex flex-col gap-4 px-6 py-6 text-sm">
               <Link href="/marketplace" className={`transition-colors ${isDark ? 'text-slate-300' : 'text-slate-700'}`} onClick={() => setIsMenuOpen(false)}>Marketplace</Link>
+              <Link href="/contact" className={`transition-colors ${isDark ? 'text-slate-300' : 'text-slate-700'}`} onClick={() => setIsMenuOpen(false)}>Contact</Link>
               <a href="#strategy" className={`transition-colors ${isDark ? 'text-slate-300' : 'text-slate-700'}`} onClick={() => setIsMenuOpen(false)}>Strategy</a>
               <a href="#performance" className={`transition-colors ${isDark ? 'text-slate-300' : 'text-slate-700'}`} onClick={() => setIsMenuOpen(false)}>Performance</a>
               <a href="#framework" className={`transition-colors ${isDark ? 'text-slate-300' : 'text-slate-700'}`} onClick={() => setIsMenuOpen(false)}>Framework</a>
@@ -615,9 +617,9 @@ export default function HomePage() {
                 {isDark ? <><Sun className="h-4 w-4" /> Light Mode</> : <><Moon className="h-4 w-4" /> Dark Mode</>}
               </button>
               
-              <a href="mailto:inquiries@qsentia.com" className="rounded-lg bg-indigo-600 px-4 py-2.5 text-center text-white font-semibold shadow hover:bg-indigo-500 transition">
+              <Link href="/contact" className="rounded-lg bg-indigo-600 px-4 py-2.5 text-center text-white font-semibold shadow hover:bg-indigo-500 transition">
                 Email Inquiries
-              </a>
+              </Link>
             </div>
           </div>
         )}
@@ -1432,9 +1434,9 @@ export default function HomePage() {
             <Link href="/marketplace" className="rounded-xl bg-indigo-600 px-8 py-4 text-sm font-semibold text-white shadow-xl hover:bg-indigo-500 transition-all duration-200">
               Go to Marketplace
             </Link>
-            <a href="mailto:inquiries@qsentia.com?subject=QSentia Investor Information Request" className={`rounded-xl border px-8 py-4 text-sm font-semibold transition-all duration-200 ${isDark ? 'border-slate-800 text-slate-300 bg-slate-950/20 hover:bg-slate-950/60 hover:border-slate-705' : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-50'}`}>
+            <Link href="/contact" className={`rounded-xl border px-8 py-4 text-sm font-semibold transition-all duration-200 ${isDark ? 'border-slate-800 text-slate-300 bg-slate-950/20 hover:bg-slate-950/60 hover:border-slate-705' : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-50'}`}>
               Contact Quant Department
-            </a>
+            </Link>
           </div>
           
           <div className="text-[10px] font-mono text-slate-500 mt-6 tracking-wide">
@@ -1473,7 +1475,7 @@ export default function HomePage() {
               <a href="#" className="block text-slate-500 mb-2.5 hover:text-white">Security Bounds</a>
               <a href="#" className="block text-slate-500 mb-2.5 hover:text-white">API References</a>
               <a href="#" className="block text-slate-500 mb-2.5 hover:text-white">Disclaimer Limits</a>
-              <a href="mailto:inquiries@qsentia.com" className="block text-slate-500 hover:text-white">Quant Query</a>
+              <Link href="/contact" className="block text-slate-500 hover:text-white">Quant Query</Link>
             </div>
           </div>
 
