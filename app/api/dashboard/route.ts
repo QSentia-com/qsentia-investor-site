@@ -686,6 +686,15 @@ export async function GET(request: Request) {
     ? submittedOrdersPrimaryRows
     : submittedOrdersFallbackRows;
   const paperStatus = inferPaperStatus(positionsRows, submittedOrdersRows);
+  const healthPaperStatus =
+    typeof healthStatus?.paper_status === 'string'
+      ? healthStatus.paper_status
+      : typeof healthStatus?.paperStatus === 'string'
+        ? healthStatus.paperStatus
+        : null;
+  const latestPaperStatus = paperStatus.isLivePaperActive
+    ? paperStatus.paperStatus
+    : healthPaperStatus || paperStatus.paperStatus;
   const latestRealismStatus =
     typeof executionRealism?.paper_replay_status === 'string'
       ? executionRealism.paper_replay_status
@@ -811,7 +820,7 @@ export async function GET(request: Request) {
             ? 'ibkr_net_liquidation_minus_starting_capital'
             : 'portfolio_csv_net_liquidation',
         isLivePaperActive: paperStatus.isLivePaperActive,
-        paperStatus: paperStatus.paperStatus,
+        paperStatus: latestPaperStatus,
         submittedOrderCount: paperStatus.submittedOrderCount,
         hasLivePositions: paperStatus.hasLivePositions,
         lastRun: latestRunTimestamp,
