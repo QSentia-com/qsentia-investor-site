@@ -1,10 +1,24 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import ScrollSpyOutline from '@/components/ScrollSpyOutline';
 
 export const metadata: Metadata = {
   title: 'Terms and Conditions | Qsentia',
   description: 'Terms and conditions governing access and use of the Qsentia platform.',
 };
+
+const outlineItems = [
+  { id: 'acceptance-of-terms', label: 'Acceptance Of Terms' },
+  { id: 'platform-purpose', label: 'Platform Purpose' },
+  { id: 'no-brokerage-or-custody-services', label: 'No Brokerage Or Custody Services' },
+  { id: 'user-responsibilities', label: 'User Responsibilities' },
+  { id: 'intellectual-property', label: 'Intellectual Property' },
+  { id: 'third-party-services', label: 'Third-Party Services' },
+  { id: 'no-financial-advice', label: 'No Financial Advice' },
+  { id: 'disclaimers-and-limitation-of-liability', label: 'Disclaimers And Limitation Of Liability' },
+  { id: 'modifications', label: 'Modifications' },
+  { id: 'contact', label: 'Contact' },
+];
 
 export default function TermsAndConditionsPage() {
   return (
@@ -19,9 +33,14 @@ export default function TermsAndConditionsPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-6 py-10 md:py-14">
-        <div className="space-y-8 text-sm leading-8 text-slate-200 md:text-base">
-          <section>
+      <section className="mx-auto max-w-6xl px-6 py-10 md:py-14">
+        <div className="grid gap-10 lg:grid-cols-[250px_minmax(0,1fr)]">
+          <aside className="hidden lg:block">
+            <ScrollSpyOutline items={outlineItems} />
+          </aside>
+
+          <div className="space-y-8 text-sm leading-8 text-slate-200 md:text-base">
+          <section id="acceptance-of-terms" className="scroll-mt-24">
             <h2 className="text-xl font-semibold text-white">1. Acceptance of Terms</h2>
             <p className="mt-3">
               By accessing or using QSentia, you agree to be bound by these Terms and Conditions and all applicable laws.
@@ -29,7 +48,7 @@ export default function TermsAndConditionsPage() {
             </p>
           </section>
 
-          <section>
+          <section id="platform-purpose" className="scroll-mt-24">
             <h2 className="text-xl font-semibold text-white">2. Platform Purpose</h2>
             <p className="mt-3">
               QSentia is provided for research, educational, and informational purposes. The platform presents simulated,
@@ -37,14 +56,14 @@ export default function TermsAndConditionsPage() {
             </p>
           </section>
 
-          <section>
+          <section id="no-brokerage-or-custody-services" className="scroll-mt-24">
             <h2 className="text-xl font-semibold text-white">3. No Brokerage or Custody Services</h2>
             <p className="mt-3">
               QSentia does not hold customer funds, custody assets, execute trades for users, or provide brokerage account services.
             </p>
           </section>
 
-          <section>
+          <section id="user-responsibilities" className="scroll-mt-24">
             <h2 className="text-xl font-semibold text-white">4. User Responsibilities</h2>
             <ul className="mt-3 list-disc space-y-2 pl-6">
               <li>Use the platform lawfully and responsibly.</li>
@@ -54,7 +73,7 @@ export default function TermsAndConditionsPage() {
             </ul>
           </section>
 
-          <section>
+          <section id="intellectual-property" className="scroll-mt-24">
             <h2 className="text-xl font-semibold text-white">5. Intellectual Property</h2>
             <p className="mt-3">
               Platform content, code, data organization, and branding elements are protected by applicable intellectual property
@@ -62,7 +81,7 @@ export default function TermsAndConditionsPage() {
             </p>
           </section>
 
-          <section>
+          <section id="third-party-services" className="scroll-mt-24">
             <h2 className="text-xl font-semibold text-white">6. Third-Party Services</h2>
             <p className="mt-3">
               QSentia may rely on third-party infrastructure and integrations, including cloud providers, code hosting,
@@ -71,7 +90,7 @@ export default function TermsAndConditionsPage() {
             </p>
           </section>
 
-          <section>
+          <section id="no-financial-advice" className="scroll-mt-24">
             <h2 className="text-xl font-semibold text-white">7. No Financial Advice</h2>
             <p className="mt-3">
               Nothing on QSentia constitutes investment, legal, tax, accounting, or financial advice. You are solely responsible
@@ -79,7 +98,7 @@ export default function TermsAndConditionsPage() {
             </p>
           </section>
 
-          <section>
+          <section id="disclaimers-and-limitation-of-liability" className="scroll-mt-24">
             <h2 className="text-xl font-semibold text-white">8. Disclaimers and Limitation of Liability</h2>
             <p className="mt-3">
               The platform is provided on an "as is" and "as available" basis without warranties of any kind. QSentia and its
@@ -88,19 +107,20 @@ export default function TermsAndConditionsPage() {
             </p>
           </section>
 
-          <section>
+          <section id="modifications" className="scroll-mt-24">
             <h2 className="text-xl font-semibold text-white">9. Modifications</h2>
             <p className="mt-3">
               We may modify these terms at any time. Continued use of QSentia after updates constitutes acceptance of the revised terms.
             </p>
           </section>
 
-          <section>
+          <section id="contact" className="scroll-mt-24">
             <h2 className="text-xl font-semibold text-white">10. Contact</h2>
             <p className="mt-3">
               For terms-related inquiries, use official QSentia website or repository contact channels.
             </p>
           </section>
+          </div>
         </div>
       </section>
     </main>
