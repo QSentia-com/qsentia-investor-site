@@ -41,6 +41,7 @@ const sparklineCoords: Record<string, string> = {
   'qsentia-btc-eth-perp-basis-alpha': 'M 0 45 Q 15 35 30 40 T 60 20 T 90 25 T 120 10 T 150 15 T 180 5 T 210 12 T 240 2',
   'qsentia-brppo-macro-rotation': 'M 0 40 Q 15 25 30 35 T 60 30 T 90 15 T 120 18 T 150 8 T 180 12 T 210 5 T 240 3',
   'crypto-sentiment-mlp': 'M 0 48 Q 15 38 30 45 T 60 25 T 90 32 T 120 15 T 150 20 T 180 8 T 210 14 T 240 5',
+  'qsentia-btc-spot-sentiment-alpha': 'M 0 46 Q 15 36 30 41 T 60 23 T 90 30 T 120 13 T 150 19 T 180 7 T 210 13 T 240 4',
   'mlp-alpha-130-30': 'M 0 42 Q 15 28 30 38 T 60 18 T 90 22 T 120 10 T 150 14 T 180 4 T 210 8 T 240 1',
   'model-c-mlp-regime-moe': 'M 0 44 Q 15 32 30 42 T 60 20 T 90 24 T 120 12 T 150 16 T 180 6 T 210 10 T 240 2',
   'qsentia-model-c-sentiment-alpha': 'M 0 46 Q 15 34 30 40 T 60 22 T 90 28 T 120 14 T 150 18 T 180 8 T 210 12 T 240 4',

@@ -9,12 +9,14 @@ const REGISTRY_REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'Base_Model_B
 const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
 const BRPPO_MACRO_ALPACA_MODEL_ID = 'qsentia_brppo_macro_rotation_alpaca';
 const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
+const BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_spot_sentiment_alpha';
 const MODEL_C_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_model_c_sentiment_alpha';
 const RL_ALPHA_ALLOCATOR_MODEL_ID = 'qsentia_rl_alpha_allocator';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || BRPPO_MACRO_ALPACA_MODEL_ID;
 const RETIRED_MODEL_IDS = new Set(['qsentia_btc_eth_perp_basis_alpha']);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   MODEL_C_SENTIMENT_ALPHA_MODEL_ID,
+  BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID,
   RL_ALPHA_ALLOCATOR_MODEL_ID,
   'real_crypto_carry_ibkr',
   'delta_neutral_crypto_funding',
@@ -55,6 +57,18 @@ const REQUIRED_MODELS: ModelConfig[] = [
     branch: 'main',
     enabled: true,
     color: '#f59e0b',
+  },
+  {
+    id: BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID,
+    name: 'QSentia BTC Spot Sentiment Alpha — Alpaca',
+    description:
+      'Long-only spot Bitcoin sentiment strategy using CryptoBERT-scored news, Reddit, YouTube, MLP/PPO ensemble signals, and Alpaca paper execution. Current portfolio value is sourced from Alpaca portfolio_value/net_liquidation logs.',
+    repo: 'FinTechEntrepreneurldz/qsentia-btc-spot-sentiment-alpha',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#10b981',
+    starting_capital: 1000000,
   },
   {
     id: MODEL_C_SENTIMENT_ALPHA_MODEL_ID,
@@ -817,7 +831,7 @@ export async function GET(request: Request) {
         // Do NOT derive P&L from positions market_value.
         pnlSource:
           accountBaseline !== null
-            ? 'ibkr_net_liquidation_minus_starting_capital'
+            ? 'broker_account_value_minus_starting_capital'
             : 'portfolio_csv_net_liquidation',
         isLivePaperActive: paperStatus.isLivePaperActive,
         paperStatus: latestPaperStatus,
