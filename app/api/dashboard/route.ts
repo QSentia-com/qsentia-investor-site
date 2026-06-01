@@ -420,6 +420,19 @@ function accountValue(row: CsvRow): number | null {
   const status = String(row.account_status || row.status || '').toLowerCase();
   if (status.includes('dry_run') || status.includes('dry-run')) return null;
 
+  const portfolioValue = num(row.portfolio_value);
+  const netLiquidation =
+    num(row.net_liquidation) ??
+    num(row.net_liquidation_value) ??
+    num(row.netliquidation) ??
+    num(row.netLiquidation) ??
+    num(row.NetLiquidation) ??
+    num(row.nlv) ??
+    num(row.NLV);
+  if (netLiquidation !== null && netLiquidation <= 0 && portfolioValue !== null && portfolioValue > 0) {
+    return portfolioValue;
+  }
+
   for (const key of ACCOUNT_VALUE_KEYS) {
     const value = num(row[key]);
     if (value !== null) return value;
@@ -451,10 +464,32 @@ function objectToCsvRow(raw: Record<string, unknown>): CsvRow {
   );
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function healthStatusObservation(healthStatus: AccountHealthStatus): PortfolioPoint[] {
   if (!healthStatus) return [];
 
-  const value = accountValue(objectToCsvRow(healthStatus));
+  const nestedAccount = isRecord(healthStatus.ibkr_account)
+    ? healthStatus.ibkr_account
+    : isRecord(healthStatus.account)
+      ? healthStatus.account
+      : null;
+  const raw = objectToCsvRow({
+    ...healthStatus,
+    ...(nestedAccount || {}),
+    account_status:
+      nestedAccount?.account_status ||
+      healthStatus.account_status ||
+      healthStatus.overall_status ||
+      'connected',
+    source:
+      nestedAccount?.source ||
+      healthStatus.source ||
+      (nestedAccount ? 'health_status_ibkr_account' : 'health_status_net_liquidation'),
+  });
+  const value = accountValue(raw);
   const timestamp = String(
     healthStatus.updated_at_utc ||
       healthStatus.timestamp_utc ||
@@ -469,11 +504,7 @@ function healthStatusObservation(healthStatus: AccountHealthStatus): PortfolioPo
     {
       timestamp,
       value,
-      raw: objectToCsvRow({
-        ...healthStatus,
-        account_status: healthStatus.account_status || healthStatus.overall_status || 'connected',
-        source: healthStatus.source || 'health_status_net_liquidation',
-      }),
+      raw,
     },
   ];
 }
@@ -655,12 +686,14 @@ export async function GET(request: Request) {
 
   const [
     portfolioRows,
+    latestIbkrAccountRows,
     latestDecisionRows,
     decisionsRows,
     targetWeightsRows,
     targetWeightHistoryRows,
     positionsRows,
     plannedOrdersRows,
+    plannedAllocationsRows,
     submittedOrdersPrimaryRows,
     submittedOrdersFallbackRows,
     ordersHistoryRows,
@@ -671,12 +704,14 @@ export async function GET(request: Request) {
     benchmarkStartDate,
   ] = await Promise.all([
     fetchCsvFromModel(selectedModelConfig, 'portfolio/portfolio.csv'),
+    fetchCsvFromModel(selectedModelConfig, 'portfolio/latest_ibkr_account.csv'),
     fetchCsvFromModel(selectedModelConfig, 'decisions/latest_decision.csv'),
     fetchCsvFromModel(selectedModelConfig, 'decisions/decisions.csv'),
     fetchCsvFromModel(selectedModelConfig, 'target_weights/latest_target_weights.csv'),
     fetchCsvFromModel(selectedModelConfig, 'target_weights/target_weights.csv'),
     fetchCsvFromModel(selectedModelConfig, 'positions/latest_positions.csv'),
     fetchCsvFromModel(selectedModelConfig, 'orders/latest_planned_orders.csv'),
+    fetchCsvFromModel(selectedModelConfig, 'orders/latest_planned_allocations.csv'),
     fetchCsvFromModel(selectedModelConfig, 'orders/latest_submitted_orders.csv'),
     fetchCsvFromModel(selectedModelConfig, 'orders/latest_orders.csv'),
     fetchCsvFromModel(selectedModelConfig, 'orders/submitted_orders.csv'),
@@ -699,6 +734,7 @@ export async function GET(request: Request) {
   const submittedOrdersRows = submittedOrdersPrimaryRows.length
     ? submittedOrdersPrimaryRows
     : submittedOrdersFallbackRows;
+  const displayedPlannedOrdersRows = plannedOrdersRows.length ? plannedOrdersRows : plannedAllocationsRows;
   const paperStatus = inferPaperStatus(positionsRows, submittedOrdersRows);
   const healthPaperStatus =
     typeof healthStatus?.paper_status === 'string'
@@ -715,13 +751,16 @@ export async function GET(request: Request) {
       : null;
   const latestRunTimestamp =
     healthStatus?.updated_at_utc ||
+    healthStatus?.timestamp_utc ||
     latest(latestDecisionRows)?.timestamp_utc ||
     latest(decisionsRows)?.timestamp_utc ||
+    latest(latestIbkrAccountRows)?.timestamp_utc ||
     latest(portfolioRows)?.timestamp_utc ||
     null;
   const portfolio = [
     ...accountValueObservations([
       portfolioRows,
+      latestIbkrAccountRows,
       latestDecisionRows,
       decisionsRows,
       signalHistoryRows,
@@ -753,12 +792,14 @@ export async function GET(request: Request) {
 
   for (const model of registry) {
     const rows = await fetchCsvFromModel(model, 'portfolio/portfolio.csv');
+    const latestAccountRows = await fetchCsvFromModel(model, 'portfolio/latest_ibkr_account.csv');
     const modelHealthStatus = await fetchJsonFromModel<Record<string, unknown>>(
       model,
       'health/health_status.json'
     );
     const daily = toDailyPortfolio([
       ...normalizePortfolioRows(rows),
+      ...normalizePortfolioRows(latestAccountRows),
       ...healthStatusObservation(modelHealthStatus),
     ]);
     const modelValues = daily.map((p) => p.value);
@@ -788,7 +829,7 @@ export async function GET(request: Request) {
       stats: computeStats(modelPerformanceValues),
       latestValue: modelValues.length ? modelValues[modelValues.length - 1] : modelBaseline,
       startingCapital: modelBaseline,
-      rowCount: rows.length,
+      rowCount: rows.length + latestAccountRows.length,
       dailyRowCount: daily.length,
       inceptionDate: modelInceptionDate || null,
       benchmarks: modelBenchmarks,
@@ -862,7 +903,7 @@ export async function GET(request: Request) {
     targetWeights: targetWeightsRows,
     targetWeightHistory: targetWeightHistoryRows,
     positions: positionsRows,
-    plannedOrders: plannedOrdersRows,
+    plannedOrders: displayedPlannedOrdersRows,
     submittedOrders: submittedOrdersRows,
     ordersHistory: ordersHistoryRows,
     signalHistory: signalHistoryRows,
@@ -887,6 +928,7 @@ export async function GET(request: Request) {
       selectedModelConfig,
         rowCounts: {
           portfolioRows: portfolioRows.length,
+          latestIbkrAccountRows: latestIbkrAccountRows.length,
           healthStatusRows: healthStatus ? 1 : 0,
           dailyPortfolioRows: dailyPortfolio.length,
         latestDecisionRows: latestDecisionRows.length,
@@ -894,7 +936,8 @@ export async function GET(request: Request) {
         targetWeightsRows: targetWeightsRows.length,
         targetWeightHistoryRows: targetWeightHistoryRows.length,
         positionsRows: positionsRows.length,
-        plannedOrdersRows: plannedOrdersRows.length,
+        plannedOrdersRows: displayedPlannedOrdersRows.length,
+        plannedAllocationsRows: plannedAllocationsRows.length,
         submittedOrdersRows: submittedOrdersRows.length,
         ordersHistoryRows: ordersHistoryRows.length,
         signalHistoryRows: signalHistoryRows.length,
