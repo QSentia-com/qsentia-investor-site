@@ -3,10 +3,12 @@ import { computeStats, normalizeTo100, pctChange } from '@/lib/metrics';
 import Papa from 'papaparse';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 const REGISTRY_OWNER = process.env.NEXT_PUBLIC_QSENTIA_REPO_OWNER || 'FinTechEntrepreneurldz';
 const REGISTRY_REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'Base_Model_BR_PPO';
 const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
+const GITHUB_READ_TOKEN = process.env.GITHUB_READ_TOKEN || process.env.QSENTIA_GITHUB_READ_TOKEN || '';
 const BRPPO_MACRO_ALPACA_MODEL_ID = 'qsentia_brppo_macro_rotation_alpaca';
 const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
 const BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_spot_sentiment_alpha';
@@ -142,7 +144,51 @@ function rawUrl(repoFullName: string, branch: string, path: string) {
   return `https://raw.githubusercontent.com/${repoFullName}/${branch}/${cleanPath}`;
 }
 
+function githubContentsUrl(repoFullName: string, branch: string, path: string) {
+  const cleanPath = path
+    .replace(/^\/+/, '')
+    .split('/')
+    .map((part) => encodeURIComponent(part))
+    .join('/');
+  return `https://api.github.com/repos/${repoFullName}/contents/${cleanPath}?ref=${encodeURIComponent(branch)}`;
+}
+
+function decodeGitHubContentJson(text: string) {
+  try {
+    const parsed = JSON.parse(text) as { content?: string; encoding?: string };
+    if (parsed.encoding === 'base64' && typeof parsed.content === 'string') {
+      return Buffer.from(parsed.content.replace(/\s/g, ''), 'base64').toString('utf8');
+    }
+  } catch {
+    return '';
+  }
+  return '';
+}
+
 async function fetchTextFromRaw(repoFullName: string, branch: string, path: string) {
+  if (GITHUB_READ_TOKEN) {
+    try {
+      const response = await fetch(githubContentsUrl(repoFullName, branch, path), {
+        cache: 'no-store',
+        headers: {
+          Accept: 'application/vnd.github.raw+json',
+          Authorization: `Bearer ${GITHUB_READ_TOKEN}`,
+          'Cache-Control': 'no-cache',
+          'User-Agent': 'qsentia-investor-site',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+      });
+
+      if (response.ok) {
+        const text = await response.text();
+        const decoded = decodeGitHubContentJson(text);
+        return decoded || text;
+      }
+    } catch {
+      // Fall back to unauthenticated raw GitHub below for public repositories.
+    }
+  }
+
   try {
     const response = await fetch(rawUrl(repoFullName, branch, path), {
       cache: 'no-store',
