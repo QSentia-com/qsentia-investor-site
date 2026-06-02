@@ -422,6 +422,14 @@ function latest<T>(arr: T[]): T | null {
   return arr.length ? arr[arr.length - 1] : null;
 }
 
+function latestPortfolioPoint(points: PortfolioPoint[]): PortfolioPoint | null {
+  if (!points.length) return null;
+
+  return points.reduce((best, point) =>
+    timestampSortValue(point.timestamp) >= timestampSortValue(best.timestamp) ? point : best
+  );
+}
+
 function timestampToDateKey(timestamp: string | undefined) {
   if (!timestamp) return '';
 
@@ -820,10 +828,11 @@ export async function GET(request: Request) {
   ]);
   const healthPortfolio = healthStatusObservation(healthStatus);
   const portfolio = filePortfolio.length ? filePortfolio : healthPortfolio;
+  const latestBrokerAccountPoint = latestPortfolioPoint(normalizePortfolioRows(latestIbkrAccountRows));
   const dailyPortfolio = toDailyPortfolio(portfolio);
   const values = dailyPortfolio.map((p) => p.value);
   const accountBaseline = startingCapitalForModel(selectedModelConfig);
-  const latestPortfolioValue = values.length ? values[values.length - 1] : accountBaseline;
+  const latestPortfolioValue = latestBrokerAccountPoint?.value ?? (values.length ? values[values.length - 1] : accountBaseline);
   const firstPortfolioValue = accountBaseline ?? (values.length ? values[0] : null);
   const selectedPerformanceValues = performanceValues(values, accountBaseline);
   const normalizedValues = normalizeTo100(values);
@@ -850,10 +859,8 @@ export async function GET(request: Request) {
       model,
       'health/health_status.json'
     );
-    const modelFilePortfolio = [
-      ...normalizePortfolioRows(rows),
-      ...normalizePortfolioRows(latestAccountRows),
-    ];
+    const latestModelBrokerAccountPoint = latestPortfolioPoint(normalizePortfolioRows(latestAccountRows));
+    const modelFilePortfolio = [...normalizePortfolioRows(rows), ...normalizePortfolioRows(latestAccountRows)];
     const daily = toDailyPortfolio(
       modelFilePortfolio.length ? modelFilePortfolio : healthStatusObservation(modelHealthStatus)
     );
@@ -882,7 +889,7 @@ export async function GET(request: Request) {
         value: curve[i],
       })),
       stats: computeStats(modelPerformanceValues),
-      latestValue: modelValues.length ? modelValues[modelValues.length - 1] : modelBaseline,
+      latestValue: latestModelBrokerAccountPoint?.value ?? (modelValues.length ? modelValues[modelValues.length - 1] : modelBaseline),
       startingCapital: modelBaseline,
       rowCount: rows.length + latestAccountRows.length,
       dailyRowCount: daily.length,
@@ -907,12 +914,18 @@ export async function GET(request: Request) {
         // SOURCE OF TRUTH: latest broker account observation from portfolio logs or health status.
         // For new account-backed models, fall back to configured starting capital until first log lands.
         portfolioValue: latestPortfolioValue,
-        portfolioValueTimestamp: dailyPortfolio.length ? dailyPortfolio[dailyPortfolio.length - 1].timestamp : null,
-        portfolioValueSource: dailyPortfolio.length
-          ? dailyPortfolio[dailyPortfolio.length - 1].raw?.source || 'broker_account_value'
-          : accountBaseline !== null
-            ? 'starting_capital_baseline'
+        portfolioValueTimestamp: latestBrokerAccountPoint
+          ? latestBrokerAccountPoint.timestamp
+          : dailyPortfolio.length
+            ? dailyPortfolio[dailyPortfolio.length - 1].timestamp
             : null,
+        portfolioValueSource: latestBrokerAccountPoint
+          ? latestBrokerAccountPoint.raw?.source || 'broker_account_value'
+          : dailyPortfolio.length
+            ? dailyPortfolio[dailyPortfolio.length - 1].raw?.source || 'broker_account_value'
+            : accountBaseline !== null
+              ? 'starting_capital_baseline'
+              : null,
         firstPortfolioValue,
         startingCapital: accountBaseline,
         portfolioPnl:
