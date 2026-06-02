@@ -811,16 +811,15 @@ export async function GET(request: Request) {
     latest(latestIbkrAccountRows)?.timestamp_utc ||
     latest(portfolioRows)?.timestamp_utc ||
     null;
-  const portfolio = [
-    ...accountValueObservations([
-      portfolioRows,
-      latestIbkrAccountRows,
-      latestDecisionRows,
-      decisionsRows,
-      signalHistoryRows,
-    ]),
-    ...healthStatusObservation(healthStatus),
-  ];
+  const filePortfolio = accountValueObservations([
+    portfolioRows,
+    latestIbkrAccountRows,
+    latestDecisionRows,
+    decisionsRows,
+    signalHistoryRows,
+  ]);
+  const healthPortfolio = healthStatusObservation(healthStatus);
+  const portfolio = filePortfolio.length ? filePortfolio : healthPortfolio;
   const dailyPortfolio = toDailyPortfolio(portfolio);
   const values = dailyPortfolio.map((p) => p.value);
   const accountBaseline = startingCapitalForModel(selectedModelConfig);
@@ -851,11 +850,13 @@ export async function GET(request: Request) {
       model,
       'health/health_status.json'
     );
-    const daily = toDailyPortfolio([
+    const modelFilePortfolio = [
       ...normalizePortfolioRows(rows),
       ...normalizePortfolioRows(latestAccountRows),
-      ...healthStatusObservation(modelHealthStatus),
-    ]);
+    ];
+    const daily = toDailyPortfolio(
+      modelFilePortfolio.length ? modelFilePortfolio : healthStatusObservation(modelHealthStatus)
+    );
     const modelValues = daily.map((p) => p.value);
     const modelBaseline = startingCapitalForModel(model);
     const modelPerformanceValues = performanceValues(modelValues, modelBaseline);
