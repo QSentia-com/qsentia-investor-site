@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import AlexAssistant from "@/components/AlexAssistant";
 import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
@@ -17,9 +18,10 @@ export default function RootLayout({
       lang="en"
       className="h-full antialiased"
     >
-      <body className="min-h-full font-sans antialiased bg-[#eeeef6] flex flex-col">
+      <body className="min-h-full bg-white font-sans antialiased flex flex-col">
         {children}
         <SiteFooter />
+        <AlexAssistant />
       </body>
     </html>
   );

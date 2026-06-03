@@ -42,11 +42,9 @@
 }
 
 body {
-  background-color: var(--bg);
-  background-image: linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 32px 32px;
-  color: var(--t1);
+  background-color: #ffffff;
+  background-image: none;
+  color: #0a0f0c;
   font-family: var(--font-dm-sans), sans-serif;
   letter-spacing: 0;
   min-height: 100vh;

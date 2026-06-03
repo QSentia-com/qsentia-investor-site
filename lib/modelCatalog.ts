@@ -60,7 +60,7 @@ export type MarketplaceModel = {
     maxDrawdown: number | null;
     winRate: number | null;
   };
-  pricing: null;
+  pricing: string | null;
   tags: string[];
   repo: string | null;
   logsPath: string | null;
@@ -72,7 +72,7 @@ export type ModelDetails = MarketplaceModel & {
     avgHoldingPeriod: string | null;
     totalSignals: number | null;
   };
-  pricing: null;
+  pricing: string | null;
   features: string[];
   compatibleBrokers?: string[];
   useCases?: string[];
@@ -90,6 +90,7 @@ function toSlug(value: string) {
 }
 
 function numberOrNull(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
 }
@@ -151,11 +152,16 @@ function mapModel(entry: ModelComparisonEntry): MarketplaceModel {
   };
 }
 
-async function fetchDashboard(origin: string, modelId?: string): Promise<DashboardPayload | null> {
+async function fetchDashboard(
+  origin: string,
+  modelId?: string,
+  summaryOnly = false
+): Promise<DashboardPayload | null> {
   try {
-    const endpoint = modelId
-      ? `${origin}/api/dashboard?model=${encodeURIComponent(modelId)}`
-      : `${origin}/api/dashboard`;
+    const params = new URLSearchParams();
+    if (modelId) params.set('model', modelId);
+    if (summaryOnly) params.set('summary', '1');
+    const endpoint = `${origin}/api/dashboard${params.toString() ? `?${params.toString()}` : ''}`;
 
     const response = await fetch(endpoint, {
       cache: 'no-store',

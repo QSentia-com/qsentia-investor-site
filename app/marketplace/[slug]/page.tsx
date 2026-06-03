@@ -1,64 +1,96 @@
 'use client';
 
-import { useState } from 'react';
+import { use, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { use } from 'react';
 import useSWR from 'swr';
-import QSentiaMotionBackground from '@/components/QSentiaMotionBackground';
-import { 
-  TrendingUp, 
-  ArrowLeft, 
-  CheckCircle2, 
-  BarChart3, 
-  Zap,
-  Shield,
-  Clock,
-  Cpu,
-  Layers,
-  Sparkles,
-  Terminal as TerminalIcon,
-  Play
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, BarChart3, CheckCircle2, Database, Play, ShieldCheck } from 'lucide-react';
+import { ApiLoadingPanel, EmptyState, Eyebrow, PageShell, SectionCard } from '@/components/PageChrome';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+  return response.json();
+};
+
+type ModelDetails = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  longDescription?: string;
+  category: string;
+  performance: {
+    sharpeRatio: number | null;
+    annualizedReturn: number | null;
+    maxDrawdown: number | null;
+    winRate: number | null;
+    avgHoldingPeriod?: string | null;
+    totalSignals?: number | null;
+  };
+  pricing: string | null;
+  tags: string[];
+  repo?: string | null;
+  logsPath?: string | null;
+  features?: string[];
+  compatibleBrokers?: string[];
+  useCases?: string[];
+  latest?: Record<string, unknown>;
+};
+
+type DetailResponse = {
+  model?: ModelDetails;
+};
+
+type DemoResult = {
+  error?: string;
+  latency?: number | string;
+  signal?: Record<string, unknown>;
+  action?: string;
+  confidence?: number | null;
+  positionSize?: number | null;
+};
 
 interface ModelDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
+function formatNum(value: number | null | undefined, digits = 2) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 'Not available';
+  return value.toFixed(digits);
+}
+
+function formatPct(value: number | null | undefined, signed = false) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 'Not available';
+  const prefix = signed && value > 0 ? '+' : '';
+  return `${prefix}${(value * 100).toFixed(2)}%`;
+}
+
+function categoryLabel(value: string) {
+  return value
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
 export default function ModelDetailPage({ params }: ModelDetailPageProps) {
   const { slug } = use(params);
-  const { data, error, isLoading } = useSWR(`/api/models/${slug}`, fetcher);
+  const { data, error, isLoading } = useSWR<DetailResponse>(`/api/models/${slug}`, fetcher);
   const [demoLoading, setDemoLoading] = useState(false);
-  const [demoResult, setDemoResult] = useState<any>(null);
-  
+  const [demoResult, setDemoResult] = useState<DemoResult | null>(null);
+
   const model = data?.model;
 
-  const metricNum = (value: number | null | undefined, digits = 2) => {
-    if (value === null || value === undefined || Number.isNaN(Number(value))) return 'Pending';
-    return Number(value).toFixed(digits);
-  };
-
-  const metricPct = (value: number | null | undefined, digits = 1, forceSign = false) => {
-    if (value === null || value === undefined || Number.isNaN(Number(value))) return 'Pending';
-    const n = Number(value);
-    const prefix = forceSign && n > 0 ? '+' : '';
-    return `${prefix}${n.toFixed(digits)}%`;
-  };
-
-  const handleFreeDemo = async () => {
+  const handlePreview = async () => {
     setDemoLoading(true);
     setDemoResult(null);
     try {
       const response = await fetch(`/api/models/${slug}/demo`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
-      const data = await response.json();
-      setDemoResult(data);
-    } catch (err) {
-      setDemoResult({ error: 'Failed to run demo' });
+      setDemoResult((await response.json()) as DemoResult);
+    } catch {
+      setDemoResult({ error: 'Failed to run telemetry preview' });
     } finally {
       setDemoLoading(false);
     }
@@ -66,378 +98,176 @@ export default function ModelDetailPage({ params }: ModelDetailPageProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#060814] flex flex-col items-center justify-center relative">
-        <QSentiaMotionBackground />
-        <div className="flex flex-col items-center gap-4 relative z-10">
-          <div className="w-12 h-12 border-t-2 border-indigo-500 border-r-2 border-indigo-500/30 rounded-full animate-spin"></div>
-          <div className="text-indigo-300 text-sm font-mono tracking-widest uppercase">Initializing Neural Connection...</div>
-        </div>
-      </div>
+      <PageShell active="/marketplace">
+        <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+          <ApiLoadingPanel
+            title="Loading model profile"
+            body="Preparing strategy metrics, source details, published features, and access context."
+            items={['Strategy metrics', 'Source details', 'Access context']}
+          />
+        </section>
+      </PageShell>
     );
   }
 
   if (error || !model) {
     return (
-      <div className="min-h-screen bg-[#060814] flex items-center justify-center relative">
-        <QSentiaMotionBackground />
-        <div className="relative z-10 text-center bg-[#080c22]/60 backdrop-blur-xl border border-white/5 p-12 rounded-2xl max-w-md shadow-2xl">
-          <Layers className="w-16 h-16 text-indigo-400 mx-auto mb-6" />
-          <h1 className="text-3xl font-bold text-white mb-4">Model Not Found</h1>
-          <p className="text-gray-400 text-sm mb-8">The requested intelligence model does not exist or has been deprecated from the active cluster index.</p>
-          <Link href="/marketplace" className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Marketplace
+      <PageShell active="/marketplace">
+        <section className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
+          <EmptyState title="Model not found" body="The requested model is not available in the current model API payload." />
+          <Link href="/marketplace" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#3d52da]">
+            <ArrowLeft className="h-4 w-4" />
+            Back to marketplace
           </Link>
-        </div>
-      </div>
+        </section>
+      </PageShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#060814] text-[#eceefb] relative overflow-hidden selection:bg-[#4f46e5]/40 selection:text-white">
-      <QSentiaMotionBackground />
-
-      {/* Futuristic Glow Layers */}
-      <div className="absolute top-[10%] left-[-15%] w-[600px] h-[600px] rounded-full bg-[#4f46e5]/5 blur-[150px] pointer-events-none z-0"></div>
-      <div className="absolute top-[30%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[#7c3aed]/5 blur-[130px] pointer-events-none z-0"></div>
-      <div className="absolute bottom-[20%] left-[10%] w-[600px] h-[600px] rounded-full bg-[#00d9ff]/5 blur-[150px] pointer-events-none z-0"></div>
-
-      {/* Header */}
-      <header className="border-b border-white/5 bg-[#080b20]/60 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative overflow-hidden p-1.5 rounded-lg bg-white/5 border border-white/10 group-hover:border-indigo-500/50 transition-all duration-300">
-              <Image
-                src="/logo/Qsentia Logo Bg transparent.png"
-                alt="Qsentia"
-                width={36}
-                height={36}
-                className="w-9 h-9 transform group-hover:scale-110 transition-transform duration-300"
-              />
-            </div>
-            <span className="text-2xl font-semibold tracking-tight text-white group-hover:text-indigo-400 transition-colors">
-              Qsentia<span className="text-xs font-mono px-2 py-0.5 ml-2 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300">CORE</span>
-            </span>
+    <PageShell active="/marketplace">
+      <section className="border-b border-[#e2e7fb] bg-[#f8faff]">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-16">
+          <Link href="/marketplace" className="inline-flex items-center gap-2 text-sm font-semibold text-[#3d52da] hover:underline">
+            <ArrowLeft className="h-4 w-4" />
+            Back to marketplace
           </Link>
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/marketplace" className="text-indigo-300 font-medium hover:text-white transition-colors">
-              Marketplace
-            </Link>
-            <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors">
-              Dashboard
-            </Link>
-            <Link href="/research" className="text-gray-400 hover:text-white transition-colors">
-              Research
-            </Link>
-            <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">
-              Contact
-            </Link>
-            <div className="h-4 w-px bg-white/10"></div>
-            <Link href="/contact" className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white rounded-lg transition-all font-medium shadow-[0_0_20px_rgba(79,70,229,0.3)]">
-              Contact Us
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      <div className="relative max-w-7xl mx-auto px-6 py-12 z-10">
-        
-        {/* Navigation Breadcrumb */}
-        <Link 
-          href="/marketplace" 
-          className="inline-flex items-center gap-2 text-indigo-300 hover:text-white mb-8 transition-colors font-medium text-sm group"
-        >
-          <ArrowLeft className="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" />
-          Back to Model Registry
-        </Link>
-
-        {/* Model Hero Banner */}
-        <div className="mb-12 border-b border-white/5 pb-12">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
-            <div className="flex flex-wrap items-center gap-4">
-              <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white">{model.name}</h1>
-              <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-mono tracking-wider font-semibold rounded-full flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-                ACTIVE ENDPOINT
-              </span>
-            </div>
-            {/* Quick response stats */}
-            <div className="flex items-center gap-4 text-xs font-mono text-gray-400">
-              <span className="px-3 py-1.5 bg-white/5 border border-white/5 rounded-lg">GPU Cluster Standard</span>
-              <span className="px-3 py-1.5 bg-white/5 border border-white/5 rounded-lg">HTTP API</span>
-            </div>
-          </div>
-          
-          <p className="text-lg md:text-xl text-gray-300 max-w-4xl leading-relaxed mb-6">
-            {model.description}
-          </p>
-
-          {/* Long Description Text Block */}
-          {model.longDescription && (
-            <p className="text-gray-400 max-w-4xl text-sm leading-relaxed mb-8 border-l-2 border-indigo-500/30 pl-4 whitespace-pre-wrap">
-              {model.longDescription}
+          <div className="mt-8 max-w-5xl">
+            <Eyebrow>{categoryLabel(model.category)}</Eyebrow>
+            <h1 className="mt-6 text-4xl font-semibold leading-[1.05] text-[#06130c] md:text-6xl">
+              {model.name}
+            </h1>
+            <p className="mt-6 max-w-4xl text-base leading-7 text-[#46554b] md:text-lg">
+              {model.description}
             </p>
-          )}
-
-          {model.tags && (
-            <div className="flex flex-wrap gap-2">
-              {model.tags.map((tag: string) => (
-                <span key={tag} className="px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 text-xs font-medium text-indigo-300 rounded-lg">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Core Layout Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          
-          {/* Main Column */}
-          <div className="lg:col-span-2 space-y-8">
-            
-            {/* Performance Metrics */}
-            <div className="bg-[#080c22]/40 backdrop-blur-xl rounded-2xl border border-white/5 p-8 shadow-[0_4px_30px_rgba(0,0,0,0.3)]">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg">
-                  <BarChart3 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white">Backtested & Production Metrics</h2>
-                  <p className="text-xs text-gray-400">Audited operational metrics synced daily with portfolio tracking</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-[#0a0d28]/60 border border-white/5 rounded-xl hover:border-indigo-500/20 transition-all duration-300">
-                  <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Sharpe Ratio</p>
-                  <p className="text-2xl font-bold text-white">{metricNum(model.performance.sharpeRatio, 2)}</p>
-                </div>
-                
-                <div className="p-4 bg-[#0a0d28]/60 border border-white/5 rounded-xl hover:border-indigo-500/20 transition-all duration-300">
-                  <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Annualized Return</p>
-                  <p className="text-2xl font-bold text-emerald-400">{metricPct(model.performance.annualizedReturn, 1, true)}</p>
-                </div>
-                
-                <div className="p-4 bg-[#0a0d28]/60 border border-white/5 rounded-xl hover:border-indigo-500/20 transition-all duration-300">
-                  <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Max Drawdown</p>
-                  <p className="text-2xl font-bold text-rose-500">{metricPct(model.performance.maxDrawdown, 1, false)}</p>
-                </div>
-                
-                <div className="p-4 bg-[#0a0d28]/60 border border-white/5 rounded-xl hover:border-indigo-500/20 transition-all duration-300">
-                  <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Win Rate</p>
-                  <p className="text-2xl font-bold text-white">{metricPct(model.performance.winRate, 1, false)}</p>
-                </div>
-                
-                <div className="p-4 bg-[#0a0d28]/60 border border-white/5 rounded-xl hover:border-indigo-500/20 transition-all duration-300">
-                  <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Average Hold Period</p>
-                  <p className="text-2xl font-bold text-white">{model.performance.avgHoldingPeriod || 'Pending'}</p>
-                </div>
-                
-                <div className="p-4 bg-[#0a0d28]/60 border border-white/5 rounded-xl hover:border-indigo-500/20 transition-all duration-300">
-                  <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">Inference Signals</p>
-                  <p className="text-2xl font-bold text-white">
-                    {model.performance.totalSignals === null || model.performance.totalSignals === undefined
-                      ? 'Pending'
-                      : model.performance.totalSignals.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Free Demo with Interactive Terminal */}
-            <div className="bg-[#080c22]/40 backdrop-blur-xl rounded-2xl border border-white/5 p-8 shadow-[0_4px_30px_rgba(0,0,0,0.3)]">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg">
-                    <TerminalIcon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Neural Endpoint Sandbox</h2>
-                    <p className="text-xs text-gray-400">Preview the latest committed signal snapshot from live model telemetry</p>
-                  </div>
-                </div>
-                
-                <div className="text-xs text-indigo-300 font-mono">
-                  POST /api/v1/infer
-                </div>
-              </div>
-              
-              <p className="text-gray-400 text-sm mb-6">
-                Fetch the latest decision state captured by the dashboard source-of-truth. Requests are rate-limited to 5 previews per hour per client session.
-              </p>
-              
-              <button
-                onClick={handleFreeDemo}
-                disabled={demoLoading}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-600/50 text-white rounded-lg font-bold transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] disabled:cursor-not-allowed group cursor-pointer"
-              >
-                {demoLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Executing GPU Inference Vector...
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 fill-current transform group-hover:scale-110 transition-transform" />
-                    Query Active Inference API
-                  </>
-                )}
-              </button>
-
-              {demoResult && (
-                <div className="mt-6 border border-white/5 rounded-xl overflow-hidden bg-[#040614]/80 shadow-2xl font-mono text-sm leading-relaxed">
-                  <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-white/5">
-                    <span className="text-xs text-gray-500 font-semibold">TERMINAL OUTPUT</span>
-                    <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                  </div>
-                  
-                  {demoResult.error ? (
-                    <div className="p-4 text-rose-400">
-                      Error: {demoResult.error}
-                    </div>
-                  ) : (
-                    <pre className="p-5 overflow-x-auto text-[13px] text-gray-300 whitespace-pre">
-{`{
-  "api_version": "2026.05.28",
-  "status": "success",
-  "deployment": "qsentia-cluster-${slug}",
-  "latency": "${demoResult.latency}ms",
-  "inference_timestamp": "${new Date().toISOString()}",
-  "signal": {
-    "action": "${demoResult.signal?.action || demoResult.action || 'PENDING'}",
-    "confidence": ${demoResult.signal?.confidence ?? demoResult.confidence ?? null},
-    "allocation_weight": ${demoResult.signal?.positionSize ?? demoResult.positionSize ?? null},
-    "risk_mitigation": {
-      "stop_loss_trigger": "price_offset_0_02",
-      "vol_cap_multiplier": 0.85
-    }
-  }
-}`}
-                    </pre>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Key Features */}
-            {model.features && (
-              <div className="bg-[#080c22]/40 backdrop-blur-xl rounded-2xl border border-white/5 p-8 shadow-[0_4px_30px_rgba(0,0,0,0.3)]">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg">
-                    <Shield className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Tactical Features & Controls</h2>
-                    <p className="text-xs text-gray-400">Core architecture built within active model endpoints</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {model.features.map((feature: string, index: number) => (
-                    <div key={index} className="flex items-start gap-3 p-3 bg-white/5 border border-white/5 rounded-xl">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-sm text-gray-300">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Compatible Brokers */}
-            {model.compatibleBrokers && (
-              <div className="bg-[#080c22]/40 backdrop-blur-xl rounded-2xl border border-white/5 p-8 shadow-[0_4px_30px_rgba(0,0,0,0.3)]">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg">
-                    <Cpu className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Certified Broker Connectivity</h2>
-                    <p className="text-xs text-gray-400">Integrated microservices ready for major APIs & execution centers</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {model.compatibleBrokers.map((broker: string) => (
-                    <div key={broker} className="p-3.5 bg-[#0a0d28]/60 border border-white/5 rounded-xl text-center hover:border-indigo-500/20 transition-all hover:scale-102">
-                      <p className="font-semibold text-xs text-white tracking-wider uppercase">{broker}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Use Cases */}
-            {model.useCases && (
-              <div className="bg-[#080c22]/40 backdrop-blur-xl rounded-2xl border border-white/5 p-8 shadow-[0_4px_30px_rgba(0,0,0,0.3)]">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg">
-                    <Clock className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Structured Use Cases</h2>
-                    <p className="text-xs text-gray-400">Recommended tactical trading applications</p>
-                  </div>
-                </div>
-                
-                <ul className="space-y-3.5">
-                  {model.useCases.map((useCase: string, index: number) => (
-                    <li key={index} className="flex items-start gap-3 p-4 bg-white/5 border border-white/5 rounded-xl">
-                      <span className="w-2 h-2 bg-indigo-450 rounded-full mt-2 flex-shrink-0 animate-pulse"></span>
-                      <span className="text-sm text-gray-300 leading-relaxed">{useCase}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {model.longDescription && (
+              <p className="mt-4 max-w-4xl text-sm leading-7 text-[#5a685f]">{model.longDescription}</p>
             )}
           </div>
+        </div>
+      </section>
 
-          {/* Access Sidebar Column */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-28 bg-[#080c22]/50 backdrop-blur-xl rounded-2xl border border-indigo-500/20 p-6 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
-              <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-indigo-450" />
-                Live Access
-              </h2>
+      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[1.35fr_0.65fr]">
+        <div className="space-y-6">
+          <SectionCard className="p-6">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#eef2ff] text-[#3d52da]">
+                <BarChart3 className="h-5 w-5" />
+              </span>
+              <div>
+                <h2 className="text-xl font-semibold text-[#06130c]">Performance metrics</h2>
+                <p className="text-sm text-[#5a685f]">Values are sourced from model detail telemetry.</p>
+              </div>
+            </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <Metric label="Sharpe ratio" value={formatNum(model.performance.sharpeRatio)} />
+              <Metric label="Annualized return" value={formatPct(model.performance.annualizedReturn, true)} />
+              <Metric label="Max drawdown" value={formatPct(model.performance.maxDrawdown, true)} />
+              <Metric label="Win rate" value={formatPct(model.performance.winRate)} />
+              <Metric label="Holding period" value={model.performance.avgHoldingPeriod || 'Not available'} />
+              <Metric label="Signal rows" value={model.performance.totalSignals?.toLocaleString('en-US') || 'Not available'} />
+            </div>
+          </SectionCard>
 
-              {/* Access Details */}
-              <div className="space-y-6">
-                <div className="p-4 bg-[#0a0d28]/80 border border-white/5 rounded-xl">
-                  <div className="flex items-baseline gap-1.5 mb-1.5">
-                    <span className="text-lg font-bold text-white tracking-tight">Commercial terms on request</span>
-                  </div>
-                  <p className="text-xs text-indigo-300 font-mono">
-                    Pricing metadata is intentionally not synthesized when no live licensing record is published.
-                  </p>
-                </div>
-
-                <div className="space-y-3.5 pt-2">
-                  <div className="flex items-center gap-3 text-sm text-gray-300">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span>Real-time live-vector signals</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-gray-300">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span>WebSocket & REST access</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-gray-300">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span>Custom safety factor triggers</span>
-                  </div>
-                </div>
-
-                <button className="w-full px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(79,70,229,0.5)] transition-all transform hover:-translate-y-0.5 cursor-pointer">
-                  Request Access
-                </button>
-
-                <p className="text-[10px] text-gray-500 text-center uppercase tracking-wider font-mono">
-                  Secure instant API token generation
+          <SectionCard className="p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-[#06130c]">Telemetry preview</h2>
+                <p className="mt-1 text-sm text-[#5a685f]">
+                  Calls the rate-limited demo route for the latest decision preview.
                 </p>
               </div>
+              <button
+                type="button"
+                onClick={handlePreview}
+                disabled={demoLoading}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-[#172554] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#2437b5] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Play className="h-4 w-4" />
+                {demoLoading ? 'Running preview' : 'Run preview'}
+              </button>
             </div>
-          </div>
+
+            {demoResult && (
+              <pre className="mt-5 max-h-[360px] overflow-auto whitespace-pre-wrap break-all rounded-md bg-[#07112a] p-4 text-xs leading-6 text-[#dbe4ff]">
+                {JSON.stringify(demoResult, null, 2)}
+              </pre>
+            )}
+          </SectionCard>
+
+          {model.features?.length ? (
+            <SectionCard className="p-6">
+              <h2 className="text-xl font-semibold text-[#06130c]">Published features</h2>
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                {model.features.map((feature) => (
+                  <div key={feature} className="flex gap-3 rounded-md border border-[#e2e7fb] bg-[#fbfcff] p-3 text-sm text-[#26352c]">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#3d52da]" />
+                    {feature}
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          ) : null}
         </div>
-      </div>
+
+        <aside className="space-y-6">
+          <SectionCard className="p-6">
+            <Database className="h-5 w-5 text-[#3d52da]" />
+            <h2 className="mt-4 text-xl font-semibold text-[#06130c]">Source details</h2>
+            <dl className="mt-5 divide-y divide-[#e2e7fb] text-sm">
+              <InfoRow label="Repository" value={model.repo || 'Not available'} />
+              <InfoRow label="Logs path" value={model.logsPath || 'Not available'} />
+              <InfoRow label="Pricing" value={model.pricing || 'Pricing not returned by API'} />
+            </dl>
+          </SectionCard>
+
+          <SectionCard className="p-6">
+            <ShieldCheck className="h-5 w-5 text-[#3d52da]" />
+            <h2 className="mt-4 text-xl font-semibold text-[#06130c]">Access</h2>
+            <p className="mt-3 text-sm leading-6 text-[#5a685f]">
+              Licensing terms are not synthesized when no live commercial record is published.
+            </p>
+            <Link
+              href="/contact"
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#172554] px-5 py-3 text-sm font-bold text-white hover:bg-[#2437b5]"
+            >
+              Request access
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </SectionCard>
+
+          {model.tags?.length ? (
+            <SectionCard className="p-6">
+              <h2 className="text-xl font-semibold text-[#06130c]">Tags</h2>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {model.tags.map((tag) => (
+                  <span key={tag} className="rounded-md border border-[#e2e7fb] bg-[#fbfcff] px-2 py-1 text-xs text-[#647269]">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </SectionCard>
+          ) : null}
+        </aside>
+      </section>
+    </PageShell>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-[#e2e7fb] bg-[#fbfcff] p-4">
+      <div className="text-[11px] font-bold uppercase tracking-wide text-[#647269]">{label}</div>
+      <div className="mt-1 text-lg font-semibold text-[#06130c]">{value}</div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid gap-1 py-3">
+      <dt className="font-medium text-[#647269]">{label}</dt>
+      <dd className="break-words font-semibold text-[#06130c]">{value}</dd>
     </div>
   );
 }

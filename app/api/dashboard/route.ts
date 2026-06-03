@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { computeStats, normalizeTo100, pctChange } from '@/lib/metrics';
 import Papa from 'papaparse';
 
@@ -27,6 +29,12 @@ const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
 const BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_spot_sentiment_alpha';
 const MODEL_C_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_model_c_sentiment_alpha';
 const RL_ALPHA_ALLOCATOR_MODEL_ID = 'qsentia_rl_alpha_allocator';
+const MODEL_C_ORIGINAL_MODEL_ID = 'model_c';
+const MODEL_C_MLP_REGIME_MOE_MODEL_ID = 'model_c_mlp_regime_moe';
+const MODEL_A_ORIGINAL_MODEL_ID = 'model_a';
+const BR_PPO_CRYPTO_V15_MODEL_ID = 'br_ppo_crypto_v15';
+const REAL_CRYPTO_CARRY_IBKR_MODEL_ID = 'real_crypto_carry_ibkr';
+const BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || BRPPO_MACRO_ALPACA_MODEL_ID;
 const RETIRED_MODEL_IDS = new Set(['qsentia_btc_eth_perp_basis_alpha']);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
@@ -41,6 +49,17 @@ const DEFAULT_ACCOUNT_STARTING_CAPITAL = Number(
     process.env.NEXT_PUBLIC_QSENTIA_ACCOUNT_STARTING_CAPITAL ||
     1000000
 );
+const UPSTREAM_API_BASE_URL = (
+  process.env.QSENTIA_UPSTREAM_API_BASE_URL || 'https://www.qsentia.com'
+).replace(/\/+$/, '');
+const UPSTREAM_DASHBOARD_BASE_URLS = Array.from(
+  new Set([UPSTREAM_API_BASE_URL, 'https://www.qsentia.com', 'https://qsentia.com'])
+);
+const DASHBOARD_CACHE_DIR = path.join(process.cwd(), '.qsentia-cache');
+const DASHBOARD_LAST_GOOD_CACHE_PATH = path.join(DASHBOARD_CACHE_DIR, 'dashboard-last-good.json');
+let lastUsableUpstreamDashboardPayload: Record<string, unknown> | null = null;
+let lastUsableUpstreamDashboardAt: string | null = null;
+let lastUpstreamDashboardFetchReport: Record<string, unknown> | null = null;
 
 const BENCHMARKS = [
   { name: 'S&P 500', ticker: 'SPY', color: '#111111' },
@@ -53,7 +72,7 @@ const BENCHMARKS = [
 const REQUIRED_MODELS: ModelConfig[] = [
   {
     id: BRPPO_MACRO_ALPACA_MODEL_ID,
-    name: 'QSentia BR-PPO Macro Rotation — Alpaca',
+    name: 'QSentia BR-PPO Macro Rotation - Alpaca',
     description:
       'Frozen BR-PPO macro rotation Sharpe 2 research-family candidate with Alpaca paper execution and canonical QSentia dashboard logs.',
     repo: 'FinTechEntrepreneurldz/qsentia-brppo-macro-rotation-alpaca',
@@ -64,7 +83,7 @@ const REQUIRED_MODELS: ModelConfig[] = [
   },
   {
     id: CRYPTO_SENTIMENT_MLP_MODEL_ID,
-    name: 'Crypto Sentiment MLP/PPO — IBKR',
+    name: 'Crypto Sentiment MLP/PPO - IBKR',
     description:
       'Live BTC sentiment ensemble using CryptoBERT-scored news, MLP/PPO stackers, and IBKR CME Micro Bitcoin futures paper execution. Current portfolio value is sourced from IBKR NetLiquidation.',
     repo: 'FinTechEntrepreneurldz/crypto_sentiment_MLP',
@@ -75,7 +94,7 @@ const REQUIRED_MODELS: ModelConfig[] = [
   },
   {
     id: BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID,
-    name: 'QSentia BTC Spot Sentiment Alpha — Alpaca',
+    name: 'QSentia BTC Spot Sentiment Alpha - Alpaca',
     description:
       'Long-only spot Bitcoin sentiment strategy using CryptoBERT-scored news, Reddit, YouTube, MLP/PPO ensemble signals, and Alpaca paper execution. Current portfolio value is sourced from Alpaca portfolio_value/net_liquidation logs.',
     repo: 'FinTechEntrepreneurldz/qsentia-btc-spot-sentiment-alpha',
@@ -107,6 +126,58 @@ const REQUIRED_MODELS: ModelConfig[] = [
     enabled: true,
     color: '#0ea5e9',
     starting_capital: 1034017,
+  },
+  {
+    id: MODEL_C_ORIGINAL_MODEL_ID,
+    name: 'MLP Alpha 130/30 - Original Model C',
+    description: 'Original Model C paper-trading model.',
+    repo: 'FinTechEntrepreneurldz/Model_C_Paper_Trading',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#a855f7',
+  },
+  {
+    id: MODEL_C_MLP_REGIME_MOE_MODEL_ID,
+    name: 'Model C - MLP Regime MoE',
+    description:
+      'Regime-aware mixture-of-experts MLP model similar to Model C. Uses Alpaca paper trading and canonical QSentia logs.',
+    repo: 'FinTechEntrepreneurldz/model_c_etf',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#2563eb',
+  },
+  {
+    id: MODEL_A_ORIGINAL_MODEL_ID,
+    name: 'BR-PPO V10 Original Base',
+    description: 'Original BR-PPO allocation agent from Base_Model_BR_PPO. Canonical Model A paper-trading logs.',
+    repo: 'FinTechEntrepreneurldz/Base_Model_BR_PPO',
+    logs_path: 'logs/model_a',
+    branch: 'main',
+    enabled: true,
+    color: '#00d4aa',
+  },
+  {
+    id: BR_PPO_CRYPTO_V15_MODEL_ID,
+    name: 'BR-PPO Crypto V15',
+    description:
+      'BR-PPO crypto model V15. Ensemble model using crypto, FreqAI, LLM, Ichimoku, and BIL allocation components.',
+    repo: 'FinTechEntrepreneurldz/br_ppo_crypto_v15',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#f97316',
+  },
+  {
+    id: REAL_CRYPTO_CARRY_IBKR_MODEL_ID,
+    name: 'Real Crypto Carry - IBKR',
+    description: 'Real crypto carry strategy using Interactive Brokers execution and canonical QSentia dashboard logs.',
+    repo: 'FinTechEntrepreneurldz/real_crypto_carry_ibkr',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#14b8a6',
   },
 ];
 
@@ -346,7 +417,8 @@ function mergeRequiredModels(models: ModelConfig[]) {
   }
 
   for (const model of models) {
-    byId.set(model.id, model);
+    const requiredModel = byId.get(model.id);
+    byId.set(model.id, requiredModel ? { ...model, ...requiredModel } : model);
   }
 
   return Array.from(byId.values());
@@ -766,8 +838,269 @@ async function benchmarkStartDateFromFirstModel(registry: ModelConfig[]) {
   return daily.length ? daily[0].timestamp : undefined;
 }
 
+function shouldUseUpstreamDashboard(request: Request) {
+  if (process.env.QSENTIA_DISABLE_UPSTREAM_API_PROXY === '1') return false;
+  if (process.env.QSENTIA_ENABLE_UPSTREAM_API_PROXY === '1') return true;
+
+  const hostname = new URL(request.url).hostname.toLowerCase();
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+}
+
+async function fetchUpstreamDashboard(request: Request) {
+  const attempts: Array<Record<string, unknown>> = [];
+
+  try {
+    const localUrl = new URL(request.url);
+
+    for (const baseUrl of UPSTREAM_DASHBOARD_BASE_URLS) {
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        const upstreamUrl = new URL('/api/dashboard', baseUrl);
+        upstreamUrl.search = localUrl.search;
+        upstreamUrl.searchParams.set('_qsentiaLocalFetch', `${Date.now()}-${attempt}`);
+        const startedAt = Date.now();
+
+        try {
+          const response = await fetch(upstreamUrl, {
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache',
+              'User-Agent': 'qsentia-investor-site-local',
+            },
+          });
+
+          const baseAttempt = {
+            attempt,
+            durationMs: Date.now() - startedAt,
+            ok: response.ok,
+            source: upstreamUrl.origin,
+            status: response.status,
+          };
+
+          if (!response.ok) {
+            attempts.push(baseAttempt);
+            continue;
+          }
+
+          const payload = await response.json();
+          const diagnostics = dashboardPayloadDiagnostics(payload);
+          const usable = hasUsableDashboardPayload(payload);
+          attempts.push({
+            ...baseAttempt,
+            ...diagnostics,
+            usable,
+          });
+
+          if (!usable) continue;
+
+          const cachedAt = new Date().toISOString();
+          await cacheUsableUpstreamDashboardPayload(payload as Record<string, unknown>, cachedAt);
+
+          lastUpstreamDashboardFetchReport = {
+            checkedAt: cachedAt,
+            status: 'live',
+            attempts,
+          };
+
+          return upstreamDashboardResponse(lastUsableUpstreamDashboardPayload, {
+            dataSource: {
+              mode: 'upstream-live',
+              cachedAt,
+              diagnostics,
+              upstreamApi: upstreamUrl.origin,
+            },
+          });
+        } catch (error) {
+          attempts.push({
+            attempt,
+            durationMs: Date.now() - startedAt,
+            error: errorMessage(error),
+            source: upstreamUrl.origin,
+          });
+        }
+      }
+    }
+  } catch (error) {
+    attempts.push({
+      error: errorMessage(error),
+      source: 'upstream-dashboard',
+    });
+  }
+
+  lastUpstreamDashboardFetchReport = {
+    checkedAt: new Date().toISOString(),
+    status: 'unusable',
+    attempts,
+  };
+
+  return cachedUpstreamDashboardResponse(lastUpstreamDashboardFetchReport);
+}
+
+function upstreamDashboardResponse(
+  payload: Record<string, unknown> | null,
+  debugPatch: Record<string, unknown> = {}
+) {
+  if (!payload) return null;
+
+  return NextResponse.json(withDashboardDebug(payload, debugPatch), {
+    headers: {
+      'Cache-Control': 'no-store',
+    },
+  });
+}
+
+async function cachedUpstreamDashboardResponse(fetchReport?: Record<string, unknown> | null) {
+  const cached = await readCachedUpstreamDashboardPayload();
+
+  if (!cached) return null;
+
+  return upstreamDashboardResponse(cached.payload, {
+    dataSource: {
+      mode: 'upstream-last-good-cache',
+      upstreamCache: {
+        cachedAt: cached.cachedAt,
+        status: 'last-good',
+      },
+      upstreamFetch: fetchReport || lastUpstreamDashboardFetchReport,
+    },
+  });
+}
+
+function withDashboardDebug(
+  payload: Record<string, unknown>,
+  debugPatch: Record<string, unknown>
+) {
+  const debug =
+    typeof payload.debug === 'object' && payload.debug !== null
+      ? (payload.debug as Record<string, unknown>)
+      : {};
+
+  return {
+    ...payload,
+    debug: {
+      ...debug,
+      ...debugPatch,
+    },
+  };
+}
+
+async function cacheUsableUpstreamDashboardPayload(
+  payload: Record<string, unknown>,
+  cachedAt: string
+) {
+  lastUsableUpstreamDashboardPayload = payload;
+  lastUsableUpstreamDashboardAt = cachedAt;
+
+  try {
+    await mkdir(DASHBOARD_CACHE_DIR, { recursive: true });
+    await writeFile(
+      DASHBOARD_LAST_GOOD_CACHE_PATH,
+      JSON.stringify({ cachedAt, payload }, null, 2),
+      'utf8'
+    );
+  } catch {
+    // The in-memory cache still keeps the current request path working.
+  }
+}
+
+async function readCachedUpstreamDashboardPayload(): Promise<{
+  cachedAt: string | null;
+  payload: Record<string, unknown>;
+} | null> {
+  if (lastUsableUpstreamDashboardPayload) {
+    return {
+      cachedAt: lastUsableUpstreamDashboardAt,
+      payload: lastUsableUpstreamDashboardPayload,
+    };
+  }
+
+  try {
+    const text = await readFile(DASHBOARD_LAST_GOOD_CACHE_PATH, 'utf8');
+    const parsed = JSON.parse(text) as { cachedAt?: unknown; payload?: unknown };
+    const payload = parsed && typeof parsed === 'object' && 'payload' in parsed ? parsed.payload : parsed;
+
+    if (!hasUsableDashboardPayload(payload)) return null;
+
+    lastUsableUpstreamDashboardPayload = payload as Record<string, unknown>;
+    lastUsableUpstreamDashboardAt =
+      typeof parsed.cachedAt === 'string' ? parsed.cachedAt : null;
+
+    return {
+      cachedAt: lastUsableUpstreamDashboardAt,
+      payload: lastUsableUpstreamDashboardPayload,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function hasUsableDashboardPayload(payload: unknown) {
+  const diagnostics = dashboardPayloadDiagnostics(payload);
+
+  return Boolean(
+    diagnostics.hasExpectedRegistry &&
+      (diagnostics.hasModelCurves || diagnostics.hasModelStats || diagnostics.hasSelectedCurve)
+  );
+}
+
+function dashboardPayloadDiagnostics(payload: unknown) {
+  const dashboard = payload as {
+    modelComparison?: Array<{
+      points?: unknown[];
+      stats?: {
+        totalReturn?: unknown;
+        sharpe?: unknown;
+      };
+    }>;
+    equityCurve?: unknown[];
+    benchmarks?: Array<{
+      points?: unknown[];
+    }>;
+  };
+  const modelRows = Array.isArray(dashboard?.modelComparison) ? dashboard.modelComparison : [];
+  const benchmarkRows = Array.isArray(dashboard?.benchmarks) ? dashboard.benchmarks : [];
+  const hasExpectedRegistry = modelRows.length >= REQUIRED_MODELS.length;
+  const hasModelCurves = modelRows.some((model) => Array.isArray(model.points) && model.points.length >= 2);
+  const hasModelStats = modelRows.some(
+    (model) =>
+      typeof model.stats?.totalReturn === 'number' ||
+      typeof model.stats?.sharpe === 'number'
+  );
+  const hasSelectedCurve = Array.isArray(dashboard?.equityCurve) && dashboard.equityCurve.length >= 2;
+  const modelCurvePoints = modelRows.reduce(
+    (sum, model) => sum + (Array.isArray(model.points) ? model.points.length : 0),
+    0
+  );
+  const benchmarkCurvePoints = benchmarkRows.reduce(
+    (sum, benchmark) => sum + (Array.isArray(benchmark.points) ? benchmark.points.length : 0),
+    0
+  );
+
+  return {
+    benchmarkCurvePoints,
+    benchmarkRows: benchmarkRows.length,
+    hasExpectedRegistry,
+    hasModelCurves,
+    hasModelStats,
+    hasSelectedCurve,
+    modelCurvePoints,
+    modelRows: modelRows.length,
+    requiredModels: REQUIRED_MODELS.length,
+    selectedCurvePoints: Array.isArray(dashboard?.equityCurve) ? dashboard.equityCurve.length : 0,
+  };
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  const summaryOnly = searchParams.get('summary') === '1';
+
+  if (shouldUseUpstreamDashboard(request)) {
+    const upstreamDashboard = await fetchUpstreamDashboard(request);
+    if (upstreamDashboard) return upstreamDashboard;
+  }
 
   const registry = await fetchModelsRegistry();
 
@@ -778,6 +1111,75 @@ export async function GET(request: Request) {
     registry[0];
 
   const selectedModel = selectedModelConfig.id;
+
+  if (summaryOnly) {
+    const summaryStats = {
+      totalReturn: null,
+      annualizedReturn: null,
+      sharpe: null,
+      sortino: null,
+      calmar: null,
+      maxDrawdown: null,
+      volatility: null,
+      hitRate: null,
+      nObservations: 0,
+      nReturns: 0,
+      status: 'insufficient',
+    };
+
+    return NextResponse.json(
+      {
+        repo: {
+          owner: REGISTRY_OWNER,
+          repo: REGISTRY_REPO,
+          branch: REGISTRY_BRANCH,
+          rawBase: `https://raw.githubusercontent.com/${REGISTRY_OWNER}/${REGISTRY_REPO}/${REGISTRY_BRANCH}`,
+        },
+        selectedModel,
+        selectedModelConfig,
+        registry,
+        latest: {
+          paperStatus: null,
+        },
+        stats: summaryStats,
+        benchmarks: BENCHMARKS.map((benchmark) => ({
+          ...benchmark,
+          rowCount: null,
+        })),
+        modelComparison: registry.map((model) => ({
+          id: model.id,
+          name: model.name,
+          description: model.description,
+          repo: model.repo,
+          logsPath: model.logs_path,
+          color: model.color,
+          stats: { ...summaryStats },
+          latestValue: model.starting_capital ?? null,
+          rowCount: null,
+          dailyRowCount: null,
+          inceptionDate: null,
+        })),
+        debug: {
+          summaryOnly: true,
+          dataSource: {
+            githubTokenPresent: Boolean(GITHUB_READ_TOKEN),
+            lastGoodCachePath: '.qsentia-cache/dashboard-last-good.json',
+            mode: 'local-github-fallback',
+            upstreamFetch: lastUpstreamDashboardFetchReport,
+            upstreamProxyEnabled: shouldUseUpstreamDashboard(request),
+          },
+          registryCount: registry.length,
+          benchmarkCount: BENCHMARKS.length,
+        },
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
+        },
+      }
+    );
+  }
 
   const [
     portfolioRows,
@@ -1011,6 +1413,21 @@ export async function GET(request: Request) {
       privateGitHubTokenConfigured: Boolean(GITHUB_READ_TOKEN),
       privateGitHubTokenEnvName: GITHUB_READ_TOKEN_ENV_NAME,
       benchmarkStartDate,
+      dataSource: {
+        benchmarkCurvePoints: benchmarks.reduce(
+          (sum, benchmark) => sum + (Array.isArray(benchmark.points) ? benchmark.points.length : 0),
+          0
+        ),
+        githubTokenPresent: Boolean(GITHUB_READ_TOKEN),
+        lastGoodCachePath: '.qsentia-cache/dashboard-last-good.json',
+        mode: 'local-github-fallback',
+        modelCurvePoints: modelComparison.reduce(
+          (sum, model) => sum + (Array.isArray(model.points) ? model.points.length : 0),
+          0
+        ),
+        upstreamFetch: lastUpstreamDashboardFetchReport,
+        upstreamProxyEnabled: shouldUseUpstreamDashboard(request),
+      },
       registryCount: registry.length,
       registry: registry.map((m) => ({
         id: m.id,

@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         models,
-        source: 'live-dashboard',
+        source: 'app-api-dashboard',
         timestamp: new Date().toISOString(),
       },
       {

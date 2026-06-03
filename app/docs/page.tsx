@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import QSentiaMotionBackground from '@/components/QSentiaMotionBackground';
-import { ArrowRight, BookOpenText, KeyRound, ShieldCheck, Workflow } from 'lucide-react';
+import { ArrowRight, KeyRound, ShieldCheck, Workflow } from 'lucide-react';
+import { Eyebrow, PageShell, SectionCard } from '@/components/PageChrome';
 
 export const metadata: Metadata = {
   title: 'Docs | Qsentia API Integration Guide',
@@ -9,181 +9,122 @@ export const metadata: Metadata = {
 };
 
 const quickSteps = [
-  'Confirm your base URL and environment setup.',
-  'Validate dashboard connectivity with a health-style fetch to /api/dashboard.',
-  'Load models from /api/models and bind user selection to model slug.',
-  'Fetch model details via /api/models/{slug} before rendering detail screens.',
-  'Call /api/models/{slug}/demo only for controlled previews due rate limits.',
+  'Confirm the base URL and environment.',
+  'Validate connectivity with GET /api/dashboard.',
+  'Load the model list with GET /api/models.',
+  'Fetch model detail with GET /api/models/{slug}.',
+  'Call POST /api/models/{slug}/demo only for controlled previews.',
 ];
 
 const endpointCards = [
-  {
-    route: 'GET /api/dashboard',
-    purpose: 'Live telemetry, performance metrics, and dashboard state.',
-    cache: 'dynamic telemetry response; designed for periodic refresh polling.',
-  },
-  {
-    route: 'GET /api/models',
-    purpose: 'Marketplace model list sourced from live dashboard mapping.',
-    cache: 'public with revalidation headers (s-maxage and stale-while-revalidate).',
-  },
-  {
-    route: 'GET /api/models/{slug}',
-    purpose: 'Single-model details for model profile and statistics pages.',
-    cache: 'public with revalidation headers (s-maxage and stale-while-revalidate).',
-  },
-  {
-    route: 'POST /api/models/{slug}/demo',
-    purpose: 'Live signal preview from latest decision telemetry for a selected model.',
-    cache: 'non-cache preview path with request limiting (5 calls per hour per IP).',
-  },
-];
+  ['GET /api/dashboard', 'Live telemetry, performance metrics, and dashboard state.'],
+  ['GET /api/models', 'Marketplace model list sourced from live dashboard mapping.'],
+  ['GET /api/models/{slug}', 'Single-model detail for model profile and statistics pages.'],
+  ['POST /api/models/{slug}/demo', 'Latest decision preview, rate-limited per client session.'],
+] as const;
 
 export default function DocsPage() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#050712] text-[#e9ecff] selection:bg-indigo-500/30 selection:text-white">
-      <QSentiaMotionBackground />
-
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[-8%] top-[-12%] h-[420px] w-[420px] rounded-full bg-indigo-600/12 blur-[130px]" />
-        <div className="absolute bottom-[-14%] right-[-8%] h-[460px] w-[460px] rounded-full bg-cyan-500/10 blur-[140px]" />
-      </div>
-
-      <header className="relative z-20 border-b border-white/8 bg-[#06091c]/65 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-3 text-white transition-colors hover:text-indigo-300">
-            <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-sm font-semibold">
-              Q
-            </div>
-            <div>
-              <div className="text-xl font-semibold tracking-tight">Qsentia</div>
-              <div className="text-[10px] font-mono uppercase tracking-[0.26em] text-indigo-300">API Docs</div>
-            </div>
-          </Link>
-
-          <div className="hidden items-center gap-6 text-sm text-slate-300 md:flex">
-            <Link href="/marketplace" className="transition-colors hover:text-white">Marketplace</Link>
-            <Link href="/dashboard" className="transition-colors hover:text-white">Dashboard</Link>
-            <Link href="/contact" className="transition-colors hover:text-white">Contact</Link>
-          </div>
-        </div>
-      </header>
-
-      <section className="relative z-10 mx-auto max-w-7xl px-6 pt-16 pb-10 md:pt-24">
-        <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/25 bg-indigo-500/12 px-4 py-2 text-[11px] font-mono uppercase tracking-[0.24em] text-indigo-200">
-          <BookOpenText className="h-4 w-4" />
-          Integration Guide
-        </div>
-
-        <h1 className="mt-6 max-w-5xl text-4xl font-medium tracking-[-0.04em] text-white md:text-6xl">
-          Qsentia API Integration Docs
-        </h1>
-
-        <p className="mt-5 max-w-4xl text-sm leading-8 text-slate-300 md:text-base">
-          This guide is designed for professional onboarding after receiving API access context. It explains how to integrate
-          current live endpoints, structure a production-safe workflow, and avoid misuse of preview and telemetry data paths.
-        </p>
-      </section>
-
-      <section className="relative z-10 mx-auto max-w-7xl px-6 py-6 md:py-10">
-        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="rounded-3xl border border-white/10 bg-[#0a0f2c]/65 p-7 backdrop-blur-xl">
-            <div className="flex items-center gap-2 text-indigo-300">
-              <Workflow className="h-4 w-4" />
-              <span className="text-xs font-mono uppercase tracking-[0.2em]">Quickstart flow</span>
-            </div>
-            <ol className="mt-5 space-y-3 text-sm leading-7 text-slate-200">
-              {quickSteps.map((step, index) => (
-                <li key={step} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  <span className="mr-2 text-indigo-300">{index + 1}.</span>
-                  {step}
-                </li>
-              ))}
-            </ol>
-          </div>
-
-          <div className="rounded-3xl border border-white/10 bg-[#0a0f2c]/50 p-7 backdrop-blur-xl">
-            <div className="flex items-center gap-2 text-indigo-300">
-              <KeyRound className="h-4 w-4" />
-              <span className="text-xs font-mono uppercase tracking-[0.2em]">Authentication notes</span>
-            </div>
-            <div className="mt-5 space-y-4 text-sm leading-7 text-slate-300">
-              <p>
-                These site endpoints are currently served on the same origin for platform use. If your deployment enables
-                private API credentials, inject your key server-side and forward requests through your backend proxy.
-              </p>
-              <p>
-                Do not expose private tokens in browser code. Keep API keys in environment variables and rotate them
-                according to your internal security policy.
-              </p>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 font-mono text-xs text-slate-300">
-                <p>Example secure pattern</p>
-                <p className="mt-2">1. Client - your backend - Qsentia API</p>
-                <p>2. Store secrets only on your backend runtime</p>
-                <p>3. Validate route-level permissions before forwarding requests</p>
-              </div>
-            </div>
-          </div>
+    <PageShell active="/docs">
+      <section className="border-b border-[#e2e7fb] bg-[#f8faff]">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:py-20">
+          <Eyebrow>Integration guide</Eyebrow>
+          <h1 className="mt-6 max-w-4xl text-5xl font-semibold leading-[1.04] tracking-normal text-[#06130c] md:text-7xl">
+            Qsentia API docs
+          </h1>
+          <p className="mt-6 max-w-3xl text-base leading-7 text-[#46554b] md:text-lg">
+            Integrate the current live endpoints, structure a production-safe workflow, and keep
+            preview and telemetry routes within operational limits.
+          </p>
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto max-w-7xl px-6 py-6 md:py-10">
-        <div className="rounded-3xl border border-white/10 bg-[#0a0f2c]/55 p-7 backdrop-blur-xl">
-          <div className="text-xs font-mono uppercase tracking-[0.2em] text-slate-400">Current endpoints</div>
+      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_1fr]">
+        <SectionCard className="p-6">
+          <div className="flex items-center gap-2 text-[#3d52da]">
+            <Workflow className="h-4 w-4" />
+            <span className="text-xs font-bold uppercase tracking-wide">Quickstart flow</span>
+          </div>
+          <ol className="mt-5 space-y-3 text-sm leading-6 text-[#26352c]">
+            {quickSteps.map((step, index) => (
+              <li key={step} className="rounded-md border border-[#e2e7fb] bg-[#fbfcff] px-4 py-3">
+                <span className="mr-2 font-bold text-[#3d52da]">{index + 1}.</span>
+                {step}
+              </li>
+            ))}
+          </ol>
+        </SectionCard>
+
+        <SectionCard className="p-6">
+          <div className="flex items-center gap-2 text-[#3d52da]">
+            <KeyRound className="h-4 w-4" />
+            <span className="text-xs font-bold uppercase tracking-wide">Authentication notes</span>
+          </div>
+          <div className="mt-5 space-y-4 text-sm leading-7 text-[#5a685f]">
+            <p>
+              These site endpoints are served on the same origin for platform use. If private API
+              credentials are enabled, inject keys server-side and forward requests through your backend.
+            </p>
+            <p>
+              Do not expose private tokens in browser code. Store secrets in environment variables and
+              rotate them according to your internal security policy.
+            </p>
+          </div>
+        </SectionCard>
+      </section>
+
+      <section className="border-y border-[#e2e7fb] bg-[#f8faff]">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+          <h2 className="text-3xl font-semibold text-[#06130c]">Current endpoints</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {endpointCards.map((endpoint) => (
-              <article key={endpoint.route} className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                <h2 className="text-base font-semibold text-white">{endpoint.route}</h2>
-                <p className="mt-2 text-sm leading-7 text-slate-300">{endpoint.purpose}</p>
-                <p className="mt-3 text-xs leading-6 text-slate-400">{endpoint.cache}</p>
-              </article>
+            {endpointCards.map(([route, purpose]) => (
+              <SectionCard key={route} className="p-5">
+                <h3 className="font-mono text-sm font-semibold text-[#06130c]">{route}</h3>
+                <p className="mt-3 text-sm leading-6 text-[#5a685f]">{purpose}</p>
+              </SectionCard>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto max-w-7xl px-6 py-6 md:py-10">
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl border border-white/10 bg-[#0a0f2c]/60 p-7 backdrop-blur-xl">
-            <h2 className="text-2xl font-semibold tracking-tight text-white">Sample requests</h2>
-            <div className="mt-4 space-y-4">
-              <pre className="overflow-x-auto rounded-2xl border border-white/10 bg-[#06091c] p-4 text-xs text-slate-200">
-{`curl -X GET https://your-domain.com/api/models`}
+      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_1fr]">
+        <SectionCard className="p-6">
+          <h2 className="text-2xl font-semibold text-[#06130c]">Sample requests</h2>
+          <div className="mt-5 space-y-4">
+            {[
+              'curl -X GET https://your-domain.com/api/models',
+              'curl -X GET https://your-domain.com/api/models/qsentia_brppo_macro_rotation_alpaca',
+              'curl -X POST https://your-domain.com/api/models/qsentia_brppo_macro_rotation_alpaca/demo',
+            ].map((code) => (
+              <pre key={code} className="overflow-x-auto rounded-md bg-[#07112a] p-4 text-xs text-[#dbe4ff]">
+                {code}
               </pre>
-              <pre className="overflow-x-auto rounded-2xl border border-white/10 bg-[#06091c] p-4 text-xs text-slate-200">
-{`curl -X GET https://your-domain.com/api/models/qsentia_brppo_macro_rotation_alpaca`}
-              </pre>
-              <pre className="overflow-x-auto rounded-2xl border border-white/10 bg-[#06091c] p-4 text-xs text-slate-200">
-{`curl -X POST https://your-domain.com/api/models/qsentia_brppo_macro_rotation_alpaca/demo`}
-              </pre>
-            </div>
+            ))}
           </div>
+        </SectionCard>
 
-          <div className="rounded-3xl border border-white/10 bg-[#0a0f2c]/50 p-7 backdrop-blur-xl">
-            <div className="flex items-center gap-2 text-indigo-300">
-              <ShieldCheck className="h-4 w-4" />
-              <span className="text-xs font-mono uppercase tracking-[0.2em]">Production checklist</span>
-            </div>
-            <ul className="mt-5 space-y-3 text-sm leading-7 text-slate-200">
-              <li className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">Apply retry logic and timeout controls for upstream API calls.</li>
-              <li className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">Cache model list/detail responses where freshness allows.</li>
-              <li className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">Respect preview route limits and avoid high-frequency polling on demo endpoint.</li>
-              <li className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">Log request IDs and timestamps for operational incident traceability.</li>
-              <li className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">Show fallback states in UI when telemetry is delayed or unavailable.</li>
-            </ul>
-
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Link href="/contact" className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 px-5 py-3 text-sm font-semibold text-white transition-transform hover:translate-y-[-1px]">
-                Request Integration Support
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link href="/marketplace" className="inline-flex items-center justify-center rounded-xl border border-white/12 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-200 transition-colors hover:bg-white/10">
-                View Live Models
-              </Link>
-            </div>
+        <SectionCard className="p-6">
+          <div className="flex items-center gap-2 text-[#3d52da]">
+            <ShieldCheck className="h-4 w-4" />
+            <span className="text-xs font-bold uppercase tracking-wide">Production checklist</span>
           </div>
-        </div>
+          <ul className="mt-5 space-y-3 text-sm leading-6 text-[#26352c]">
+            <li className="rounded-md border border-[#e2e7fb] bg-[#fbfcff] px-4 py-3">Apply retry logic and timeout controls for upstream API calls.</li>
+            <li className="rounded-md border border-[#e2e7fb] bg-[#fbfcff] px-4 py-3">Cache model list/detail responses where freshness allows.</li>
+            <li className="rounded-md border border-[#e2e7fb] bg-[#fbfcff] px-4 py-3">Respect preview route limits and avoid high-frequency polling.</li>
+            <li className="rounded-md border border-[#e2e7fb] bg-[#fbfcff] px-4 py-3">Show fallback states when telemetry is delayed or unavailable.</li>
+          </ul>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <Link href="/contact" className="inline-flex items-center justify-center gap-2 rounded-md bg-[#172554] px-5 py-3 text-sm font-bold text-white hover:bg-[#2437b5]">
+              Request support
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link href="/marketplace" className="inline-flex items-center justify-center rounded-md border border-[#cbd5ff] px-5 py-3 text-sm font-bold text-[#172554] hover:bg-[#f7f8ff]">
+              View models
+            </Link>
+          </div>
+        </SectionCard>
       </section>
-    </main>
+    </PageShell>
   );
 }

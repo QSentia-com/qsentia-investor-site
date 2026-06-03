@@ -1,108 +1,75 @@
-'use client';
-
 import Link from 'next/link';
-import QSentiaMotionBackground from '@/components/QSentiaMotionBackground';
+import { ArrowRight, BarChart3, Database, Workflow } from 'lucide-react';
+import { Eyebrow, PageShell, SectionCard } from '@/components/PageChrome';
+import { ResearchTerminal } from '@/components/ResearchTerminal';
 
-export default function HomePage() {
+const thesis = [
+  ['01', 'Source transparency', 'Models are linked to repositories and log paths before performance is displayed.'],
+  ['02', 'Benchmark discipline', 'Returns are shown only when enough observations exist for the same source window.'],
+  ['03', 'Risk first', 'Drawdown, volatility, and status remain visible alongside return metrics.'],
+  ['04', 'Execution audit', 'Orders, positions, decisions, and signal history stay in table form for review.'],
+] as const;
+
+export default function ResearchPage() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#fbfbfb] text-black">
-      <QSentiaMotionBackground />
-
-      <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center">
-        <div className="mb-20 flex items-center justify-center gap-5">
-          <div className="flex h-20 w-20 items-center justify-center border-4 border-[#4b3fd1] bg-white/60 text-5xl font-black shadow-[0_24px_90px_rgba(75,63,209,0.14)] backdrop-blur-xl">
-            Q
-          </div>
-          <div className="tracking-[0.75em] text-6xl font-black max-md:text-4xl">
-            SENTIA
-          </div>
-        </div>
-
-        <div className="relative mb-10 max-w-6xl">
-          <div className="absolute -left-10 top-8 h-5 w-5 rotate-45 border-2 border-[#4b3fd1]/70" />
-          <div className="absolute -right-8 bottom-10 h-4 w-4 rotate-45 border-2 border-black/40" />
-          <div className="absolute left-1/2 top-[-34px] h-[2px] w-72 -translate-x-1/2 bg-gradient-to-r from-transparent via-[#4b3fd1]/45 to-transparent" />
-          <div className="absolute bottom-[-30px] left-1/2 h-[2px] w-96 -translate-x-1/2 bg-gradient-to-r from-transparent via-black/30 to-transparent" />
-
-          <h1 className="relative text-[clamp(72px,10vw,156px)] font-light leading-[0.84] tracking-[-0.105em] text-black">
-            More Alpha
-            <br />
-            Less Risk
+    <PageShell active="/research">
+      <section className="border-b border-[#e2e7fb] bg-[#f8faff]">
+        <div className="mx-auto max-w-7xl px-4 py-14 text-left sm:px-6 lg:py-20">
+          <Eyebrow>Research overview</Eyebrow>
+          <h1 className="mt-6 max-w-5xl text-5xl font-semibold leading-[1.04] tracking-normal text-[#06130c] md:text-7xl">
+            Model research, grounded in published telemetry
           </h1>
-
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 -z-10 mx-auto h-40 w-[78%] -translate-y-1/2 rounded-full bg-[#4b3fd1]/10 blur-3xl" />
+          <p className="mt-6 max-w-3xl text-base leading-7 text-[#46554b] md:text-lg">
+            Qsentia presents systematic model context, benchmark comparison, and auditability in a
+            focused research workspace for institutional review.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link href="/dashboard" className="inline-flex items-center justify-center gap-2 rounded-md bg-[#172554] px-5 py-3 text-sm font-bold text-white hover:bg-[#2437b5]">
+              Open live dashboard
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link href="/marketplace" className="inline-flex items-center justify-center rounded-md border border-[#cbd5ff] bg-white px-5 py-3 text-sm font-bold text-[#172554] hover:bg-[#f7f8ff]">
+              View registry
+            </Link>
+          </div>
         </div>
-
-        <p className="mb-14 max-w-3xl text-xl leading-8 text-neutral-600">
-          Where intelligent reinforcement learning meets market perception.
-        </p>
-
-        <div className="flex flex-wrap items-center justify-center gap-4">
-        <button
-  onClick={() => {
-    window.location.href = '/dashboard';
-  }}
-  className="bg-[#4b3fd1] px-14 py-5 text-lg font-medium text-white shadow-[0_24px_80px_rgba(75,63,209,0.25)] transition hover:bg-[#372db8]"
->
-  View Live Research Terminal
-</button>
-
-          <Link
-            href="/contact"
-            className="border border-black/20 bg-white/70 px-14 py-5 text-lg font-medium text-black shadow-[0_18px_70px_rgba(25,20,90,0.08)] backdrop-blur-xl transition hover:border-[#4b3fd1] hover:text-[#4b3fd1]"
-          >
-            Request Information
-          </Link>
-        </div>
-
-        <div className="absolute bottom-8 text-4xl font-light text-neutral-500">⌄</div>
       </section>
 
-      <section className="relative z-10 mx-auto grid max-w-7xl gap-5 px-6 pb-24 md:grid-cols-4">
-        <ThesisCard
-          number="01"
-          title="Adaptive Allocation"
-          text="BR-PPO dynamically shifts exposure based on live portfolio state, model signals, and risk behavior."
-        />
-        <ThesisCard
-          number="02"
-          title="Benchmark Discipline"
-          text="Every model is evaluated against transparent market benchmarks and normalized performance curves."
-        />
-        <ThesisCard
-          number="03"
-          title="Risk First"
-          text="Drawdown, volatility, hit rate, and model health are visible before capital allocation decisions."
-        />
-        <ThesisCard
-          number="04"
-          title="Execution Transparency"
-          text="Orders, positions, target weights, and decisions are logged and visible from the same source of truth."
-        />
+      <ResearchTerminal />
+
+      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-10 sm:px-6 md:grid-cols-4">
+        {thesis.map(([number, title, text]) => (
+          <SectionCard key={number} className="p-6">
+            <div className="text-xs font-bold uppercase tracking-wide text-[#3d52da]">{number}</div>
+            <h2 className="mt-4 text-xl font-semibold text-[#06130c]">{title}</h2>
+            <p className="mt-3 text-sm leading-6 text-[#5a685f]">{text}</p>
+          </SectionCard>
+        ))}
       </section>
-    </main>
+
+      <section className="border-y border-[#e2e7fb] bg-[#f8faff]">
+        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-10 sm:px-6 md:grid-cols-3">
+          <ResearchCard icon={<Database className="h-5 w-5" />} title="Repository-backed">
+            Model cards and dashboard rows cite repository, branch, and log-path context whenever available.
+          </ResearchCard>
+          <ResearchCard icon={<BarChart3 className="h-5 w-5" />} title="Metrics with status">
+            Partial and insufficient histories are labeled directly instead of being hidden behind polished charts.
+          </ResearchCard>
+          <ResearchCard icon={<Workflow className="h-5 w-5" />} title="Operational review">
+            The dashboard keeps decisions, orders, positions, and signals inspectable as structured tables.
+          </ResearchCard>
+        </div>
+      </section>
+    </PageShell>
   );
 }
 
-function ThesisCard({
-  number,
-  title,
-  text,
-}: {
-  number: string;
-  title: string;
-  text: string;
-}) {
+function ResearchCard({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <div className="relative overflow-hidden rounded-[34px] border border-black/10 bg-white/78 p-6 shadow-[0_26px_100px_rgba(25,20,90,0.10)] backdrop-blur-2xl">
-      <div className="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-[#4b3fd1]/8 blur-2xl" />
-      <div className="relative mb-10 text-xs font-black tracking-[0.24em] text-[#4b3fd1]">
-        {number}
-      </div>
-      <h3 className="relative mb-4 text-3xl font-light tracking-[-0.065em] text-black">
-        {title}
-      </h3>
-      <p className="relative text-sm leading-6 text-neutral-600">{text}</p>
-    </div>
+    <SectionCard className="p-6">
+      <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#eef2ff] text-[#3d52da]">{icon}</span>
+      <h2 className="mt-5 text-xl font-semibold text-[#06130c]">{title}</h2>
+      <p className="mt-3 text-sm leading-6 text-[#5a685f]">{children}</p>
+    </SectionCard>
   );
 }
