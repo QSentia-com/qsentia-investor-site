@@ -14,18 +14,13 @@ const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
 const BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_spot_sentiment_alpha';
 const MODEL_C_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_model_c_sentiment_alpha';
 const RL_ALPHA_ALLOCATOR_MODEL_ID = 'qsentia_rl_alpha_allocator';
-const REAL_CRYPTO_CARRY_IBKR_MODEL_ID = 'real_crypto_carry_ibkr';
-const BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || BRPPO_MACRO_ALPACA_MODEL_ID;
-const RETIRED_MODEL_IDS = new Set([BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID]);
-const MODEL_ID_ALIASES: Record<string, string> = {
-  [BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID]: REAL_CRYPTO_CARRY_IBKR_MODEL_ID,
-};
+const RETIRED_MODEL_IDS = new Set(['qsentia_btc_eth_perp_basis_alpha']);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   MODEL_C_SENTIMENT_ALPHA_MODEL_ID,
   BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID,
   RL_ALPHA_ALLOCATOR_MODEL_ID,
-  REAL_CRYPTO_CARRY_IBKR_MODEL_ID,
+  'real_crypto_carry_ibkr',
   'delta_neutral_crypto_funding',
 ]);
 const DEFAULT_ACCOUNT_STARTING_CAPITAL = Number(
@@ -728,11 +723,8 @@ export async function GET(request: Request) {
   const registry = await fetchModelsRegistry();
 
   const requestedModel = searchParams.get('model');
-  const resolvedRequestedModel = requestedModel
-    ? MODEL_ID_ALIASES[requestedModel] || requestedModel
-    : null;
   const selectedModelConfig =
-    registry.find((m) => m.id === resolvedRequestedModel) ||
+    registry.find((m) => m.id === requestedModel) ||
     registry.find((m) => m.id === DEFAULT_MODEL_ID) ||
     registry[0];
 
