@@ -8,7 +8,20 @@ export const runtime = 'nodejs';
 const REGISTRY_OWNER = process.env.NEXT_PUBLIC_QSENTIA_REPO_OWNER || 'FinTechEntrepreneurldz';
 const REGISTRY_REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'Base_Model_BR_PPO';
 const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
-const GITHUB_READ_TOKEN = process.env.GITHUB_READ_TOKEN || process.env.QSENTIA_GITHUB_READ_TOKEN || '';
+const GITHUB_READ_TOKEN_CANDIDATES = [
+  ['GITHUB_READ_TOKEN', process.env.GITHUB_READ_TOKEN],
+  ['QSENTIA_GITHUB_READ_TOKEN', process.env.QSENTIA_GITHUB_READ_TOKEN],
+  ['GITHUB_TOKEN', process.env.GITHUB_TOKEN],
+  ['GH_TOKEN', process.env.GH_TOKEN],
+  ['VERCEL_GITHUB_TOKEN', process.env.VERCEL_GITHUB_TOKEN],
+  ['NEXT_PUBLIC_GITHUB_READ_TOKEN', process.env.NEXT_PUBLIC_GITHUB_READ_TOKEN],
+] as const;
+const ACTIVE_GITHUB_READ_TOKEN = GITHUB_READ_TOKEN_CANDIDATES.map(([name, value]) => ({
+  name,
+  value: normalizeGitHubToken(value),
+})).find((candidate) => candidate.value);
+const GITHUB_READ_TOKEN = ACTIVE_GITHUB_READ_TOKEN?.value || '';
+const GITHUB_READ_TOKEN_ENV_NAME = ACTIVE_GITHUB_READ_TOKEN?.name || null;
 const BRPPO_MACRO_ALPACA_MODEL_ID = 'qsentia_brppo_macro_rotation_alpaca';
 const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
 const BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_spot_sentiment_alpha';
@@ -139,6 +152,16 @@ const ACCOUNT_VALUE_KEYS = [
   'total_equity',
 ];
 
+function normalizeGitHubToken(raw: string | undefined) {
+  return String(raw || '')
+    .trim()
+    .replace(/^['"]|['"]$/g, '')
+    .replace(/^[A-Z0-9_]+\s*=\s*/i, '')
+    .replace(/^bearer\s+/i, '')
+    .replace(/^token\s+/i, '')
+    .trim();
+}
+
 function rawUrl(repoFullName: string, branch: string, path: string) {
   const cleanPath = path.replace(/^\/+/, '');
   return `https://raw.githubusercontent.com/${repoFullName}/${branch}/${cleanPath}`;
@@ -167,25 +190,32 @@ function decodeGitHubContentJson(text: string) {
 
 async function fetchTextFromRaw(repoFullName: string, branch: string, path: string) {
   if (GITHUB_READ_TOKEN) {
-    try {
-      const response = await fetch(githubContentsUrl(repoFullName, branch, path), {
-        cache: 'no-store',
-        headers: {
-          Accept: 'application/vnd.github.raw+json',
-          Authorization: `Bearer ${GITHUB_READ_TOKEN}`,
-          'Cache-Control': 'no-cache',
-          'User-Agent': 'qsentia-investor-site',
-          'X-GitHub-Api-Version': '2022-11-28',
-        },
-      });
+    const authorizationValues = [`Bearer ${GITHUB_READ_TOKEN}`, `token ${GITHUB_READ_TOKEN}`];
+    const acceptValues = ['application/vnd.github.raw', 'application/vnd.github+json'];
 
-      if (response.ok) {
-        const text = await response.text();
-        const decoded = decodeGitHubContentJson(text);
-        return decoded || text;
+    for (const authorization of authorizationValues) {
+      for (const accept of acceptValues) {
+        try {
+          const response = await fetch(githubContentsUrl(repoFullName, branch, path), {
+            cache: 'no-store',
+            headers: {
+              Accept: accept,
+              Authorization: authorization,
+              'Cache-Control': 'no-cache',
+              'User-Agent': 'qsentia-investor-site',
+              'X-GitHub-Api-Version': '2022-11-28',
+            },
+          });
+
+          if (response.ok) {
+            const text = await response.text();
+            const decoded = decodeGitHubContentJson(text);
+            return decoded || text;
+          }
+        } catch {
+          // Try the next authenticated GitHub Contents variant.
+        }
       }
-    } catch {
-      // Fall back to unauthenticated raw GitHub below for public repositories.
     }
   }
 
@@ -959,6 +989,8 @@ export async function GET(request: Request) {
     debug: {
       requestedModel,
       selectedModel,
+      privateGitHubTokenConfigured: Boolean(GITHUB_READ_TOKEN),
+      privateGitHubTokenEnvName: GITHUB_READ_TOKEN_ENV_NAME,
       benchmarkStartDate,
       registryCount: registry.length,
       registry: registry.map((m) => ({
