@@ -217,6 +217,25 @@ async function fetchTextFromRaw(repoFullName: string, branch: string, path: stri
         }
       }
     }
+
+    for (const authorization of authorizationValues) {
+      try {
+        const response = await fetch(rawUrl(repoFullName, branch, path), {
+          cache: 'no-store',
+          headers: {
+            Authorization: authorization,
+            'Cache-Control': 'no-cache',
+            'User-Agent': 'qsentia-investor-site',
+          },
+        });
+
+        if (response.ok) {
+          return response.text();
+        }
+      } catch {
+        // Fall back to unauthenticated raw GitHub below for public repositories.
+      }
+    }
   }
 
   try {
