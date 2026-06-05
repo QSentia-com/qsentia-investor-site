@@ -24,6 +24,7 @@ const navItems = [
     ],
   },
   { href: '/docs', label: 'Docs' },
+  { href: '/careers', label: 'Careers' },
   { href: '/contact', label: 'Contact' },
 ];
 

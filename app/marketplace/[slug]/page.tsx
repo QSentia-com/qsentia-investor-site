@@ -1,10 +1,11 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { ArrowLeft, ArrowRight, BarChart3, CheckCircle2, Database, Play, ShieldCheck } from 'lucide-react';
 import { ApiLoadingPanel, EmptyState, Eyebrow, PageShell, SectionCard } from '@/components/PageChrome';
+import TrialRequestForm from '@/components/TrialRequestForm';
 
 const fetcher = async (url: string) => {
   const response = await fetch(url);
@@ -28,6 +29,14 @@ type ModelDetails = {
     totalSignals?: number | null;
   };
   pricing: string | null;
+  billingInterval?: string;
+  setupFee?: string | null;
+  minimumCapital?: string | null;
+  accessStatus?: string;
+  visibility?: string;
+  salesOwner?: string | null;
+  onboardingNotes?: string | null;
+  commercialUpdatedAt?: string;
   tags: string[];
   repo?: string | null;
   logsPath?: string | null;
@@ -72,6 +81,14 @@ function categoryLabel(value: string) {
     .join(' ');
 }
 
+function accessLabel(value: string | undefined) {
+  if (!value) return 'Not configured';
+  return value
+    .split(/[-_]/g)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
 export default function ModelDetailPage({ params }: ModelDetailPageProps) {
   const { slug } = use(params);
   const { data, error, isLoading } = useSWR<DetailResponse>(`/api/models/${slug}`, fetcher);
@@ -79,6 +96,21 @@ export default function ModelDetailPage({ params }: ModelDetailPageProps) {
   const [demoResult, setDemoResult] = useState<DemoResult | null>(null);
 
   const model = data?.model;
+  const commercialConfigured = Boolean(model?.commercialUpdatedAt);
+
+  useEffect(() => {
+    if (!model?.id) return;
+
+    void fetch('/api/telemetry/model-view', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        modelId: model.id,
+        slug,
+        name: model.name,
+      }),
+    }).catch(() => null);
+  }, [model?.id, model?.name, slug]);
 
   const handlePreview = async () => {
     setDemoLoading(true);
@@ -217,7 +249,11 @@ export default function ModelDetailPage({ params }: ModelDetailPageProps) {
             <dl className="mt-5 divide-y divide-[#e2e7fb] text-sm">
               <InfoRow label="Repository" value={model.repo || 'Not available'} />
               <InfoRow label="Logs path" value={model.logsPath || 'Not available'} />
-              <InfoRow label="Pricing" value={model.pricing || 'Pricing not returned by API'} />
+              <InfoRow label="Pricing" value={model.pricing || 'Contact sales'} />
+              <InfoRow label="Access status" value={commercialConfigured ? accessLabel(model.accessStatus) : 'Not configured'} />
+              <InfoRow label="Billing interval" value={commercialConfigured ? accessLabel(model.billingInterval) : 'Not configured'} />
+              <InfoRow label="Minimum capital" value={model.minimumCapital || 'Not configured'} />
+              <InfoRow label="Setup fee" value={model.setupFee || 'Not configured'} />
             </dl>
           </SectionCard>
 
@@ -225,8 +261,14 @@ export default function ModelDetailPage({ params }: ModelDetailPageProps) {
             <ShieldCheck className="h-5 w-5 text-[#3d52da]" />
             <h2 className="mt-4 text-xl font-semibold text-[#06130c]">Access</h2>
             <p className="mt-3 text-sm leading-6 text-[#5a685f]">
-              Licensing terms are not synthesized when no live commercial record is published.
+              Commercial terms are controlled from the QSentia back office and published through the
+              model API. Request access for eligibility, onboarding, and execution details.
             </p>
+            {model.onboardingNotes && (
+              <div className="mt-4 rounded-md border border-[#e2e7fb] bg-[#fbfcff] p-3 text-sm leading-6 text-[#46554b]">
+                {model.onboardingNotes}
+              </div>
+            )}
             <Link
               href="/contact"
               className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#172554] px-5 py-3 text-sm font-bold text-white hover:bg-[#2437b5]"
@@ -234,6 +276,7 @@ export default function ModelDetailPage({ params }: ModelDetailPageProps) {
               Request access
               <ArrowRight className="h-4 w-4" />
             </Link>
+            <TrialRequestForm modelId={model.id} modelName={model.name} />
           </SectionCard>
 
           {model.tags?.length ? (

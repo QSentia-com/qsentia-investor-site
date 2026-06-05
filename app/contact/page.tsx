@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Building2, FileText, Mail, ShieldCheck } from 'lucide-react';
+import { ContactLeadForm } from '@/components/LeadCaptureForms';
 import { Eyebrow, PageShell, SectionCard } from '@/components/PageChrome';
 
 export const metadata: Metadata = {
@@ -75,6 +76,8 @@ export default function ContactPage() {
               from your institutional email address.
             </p>
           </div>
+
+          <ContactLeadForm />
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <a

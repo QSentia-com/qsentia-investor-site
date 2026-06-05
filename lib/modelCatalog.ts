@@ -1,3 +1,14 @@
+import {
+  type AdminModelSetting,
+  type BillingInterval,
+  type ModelAccessStatus,
+  type ModelVisibility,
+  mergeAdminModelSetting,
+  readAdminModelSettings,
+} from '@/lib/adminModelSettings';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+
 type ModelStats = {
   sharpe?: number | null;
   totalReturn?: number | null;
@@ -61,10 +72,26 @@ export type MarketplaceModel = {
     winRate: number | null;
   };
   pricing: string | null;
+  billingInterval?: BillingInterval;
+  currency?: string;
+  setupFee?: string | null;
+  minimumCapital?: string | null;
+  accessStatus?: ModelAccessStatus;
+  visibility?: ModelVisibility;
+  featured?: boolean;
+  salesOwner?: string | null;
+  onboardingNotes?: string | null;
+  commercialUpdatedAt?: string;
   tags: string[];
   repo: string | null;
   logsPath: string | null;
 };
+
+const DASHBOARD_LAST_GOOD_CACHE_PATH = path.join(
+  process.cwd(),
+  '.qsentia-cache',
+  'dashboard-last-good.json'
+);
 
 export type ModelDetails = MarketplaceModel & {
   longDescription: string;
@@ -152,6 +179,28 @@ function mapModel(entry: ModelComparisonEntry): MarketplaceModel {
   };
 }
 
+function applyAdminSetting(
+  model: MarketplaceModel,
+  setting: AdminModelSetting | undefined
+): MarketplaceModel {
+  const admin = mergeAdminModelSetting(setting);
+
+  return {
+    ...model,
+    pricing: admin.pricing,
+    billingInterval: admin.billingInterval,
+    currency: admin.currency,
+    setupFee: admin.setupFee,
+    minimumCapital: admin.minimumCapital,
+    accessStatus: admin.accessStatus,
+    visibility: admin.visibility,
+    featured: admin.featured,
+    salesOwner: admin.salesOwner,
+    onboardingNotes: admin.onboardingNotes,
+    commercialUpdatedAt: admin.updatedAt,
+  };
+}
+
 async function fetchDashboard(
   origin: string,
   modelId?: string,
@@ -177,18 +226,55 @@ async function fetchDashboard(
   }
 }
 
+async function readCachedDashboardPayload(): Promise<DashboardPayload | null> {
+  try {
+    const text = await readFile(DASHBOARD_LAST_GOOD_CACHE_PATH, 'utf8');
+    const parsed = JSON.parse(text) as { payload?: unknown } | DashboardPayload;
+    const payload =
+      parsed && typeof parsed === 'object' && 'payload' in parsed
+        ? parsed.payload
+        : parsed;
+
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      Array.isArray((payload as DashboardPayload).modelComparison)
+    ) {
+      return payload as DashboardPayload;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 function originFromRequest(request: Request) {
   return new URL(request.url).origin;
 }
 
-export async function getLiveMarketplaceModels(request: Request): Promise<MarketplaceModel[]> {
-  const dashboard = await fetchDashboard(originFromRequest(request));
+export async function getLiveMarketplaceModels(
+  request: Request,
+  options: { includeHidden?: boolean; preferCachedDashboard?: boolean; summaryOnly?: boolean } = {}
+): Promise<MarketplaceModel[]> {
+  const cachedDashboard = options.preferCachedDashboard ? await readCachedDashboardPayload() : null;
+  const dashboard =
+    cachedDashboard || (await fetchDashboard(originFromRequest(request), undefined, options.summaryOnly));
 
   if (!dashboard?.modelComparison?.length) {
     return [];
   }
 
-  return dashboard.modelComparison.map(mapModel);
+  const settings = await readAdminModelSettings();
+  const models = dashboard.modelComparison.map((entry) =>
+    applyAdminSetting(mapModel(entry), settings.models[entry.id])
+  );
+
+  const visibleModels = options.includeHidden
+    ? models
+    : models.filter((model) => model.visibility !== 'hidden');
+
+  return visibleModels.sort((a, b) => Number(b.featured) - Number(a.featured) || a.name.localeCompare(b.name));
 }
 
 function signalCount(payload: DashboardPayload): number | null {
@@ -248,7 +334,7 @@ export async function getLiveModelDetails(request: Request, slug: string): Promi
       avgHoldingPeriod: null,
       totalSignals: signalCount(detailPayload || {}),
     },
-    pricing: null,
+    pricing: summary.pricing,
     features,
     latest: detailPayload?.latest || {},
   };

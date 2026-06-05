@@ -25,6 +25,9 @@ type Model = {
     winRate: number | null;
   };
   pricing: string | null;
+  accessStatus?: string;
+  minimumCapital?: string | null;
+  commercialUpdatedAt?: string;
   tags: string[];
   repo?: string | null;
   logsPath?: string | null;
@@ -50,6 +53,22 @@ function categoryLabel(value: string) {
     .split('-')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
+}
+
+function accessLabel(value: string | undefined) {
+  if (!value) return null;
+  return value
+    .split(/[-_]/g)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function accessBadgeClass(value: string | undefined) {
+  if (value === 'active') return 'border-[#bbf7d0] bg-[#f0fdf4] text-[#047857]';
+  if (value === 'private') return 'border-[#c7d2fe] bg-[#eef2ff] text-[#3d52da]';
+  if (value === 'waitlist') return 'border-[#fde68a] bg-[#fffbeb] text-[#b45309]';
+  if (value === 'retired') return 'border-[#fecdd3] bg-[#fff1f2] text-[#be123c]';
+  return 'border-[#e2e7fb] bg-[#fbfcff] text-[#647269]';
 }
 
 export default function MarketplacePage() {
@@ -151,10 +170,17 @@ export default function MarketplacePage() {
               <Link key={model.id} href={`/marketplace/${model.slug}`} className="group">
                 <SectionCard className="flex h-full flex-col p-6 transition group-hover:border-[#3d52da]">
                   <div className="flex items-start justify-between gap-3">
-                    <span className="rounded-md border border-[#c7d2fe] bg-[#eef2ff] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#3d52da]">
-                      {categoryLabel(model.category)}
-                    </span>
-                    <ArrowRight className="h-4 w-4 text-[#3d52da] transition group-hover:translate-x-1" />
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-md border border-[#c7d2fe] bg-[#eef2ff] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#3d52da]">
+                        {categoryLabel(model.category)}
+                      </span>
+                      {model.commercialUpdatedAt && (
+                        <span className={`rounded-md border px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${accessBadgeClass(model.accessStatus)}`}>
+                          {accessLabel(model.accessStatus)}
+                        </span>
+                      )}
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-[#3d52da] transition group-hover:translate-x-1" />
                   </div>
 
                   <h2 className="mt-5 text-xl font-semibold text-[#06130c]">{model.name}</h2>
@@ -178,8 +204,11 @@ export default function MarketplacePage() {
                   <div className="mt-auto border-t border-[#e2e7fb] pt-5">
                     <div className="text-xs font-bold uppercase tracking-wide text-[#647269]">Access</div>
                     <div className="mt-1 text-sm font-semibold text-[#06130c]">
-                      {model.pricing || 'Pricing not returned by API'}
+                      {model.pricing || 'Contact sales'}
                     </div>
+                    {model.minimumCapital && (
+                      <div className="mt-1 text-xs text-[#647269]">Minimum capital: {model.minimumCapital}</div>
+                    )}
                   </div>
                 </SectionCard>
               </Link>

@@ -76,14 +76,26 @@ export function CreateAccountForm() {
   const [workEmail, setWorkEmail] = useState('');
   const [organization, setOrganization] = useState('');
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    saveStoredProfile({
+    const profile = {
       name: fullName.trim(),
       email: workEmail.trim(),
       organization: organization.trim(),
-    });
+    };
+
+    saveStoredProfile(profile);
+
+    await fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...profile,
+        source: 'signup',
+        interest: 'Account access request',
+      }),
+    }).catch(() => null);
 
     window.location.href = '/dashboard';
   }
