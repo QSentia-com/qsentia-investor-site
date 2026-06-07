@@ -13,6 +13,7 @@ const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
 const GITHUB_READ_TOKEN_CANDIDATES = [
   ['GITHUB_READ_TOKEN', process.env.GITHUB_READ_TOKEN],
   ['QSENTIA_GITHUB_READ_TOKEN', process.env.QSENTIA_GITHUB_READ_TOKEN],
+  ['QSENTIA_GITHUB_TOKEN', process.env.QSENTIA_GITHUB_TOKEN],
   ['GITHUB_TOKEN', process.env.GITHUB_TOKEN],
   ['GH_TOKEN', process.env.GH_TOKEN],
   ['VERCEL_GITHUB_TOKEN', process.env.VERCEL_GITHUB_TOKEN],
@@ -27,6 +28,7 @@ const GITHUB_READ_TOKEN_ENV_NAME = ACTIVE_GITHUB_READ_TOKEN?.name || null;
 const BRPPO_MACRO_ALPACA_MODEL_ID = 'qsentia_brppo_macro_rotation_alpaca';
 const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
 const BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_spot_sentiment_alpha';
+const BTC_ETF_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_etf_sentiment_alpha';
 const MODEL_C_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_model_c_sentiment_alpha';
 const RL_ALPHA_ALLOCATOR_MODEL_ID = 'qsentia_rl_alpha_allocator';
 const MODEL_C_ORIGINAL_MODEL_ID = 'model_c';
@@ -40,6 +42,7 @@ const RETIRED_MODEL_IDS = new Set(['qsentia_btc_eth_perp_basis_alpha']);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   MODEL_C_SENTIMENT_ALPHA_MODEL_ID,
   BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID,
+  BTC_ETF_SENTIMENT_ALPHA_MODEL_ID,
   RL_ALPHA_ALLOCATOR_MODEL_ID,
   'real_crypto_carry_ibkr',
   'delta_neutral_crypto_funding',
@@ -102,6 +105,18 @@ const REQUIRED_MODELS: ModelConfig[] = [
     branch: 'main',
     enabled: true,
     color: '#10b981',
+    starting_capital: 1000000,
+  },
+  {
+    id: BTC_ETF_SENTIMENT_ALPHA_MODEL_ID,
+    name: 'QSentia BTC ETF Sentiment Alpha - Alpaca',
+    description:
+      'BTC sentiment ensemble using the same CryptoBERT, MLP, PPO, and live news stack as the futures model, routed through Alpaca-listed BITU/SBIT ETF exposure. Current portfolio value is sourced from Alpaca portfolio_value/net_liquidation logs.',
+    repo: 'FinTechEntrepreneurldz/qsentia-btc-etf-sentiment-alpha',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#14b8a6',
     starting_capital: 1000000,
   },
   {
@@ -1285,18 +1300,35 @@ export async function GET(request: Request) {
 
   const benchmarks = await fetchBenchmarks(benchmarkStartDate);
 
-    const modelComparison = [];
+  const modelComparison = [];
 
   for (const model of registry) {
-    const rows = await fetchCsvFromModel(model, 'portfolio/portfolio.csv');
-    const latestAccountRows = await fetchCsvFromModel(model, 'portfolio/latest_ibkr_account.csv');
-    const modelHealthStatus = await fetchJsonFromModel<Record<string, unknown>>(
-      model,
-      'health/health_status.json'
-    );
+    const [
+      rows,
+      latestAccountRows,
+      latestDecisionRowsForModel,
+      decisionsRowsForModel,
+      signalHistoryRowsForModel,
+      modelHealthStatus,
+    ] = await Promise.all([
+      fetchCsvFromModel(model, 'portfolio/portfolio.csv'),
+      fetchCsvFromModel(model, 'portfolio/latest_ibkr_account.csv'),
+      fetchCsvFromModel(model, 'decisions/latest_decision.csv'),
+      fetchCsvFromModel(model, 'decisions/decisions.csv'),
+      fetchCsvFromModel(model, 'health/signal_history.csv'),
+      fetchJsonFromModel<Record<string, unknown>>(
+        model,
+        'health/health_status.json'
+      ),
+    ]);
     const daily = toDailyPortfolio([
-      ...normalizePortfolioRows(rows),
-      ...normalizePortfolioRows(latestAccountRows),
+      ...accountValueObservations([
+        rows,
+        latestAccountRows,
+        latestDecisionRowsForModel,
+        decisionsRowsForModel,
+        signalHistoryRowsForModel,
+      ]),
       ...healthStatusObservation(modelHealthStatus),
     ]);
     const modelValues = daily.map((p) => p.value);
@@ -1326,7 +1358,12 @@ export async function GET(request: Request) {
       stats: computeStats(modelPerformanceValues),
       latestValue: modelValues.length ? modelValues[modelValues.length - 1] : modelBaseline,
       startingCapital: modelBaseline,
-      rowCount: rows.length + latestAccountRows.length,
+      rowCount:
+        rows.length +
+        latestAccountRows.length +
+        latestDecisionRowsForModel.length +
+        decisionsRowsForModel.length +
+        signalHistoryRowsForModel.length,
       dailyRowCount: daily.length,
       inceptionDate: modelInceptionDate || null,
       benchmarks: modelBenchmarks,

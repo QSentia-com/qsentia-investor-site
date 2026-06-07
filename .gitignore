@@ -31,6 +31,7 @@ yarn-error.log*
 .pnpm-debug.log*
 next-dev.*.log
 .qsentia-cache/
+/actions-runner/
 
 # env files (can opt-in for committing if needed)
 .env*
