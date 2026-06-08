@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const REGISTRY_OWNER = process.env.NEXT_PUBLIC_QSENTIA_REPO_OWNER || 'FinTechEntrepreneurldz';
-const REGISTRY_REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'Base_Model_BR_PPO';
+const REGISTRY_REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'qsentia-investor-site';
 const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
 const GITHUB_READ_TOKEN_CANDIDATES = [
   ['GITHUB_READ_TOKEN', process.env.GITHUB_READ_TOKEN],
@@ -29,7 +29,6 @@ const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
 const BTC_ETF_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_etf_sentiment_alpha';
 const ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID =
   'qsentia_eth_micro_futures_sentiment_alpha';
-const MODEL_A_ORIGINAL_MODEL_ID = 'model_a';
 const BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRYPTO_SENTIMENT_MLP_MODEL_ID;
 const RETIRED_MODEL_IDS = new Set([
@@ -48,6 +47,10 @@ const RETIRED_MODEL_IDS = new Set([
   'model-c-mlp-regime-moe',
   'qsentia_rl_alpha_allocator',
   'qsentia-rl-alpha-allocator',
+  'model_a',
+  'brppo-v10-original-base',
+  'base_model_br_ppo',
+  'base-model-br-ppo',
 ]);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   BTC_ETF_SENTIMENT_ALPHA_MODEL_ID,
@@ -114,16 +117,6 @@ const REQUIRED_MODELS: ModelConfig[] = [
     enabled: true,
     color: '#8b5cf6',
     starting_capital: DEFAULT_ACCOUNT_STARTING_CAPITAL,
-  },
-  {
-    id: MODEL_A_ORIGINAL_MODEL_ID,
-    name: 'BR-PPO V10 Original Base',
-    description: 'Original BR-PPO allocation agent from Base_Model_BR_PPO. Canonical Model A paper-trading logs.',
-    repo: 'FinTechEntrepreneurldz/Base_Model_BR_PPO',
-    logs_path: 'logs/model_a',
-    branch: 'main',
-    enabled: true,
-    color: '#00d4aa',
   },
 ];
 type CsvRow = Record<string, string>;
@@ -335,18 +328,7 @@ async function fetchModelsRegistry(): Promise<ModelConfig[]> {
   );
 
   const parsed = parseSimpleModelsYaml(text);
-  const fallback = [
-    {
-      id: 'model_a',
-      name: 'BR-PPO V10 (original)',
-      description: 'Fallback model from Base_Model_BR_PPO.',
-      repo: 'FinTechEntrepreneurldz/Base_Model_BR_PPO',
-      logs_path: 'logs/model_a',
-      branch: 'main',
-      enabled: true,
-      color: '#00d4aa',
-    },
-  ];
+  const fallback: ModelConfig[] = [];
   const registry = parsed.length ? parsed : fallback;
 
   return mergeRequiredModels(registry).filter(
@@ -770,10 +752,7 @@ async function fetchBenchmarks(startDate?: string) {
 }
 
 async function benchmarkStartDateFromFirstModel(registry: ModelConfig[]) {
-  const firstModel =
-    registry.find((model) => model.id === 'model_a') ||
-    registry.find((model) => model.name.toLowerCase().includes('br-ppo v10')) ||
-    registry[0];
+  const firstModel = registry[0];
 
   if (!firstModel) return undefined;
 
