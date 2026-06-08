@@ -93,8 +93,8 @@ export default function DocsPage() {
           <div className="mt-5 space-y-4">
             {[
               'curl -X GET https://your-domain.com/api/models',
-              'curl -X GET https://your-domain.com/api/models/qsentia_brppo_macro_rotation_alpaca',
-              'curl -X POST https://your-domain.com/api/models/qsentia_brppo_macro_rotation_alpaca/demo',
+              'curl -X GET https://your-domain.com/api/models/crypto_sentiment_mlp',
+              'curl -X POST https://your-domain.com/api/models/crypto_sentiment_mlp/demo',
             ].map((code) => (
               <pre key={code} className="overflow-x-auto rounded-md bg-[#07112a] p-4 text-xs text-[#dbe4ff]">
                 {code}

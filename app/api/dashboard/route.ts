@@ -25,9 +25,7 @@ const ACTIVE_GITHUB_READ_TOKEN = GITHUB_READ_TOKEN_CANDIDATES.map(([name, value]
 })).find((candidate) => candidate.value);
 const GITHUB_READ_TOKEN = ACTIVE_GITHUB_READ_TOKEN?.value || '';
 const GITHUB_READ_TOKEN_ENV_NAME = ACTIVE_GITHUB_READ_TOKEN?.name || null;
-const BRPPO_MACRO_ALPACA_MODEL_ID = 'qsentia_brppo_macro_rotation_alpaca';
 const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
-const BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_spot_sentiment_alpha';
 const BTC_ETF_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_etf_sentiment_alpha';
 const ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID =
   'qsentia_eth_micro_futures_sentiment_alpha';
@@ -37,17 +35,20 @@ const MODEL_C_ORIGINAL_MODEL_ID = 'model_c';
 const MODEL_C_MLP_REGIME_MOE_MODEL_ID = 'model_c_mlp_regime_moe';
 const MODEL_A_ORIGINAL_MODEL_ID = 'model_a';
 const BR_PPO_CRYPTO_V15_MODEL_ID = 'br_ppo_crypto_v15';
-const REAL_CRYPTO_CARRY_IBKR_MODEL_ID = 'real_crypto_carry_ibkr';
 const BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
-const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || BRPPO_MACRO_ALPACA_MODEL_ID;
-const RETIRED_MODEL_IDS = new Set(['qsentia_btc_eth_perp_basis_alpha']);
+const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRYPTO_SENTIMENT_MLP_MODEL_ID;
+const RETIRED_MODEL_IDS = new Set([
+  'qsentia_btc_eth_perp_basis_alpha',
+  'qsentia_btc_spot_sentiment_alpha',
+  'qsentia_brppo_macro_rotation_alpaca',
+  'real_crypto_carry_ibkr',
+  'real-crypto-carry-ibkr',
+]);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   MODEL_C_SENTIMENT_ALPHA_MODEL_ID,
-  BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID,
   BTC_ETF_SENTIMENT_ALPHA_MODEL_ID,
   ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID,
   RL_ALPHA_ALLOCATOR_MODEL_ID,
-  'real_crypto_carry_ibkr',
   'delta_neutral_crypto_funding',
 ]);
 const DEFAULT_ACCOUNT_STARTING_CAPITAL = Number(
@@ -77,17 +78,6 @@ const BENCHMARKS = [
 
 const REQUIRED_MODELS: ModelConfig[] = [
   {
-    id: BRPPO_MACRO_ALPACA_MODEL_ID,
-    name: 'QSentia BR-PPO Macro Rotation - Alpaca',
-    description:
-      'Frozen BR-PPO macro rotation Sharpe 2 research-family candidate with Alpaca paper execution and canonical QSentia dashboard logs.',
-    repo: 'FinTechEntrepreneurldz/qsentia-brppo-macro-rotation-alpaca',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#2563eb',
-  },
-  {
     id: CRYPTO_SENTIMENT_MLP_MODEL_ID,
     name: 'Crypto Sentiment MLP/PPO - IBKR',
     description:
@@ -97,18 +87,6 @@ const REQUIRED_MODELS: ModelConfig[] = [
     branch: 'main',
     enabled: true,
     color: '#f59e0b',
-  },
-  {
-    id: BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID,
-    name: 'QSentia BTC Spot Sentiment Alpha - Alpaca',
-    description:
-      'Long-only spot Bitcoin sentiment strategy using CryptoBERT-scored news, Reddit, YouTube, MLP/PPO ensemble signals, and Alpaca paper execution. Current portfolio value is sourced from Alpaca portfolio_value/net_liquidation logs.',
-    repo: 'FinTechEntrepreneurldz/qsentia-btc-spot-sentiment-alpha',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#10b981',
-    starting_capital: 1000000,
   },
   {
     id: BTC_ETF_SENTIMENT_ALPHA_MODEL_ID,
@@ -199,18 +177,7 @@ const REQUIRED_MODELS: ModelConfig[] = [
     enabled: true,
     color: '#f97316',
   },
-  {
-    id: REAL_CRYPTO_CARRY_IBKR_MODEL_ID,
-    name: 'Real Crypto Carry - IBKR',
-    description: 'Real crypto carry strategy using Interactive Brokers execution and canonical QSentia dashboard logs.',
-    repo: 'FinTechEntrepreneurldz/real_crypto_carry_ibkr',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#14b8a6',
-  },
 ];
-
 type CsvRow = Record<string, string>;
 
 type ModelConfig = {
