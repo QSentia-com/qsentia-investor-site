@@ -34,7 +34,6 @@ const RL_ALPHA_ALLOCATOR_MODEL_ID = 'qsentia_rl_alpha_allocator';
 const MODEL_C_ORIGINAL_MODEL_ID = 'model_c';
 const MODEL_C_MLP_REGIME_MOE_MODEL_ID = 'model_c_mlp_regime_moe';
 const MODEL_A_ORIGINAL_MODEL_ID = 'model_a';
-const BR_PPO_CRYPTO_V15_MODEL_ID = 'br_ppo_crypto_v15';
 const BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRYPTO_SENTIMENT_MLP_MODEL_ID;
 const RETIRED_MODEL_IDS = new Set([
@@ -43,6 +42,8 @@ const RETIRED_MODEL_IDS = new Set([
   'qsentia_brppo_macro_rotation_alpaca',
   'real_crypto_carry_ibkr',
   'real-crypto-carry-ibkr',
+  'br_ppo_crypto_v15',
+  'brppo-crypto-v15',
 ]);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   MODEL_C_SENTIMENT_ALPHA_MODEL_ID,
@@ -165,17 +166,6 @@ const REQUIRED_MODELS: ModelConfig[] = [
     branch: 'main',
     enabled: true,
     color: '#00d4aa',
-  },
-  {
-    id: BR_PPO_CRYPTO_V15_MODEL_ID,
-    name: 'BR-PPO Crypto V15',
-    description:
-      'BR-PPO crypto model V15. Ensemble model using crypto, FreqAI, LLM, Ichimoku, and BIL allocation components.',
-    repo: 'FinTechEntrepreneurldz/br_ppo_crypto_v15',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#f97316',
   },
 ];
 type CsvRow = Record<string, string>;
