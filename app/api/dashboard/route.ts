@@ -29,10 +29,7 @@ const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
 const BTC_ETF_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_etf_sentiment_alpha';
 const ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID =
   'qsentia_eth_micro_futures_sentiment_alpha';
-const MODEL_C_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_model_c_sentiment_alpha';
 const RL_ALPHA_ALLOCATOR_MODEL_ID = 'qsentia_rl_alpha_allocator';
-const MODEL_C_ORIGINAL_MODEL_ID = 'model_c';
-const MODEL_C_MLP_REGIME_MOE_MODEL_ID = 'model_c_mlp_regime_moe';
 const MODEL_A_ORIGINAL_MODEL_ID = 'model_a';
 const BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRYPTO_SENTIMENT_MLP_MODEL_ID;
@@ -44,9 +41,14 @@ const RETIRED_MODEL_IDS = new Set([
   'real-crypto-carry-ibkr',
   'br_ppo_crypto_v15',
   'brppo-crypto-v15',
+  'qsentia_model_c_sentiment_alpha',
+  'qsentia-model-c-sentiment-alpha',
+  'model_c',
+  'model-c',
+  'model_c_mlp_regime_moe',
+  'model-c-mlp-regime-moe',
 ]);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
-  MODEL_C_SENTIMENT_ALPHA_MODEL_ID,
   BTC_ETF_SENTIMENT_ALPHA_MODEL_ID,
   ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID,
   RL_ALPHA_ALLOCATOR_MODEL_ID,
@@ -114,17 +116,6 @@ const REQUIRED_MODELS: ModelConfig[] = [
     starting_capital: DEFAULT_ACCOUNT_STARTING_CAPITAL,
   },
   {
-    id: MODEL_C_SENTIMENT_ALPHA_MODEL_ID,
-    name: 'QSentia Model C Sentiment Alpha',
-    description:
-      'Sector-neutral Model C equity MLP with live FinBERT news sentiment overlay and Alpaca paper execution.',
-    repo: 'FinTechEntrepreneurldz/qsentia-model-c-sentiment-alpha',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#6366f1',
-  },
-  {
     id: RL_ALPHA_ALLOCATOR_MODEL_ID,
     name: 'QSentia RL Alpha Allocator',
     description:
@@ -135,27 +126,6 @@ const REQUIRED_MODELS: ModelConfig[] = [
     enabled: true,
     color: '#0ea5e9',
     starting_capital: 1034017,
-  },
-  {
-    id: MODEL_C_ORIGINAL_MODEL_ID,
-    name: 'MLP Alpha 130/30 - Original Model C',
-    description: 'Original Model C paper-trading model.',
-    repo: 'FinTechEntrepreneurldz/Model_C_Paper_Trading',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#a855f7',
-  },
-  {
-    id: MODEL_C_MLP_REGIME_MOE_MODEL_ID,
-    name: 'Model C - MLP Regime MoE',
-    description:
-      'Regime-aware mixture-of-experts MLP model similar to Model C. Uses Alpaca paper trading and canonical QSentia logs.',
-    repo: 'FinTechEntrepreneurldz/model_c_etf',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#2563eb',
   },
   {
     id: MODEL_A_ORIGINAL_MODEL_ID,
