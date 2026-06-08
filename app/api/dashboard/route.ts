@@ -29,6 +29,8 @@ const BRPPO_MACRO_ALPACA_MODEL_ID = 'qsentia_brppo_macro_rotation_alpaca';
 const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
 const BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_spot_sentiment_alpha';
 const BTC_ETF_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_etf_sentiment_alpha';
+const ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID =
+  'qsentia_eth_micro_futures_sentiment_alpha';
 const MODEL_C_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_model_c_sentiment_alpha';
 const RL_ALPHA_ALLOCATOR_MODEL_ID = 'qsentia_rl_alpha_allocator';
 const MODEL_C_ORIGINAL_MODEL_ID = 'model_c';
@@ -43,6 +45,7 @@ const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   MODEL_C_SENTIMENT_ALPHA_MODEL_ID,
   BTC_SPOT_SENTIMENT_ALPHA_MODEL_ID,
   BTC_ETF_SENTIMENT_ALPHA_MODEL_ID,
+  ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID,
   RL_ALPHA_ALLOCATOR_MODEL_ID,
   'real_crypto_carry_ibkr',
   'delta_neutral_crypto_funding',
@@ -118,6 +121,18 @@ const REQUIRED_MODELS: ModelConfig[] = [
     enabled: true,
     color: '#14b8a6',
     starting_capital: 1000000,
+  },
+  {
+    id: ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID,
+    name: 'QSentia ETH Micro Futures Sentiment Alpha - IBKR',
+    description:
+      'ETH-specific CryptoBERT, MLP, and PPO sentiment ensemble trained on Ethereum news/social text and routed through IBKR CME Micro Ether futures (MET) paper execution. Current portfolio value is sourced from IBKR NetLiquidation logs.',
+    repo: 'FinTechEntrepreneurldz/qsentia-eth-micro-futures-sentiment-alpha',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#8b5cf6',
+    starting_capital: DEFAULT_ACCOUNT_STARTING_CAPITAL,
   },
   {
     id: MODEL_C_SENTIMENT_ALPHA_MODEL_ID,
