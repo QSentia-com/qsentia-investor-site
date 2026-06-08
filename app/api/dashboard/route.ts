@@ -29,7 +29,6 @@ const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
 const BTC_ETF_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_etf_sentiment_alpha';
 const ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID =
   'qsentia_eth_micro_futures_sentiment_alpha';
-const RL_ALPHA_ALLOCATOR_MODEL_ID = 'qsentia_rl_alpha_allocator';
 const MODEL_A_ORIGINAL_MODEL_ID = 'model_a';
 const BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRYPTO_SENTIMENT_MLP_MODEL_ID;
@@ -47,11 +46,12 @@ const RETIRED_MODEL_IDS = new Set([
   'model-c',
   'model_c_mlp_regime_moe',
   'model-c-mlp-regime-moe',
+  'qsentia_rl_alpha_allocator',
+  'qsentia-rl-alpha-allocator',
 ]);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   BTC_ETF_SENTIMENT_ALPHA_MODEL_ID,
   ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID,
-  RL_ALPHA_ALLOCATOR_MODEL_ID,
   'delta_neutral_crypto_funding',
 ]);
 const DEFAULT_ACCOUNT_STARTING_CAPITAL = Number(
@@ -114,18 +114,6 @@ const REQUIRED_MODELS: ModelConfig[] = [
     enabled: true,
     color: '#8b5cf6',
     starting_capital: DEFAULT_ACCOUNT_STARTING_CAPITAL,
-  },
-  {
-    id: RL_ALPHA_ALLOCATOR_MODEL_ID,
-    name: 'QSentia RL Alpha Allocator',
-    description:
-      'Offline RL meta-allocator that assigns capital across QSentia alpha sleeves and writes IBKR paper allocation tickets from account NetLiquidation.',
-    repo: 'FinTechEntrepreneurldz/qsentia-rl-alpha-allocator',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#0ea5e9',
-    starting_capital: 1034017,
   },
   {
     id: MODEL_A_ORIGINAL_MODEL_ID,
