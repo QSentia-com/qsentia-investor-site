@@ -114,8 +114,6 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
-NEXTAUTH_SECRET=
-NEXTAUTH_URL=
 ```
 
 > Never commit secrets or production keys to the repository.
