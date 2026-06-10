@@ -116,6 +116,7 @@ const REQUIRED_MODELS: ModelConfig[] = [
     enabled: true,
     color: '#8b5cf6',
     starting_capital: 994099,
+    placeholder_account_value: 1000000,
   },
 ];
 type CsvRow = Record<string, string>;
@@ -130,6 +131,7 @@ type ModelConfig = {
   enabled: boolean;
   color: string;
   starting_capital?: number;
+  placeholder_account_value?: number;
 };
 
 type PortfolioPoint = {
@@ -375,6 +377,7 @@ function parseSimpleModelsYaml(text: string): ModelConfig[] {
       enabled: current.enabled !== false,
       color: current.color || '#4b3fd1',
       starting_capital: current.starting_capital,
+      placeholder_account_value: current.placeholder_account_value,
     });
   }
 
@@ -426,6 +429,14 @@ function setYamlValue(target: Partial<ModelConfig>, key: keyof ModelConfig, valu
     return;
   }
 
+  if (key === 'placeholder_account_value') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      target.placeholder_account_value = parsed;
+    }
+    return;
+  }
+
   if (
     key === 'id' ||
     key === 'name' ||
@@ -453,6 +464,41 @@ function startingCapitalForModel(model: ModelConfig): number | null {
   return Number.isFinite(DEFAULT_ACCOUNT_STARTING_CAPITAL)
     ? DEFAULT_ACCOUNT_STARTING_CAPITAL
     : null;
+}
+
+function isPlaceholderAccountValue(model: ModelConfig, value: number) {
+  if (
+    typeof model.placeholder_account_value !== 'number' ||
+    !Number.isFinite(model.placeholder_account_value)
+  ) {
+    return false;
+  }
+
+  const baseline = startingCapitalForModel(model);
+  if (baseline === null || baseline === model.placeholder_account_value) return false;
+
+  return Math.abs(value - model.placeholder_account_value) < 0.01;
+}
+
+function applyAccountValueOverrides(model: ModelConfig, daily: DailyPoint[]) {
+  const baseline = startingCapitalForModel(model);
+  if (baseline === null) return daily;
+
+  return daily.map((point) => {
+    if (!isPlaceholderAccountValue(model, point.value)) return point;
+
+    return {
+      ...point,
+      value: baseline,
+      raw: {
+        ...(point.raw || {}),
+        original_account_value: String(point.value),
+        original_source: point.raw?.source || 'broker_account_value',
+        override_reason: 'placeholder_account_value',
+        source: 'configured_ibkr_starting_liquidity',
+      },
+    };
+  });
 }
 
 function performanceValues(values: number[], baseline: number | null) {
@@ -1187,7 +1233,10 @@ export async function GET(request: Request) {
     ]),
     ...healthStatusObservation(healthStatus),
   ];
-  const dailyPortfolio = toDailyPortfolio(portfolio);
+  const dailyPortfolio = applyAccountValueOverrides(
+    selectedModelConfig,
+    toDailyPortfolio(portfolio)
+  );
   const values = dailyPortfolio.map((p) => p.value);
   const accountBaseline = startingCapitalForModel(selectedModelConfig);
   const latestPortfolioValue = values.length ? values[values.length - 1] : accountBaseline;
@@ -1229,16 +1278,19 @@ export async function GET(request: Request) {
         'health/health_status.json'
       ),
     ]);
-    const daily = toDailyPortfolio([
-      ...accountValueObservations([
-        rows,
-        latestAccountRows,
-        latestDecisionRowsForModel,
-        decisionsRowsForModel,
-        signalHistoryRowsForModel,
-      ]),
-      ...healthStatusObservation(modelHealthStatus),
-    ]);
+    const daily = applyAccountValueOverrides(
+      model,
+      toDailyPortfolio([
+        ...accountValueObservations([
+          rows,
+          latestAccountRows,
+          latestDecisionRowsForModel,
+          decisionsRowsForModel,
+          signalHistoryRowsForModel,
+        ]),
+        ...healthStatusObservation(modelHealthStatus),
+      ])
+    );
     const modelValues = daily.map((p) => p.value);
     const modelBaseline = startingCapitalForModel(model);
     const modelPerformanceValues = performanceValues(modelValues, modelBaseline);
