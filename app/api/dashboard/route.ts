@@ -27,6 +27,8 @@ const GITHUB_READ_TOKEN = ACTIVE_GITHUB_READ_TOKEN?.value || '';
 const GITHUB_READ_TOKEN_ENV_NAME = ACTIVE_GITHUB_READ_TOKEN?.name || null;
 const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
 const BTC_ETF_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_etf_sentiment_alpha';
+const ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID =
+  'qsentia_eth_micro_futures_sentiment_alpha';
 const BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRYPTO_SENTIMENT_MLP_MODEL_ID;
 const RETIRED_MODEL_IDS = new Set([
@@ -49,8 +51,6 @@ const RETIRED_MODEL_IDS = new Set([
   'brppo-v10-original-base',
   'base_model_br_ppo',
   'base-model-br-ppo',
-  'qsentia_eth_micro_futures_sentiment_alpha',
-  'qsentia-eth-micro-futures-sentiment-alpha',
 ]);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   BTC_ETF_SENTIMENT_ALPHA_MODEL_ID,
@@ -104,6 +104,18 @@ const REQUIRED_MODELS: ModelConfig[] = [
     enabled: true,
     color: '#14b8a6',
     starting_capital: 1000000,
+  },
+  {
+    id: ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID,
+    name: 'QSentia ETH Micro Futures Sentiment Alpha - IBKR',
+    description:
+      'Live ETH sentiment ensemble using CryptoBERT-scored ETH news, MLP/PPO stackers, and IBKR CME Micro Ether futures paper execution. Current portfolio value is sourced from IBKR NetLiquidation.',
+    repo: 'FinTechEntrepreneurldz/qsentia-eth-micro-futures-sentiment-alpha',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#8b5cf6',
+    starting_capital: 994099,
   },
 ];
 type CsvRow = Record<string, string>;
