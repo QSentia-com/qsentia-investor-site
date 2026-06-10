@@ -26,6 +26,7 @@ const ACTIVE_GITHUB_READ_TOKEN = GITHUB_READ_TOKEN_CANDIDATES.map(([name, value]
 const GITHUB_READ_TOKEN = ACTIVE_GITHUB_READ_TOKEN?.value || '';
 const GITHUB_READ_TOKEN_ENV_NAME = ACTIVE_GITHUB_READ_TOKEN?.name || null;
 const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
+const BTC_FUTURES_SENTIMENT_ALPHA_V2_MODEL_ID = 'qsentia_btc_futures_sentiment_alpha_v2';
 const BTC_ETF_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_etf_sentiment_alpha';
 const ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID =
   'qsentia_eth_micro_futures_sentiment_alpha';
@@ -104,6 +105,18 @@ const REQUIRED_MODELS: ModelConfig[] = [
     enabled: true,
     color: '#14b8a6',
     starting_capital: 1000000,
+  },
+  {
+    id: BTC_FUTURES_SENTIMENT_ALPHA_V2_MODEL_ID,
+    name: 'QSentia BTC Futures Sentiment Alpha V2 - IBKR',
+    description:
+      'BTC futures sentiment alpha V2 using the working CryptoBERT, MLP, PPO, and live news ensemble with upgraded production gates and IBKR CME Micro Bitcoin futures paper execution. Current portfolio value is sourced from IBKR NetLiquidation.',
+    repo: 'FinTechEntrepreneurldz/qsentia-btc-futures-sentiment-alpha-v2',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#ef4444',
+    starting_capital: 1004248,
   },
   {
     id: ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID,
