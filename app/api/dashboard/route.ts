@@ -26,6 +26,8 @@ const ACTIVE_GITHUB_READ_TOKEN = GITHUB_READ_TOKEN_CANDIDATES.map(([name, value]
 const GITHUB_READ_TOKEN = ACTIVE_GITHUB_READ_TOKEN?.value || '';
 const GITHUB_READ_TOKEN_ENV_NAME = ACTIVE_GITHUB_READ_TOKEN?.name || null;
 const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
+const BTC_FUTURES_LIVE_SENTIMENT_ALPHA_MODEL_ID =
+  'qsentia_btc_futures_live_sentiment_alpha';
 const BTC_FUTURES_SENTIMENT_ALPHA_V2_MODEL_ID = 'qsentia_btc_futures_sentiment_alpha_v2';
 const BTC_ETF_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_etf_sentiment_alpha';
 const ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID =
@@ -93,6 +95,18 @@ const REQUIRED_MODELS: ModelConfig[] = [
     branch: 'main',
     enabled: true,
     color: '#f59e0b',
+  },
+  {
+    id: BTC_FUTURES_LIVE_SENTIMENT_ALPHA_MODEL_ID,
+    name: 'QSentia BTC Futures Live Sentiment Alpha - IBKR',
+    description:
+      'Live-capital BTC sentiment ensemble using the same CryptoBERT, MLP, PPO, and live news stack as the working BTC futures model, routed through IBKR CME Micro Bitcoin futures with live account gates, account lock, and rollover controls.',
+    repo: 'FinTechEntrepreneurldz/qsentia-btc-futures-live-sentiment-alpha',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#0ea5e9',
+    starting_capital: 11500,
   },
   {
     id: BTC_ETF_SENTIMENT_ALPHA_MODEL_ID,
