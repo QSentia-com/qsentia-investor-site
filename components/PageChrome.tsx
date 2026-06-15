@@ -3,7 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { ArrowRight, ChevronDown, Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
+import AuthSessionMenu from '@/components/AuthSessionMenu';
 
 const navItems = [
   { href: '/marketplace', label: 'Products' },
@@ -125,23 +126,7 @@ export function SiteHeader({ active, theme = 'light' }: { active?: string; theme
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Link
-            href="/signin"
-            className={`rounded-md px-3 py-2 text-sm font-semibold transition ${
-              dark ? 'text-[#d7dfed] hover:bg-[#10172b]' : 'text-[#26352c] hover:bg-[#eef2ff]'
-            }`}
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/dashboard"
-            className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition ${
-              dark ? 'bg-white text-[#050714] hover:bg-[#dce2ff]' : 'bg-[#172554] text-white hover:bg-[#2437b5]'
-            }`}
-          >
-            Dashboard
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+          <AuthSessionMenu theme={theme} />
         </div>
       </div>
     </header>

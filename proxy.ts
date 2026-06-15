@@ -3,40 +3,66 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
   const response = NextResponse.next();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const protectedPage =
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/customer");
+  const protectedApi = pathname.startsWith("/api/customer");
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
-          );
-        },
+  if (!supabaseUrl || !supabaseAnonKey) {
+    if (protectedApi) {
+      return NextResponse.json(
+        { error: "Authentication is not configured" },
+        { status: 503, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+
+    if (protectedPage) {
+      const signin = new URL("/signin", request.url);
+      signin.searchParams.set("next", pathname);
+      signin.searchParams.set("error", "auth_not_configured");
+      return NextResponse.redirect(signin);
+    }
+
+    return response;
+  }
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options),
+        );
       },
     },
-  );
+  });
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // protect admin and dashboard routes
-  if (
-    (request.nextUrl.pathname.startsWith("/admin") ||
-      request.nextUrl.pathname.startsWith("/dashboard")) &&
-    !user
-  ) {
-    return NextResponse.redirect(new URL("/signin", request.url));
+  if (protectedApi && !user) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  if (protectedPage && !user) {
+    const signin = new URL("/signin", request.url);
+    signin.searchParams.set("next", pathname);
+    return NextResponse.redirect(signin);
   }
 
   // redirect signed in users away from signin page
-  if (request.nextUrl.pathname === "/signin" && user) {
+  if (pathname === "/signin" && user) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
@@ -44,5 +70,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/dashboard/:path*", "/signin"],
+  matcher: ["/admin/:path*", "/dashboard/:path*", "/customer/:path*", "/api/customer/:path*", "/signin"],
 };

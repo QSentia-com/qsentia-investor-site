@@ -1,24 +1,54 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { ArrowRight } from "lucide-react";
-import { createBrowserClient } from "@supabase/ssr";
+import { FormEvent, useEffect, useState } from "react";
+import { ArrowRight, Loader2 } from "lucide-react";
+import { authConfigMissingMessage, getSupabaseBrowserClient } from "@/lib/supabaseClient";
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+type OAuthProvider = "google" | "github";
+
+function callbackUrl(nextPath: string) {
+  const callback = new URL("/auth/callback", window.location.origin);
+  callback.searchParams.set("next", nextPath);
+  return callback.toString();
+}
+
+function nextPathFromLocation() {
+  if (typeof window === "undefined") return "/dashboard";
+  return new URLSearchParams(window.location.search).get("next") || "/dashboard";
+}
 
 export function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [providerLoading, setProviderLoading] = useState<OAuthProvider | null>(null);
+
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("error");
+    if (!code) return;
+
+    const timer = window.setTimeout(() => {
+      if (code === "auth_not_configured") setError(authConfigMissingMessage());
+      if (code === "oauth_exchange_failed") {
+        setError("OAuth sign-in could not be completed. Please try again.");
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError("");
+    const supabase = getSupabaseBrowserClient();
+
+    if (!supabase) {
+      setError(authConfigMissingMessage());
+      setLoading(false);
+      return;
+    }
 
     const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
@@ -31,11 +61,60 @@ export function SignInForm() {
       return;
     }
 
-    window.location.href = "/dashboard";
+    window.location.href = nextPathFromLocation();
+  }
+
+  async function handleOAuth(provider: OAuthProvider) {
+    setProviderLoading(provider);
+    setError("");
+    const supabase = getSupabaseBrowserClient();
+
+    if (!supabase) {
+      setError(authConfigMissingMessage());
+      setProviderLoading(null);
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: callbackUrl(nextPathFromLocation()),
+        queryParams: provider === "google" ? { prompt: "select_account" } : undefined,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+      setProviderLoading(null);
+    }
   }
 
   return (
-    <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
+    <div className="mt-6 grid gap-5">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <ProviderButton
+          provider="google"
+          label="Continue with Google"
+          loading={providerLoading === "google"}
+          disabled={Boolean(providerLoading) || loading}
+          onClick={() => handleOAuth("google")}
+        />
+        <ProviderButton
+          provider="github"
+          label="Continue with GitHub"
+          loading={providerLoading === "github"}
+          disabled={Boolean(providerLoading) || loading}
+          onClick={() => handleOAuth("github")}
+        />
+      </div>
+
+      <div className="flex items-center gap-3">
+        <span className="h-px flex-1 bg-[#e2e7fb]" />
+        <span className="text-xs font-bold uppercase tracking-wide text-[#8a958e]">or use email</span>
+        <span className="h-px flex-1 bg-[#e2e7fb]" />
+      </div>
+
+      <form className="grid gap-4" onSubmit={handleSubmit}>
       <label
         className="text-xs font-bold uppercase tracking-wide text-[#647269]"
         htmlFor="email"
@@ -75,13 +154,14 @@ export function SignInForm() {
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || Boolean(providerLoading)}
         className="mt-2 inline-flex items-center justify-center gap-2 rounded-md bg-[#172554] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#2437b5] disabled:opacity-60"
       >
         {loading ? "Signing in..." : "Continue to dashboard"}
         <ArrowRight className="h-4 w-4" />
       </button>
     </form>
+    </div>
   );
 }
 
@@ -92,11 +172,19 @@ export function CreateAccountForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [providerLoading, setProviderLoading] = useState<OAuthProvider | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError("");
+    const supabase = getSupabaseBrowserClient();
+
+    if (!supabase) {
+      setError(authConfigMissingMessage());
+      setLoading(false);
+      return;
+    }
 
     const { error } = await supabase.auth.signUp({
       email: workEmail.trim(),
@@ -106,7 +194,7 @@ export function CreateAccountForm() {
           full_name: fullName.trim(),
           organization: organization.trim(),
         },
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: callbackUrl(nextPathFromLocation()),
       },
     });
 
@@ -129,11 +217,60 @@ export function CreateAccountForm() {
       }),
     }).catch(() => null);
 
-    window.location.href = "/dashboard";
+    window.location.href = nextPathFromLocation();
+  }
+
+  async function handleOAuth(provider: OAuthProvider) {
+    setProviderLoading(provider);
+    setError("");
+    const supabase = getSupabaseBrowserClient();
+
+    if (!supabase) {
+      setError(authConfigMissingMessage());
+      setProviderLoading(null);
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: callbackUrl(nextPathFromLocation()),
+        queryParams: provider === "google" ? { prompt: "select_account" } : undefined,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+      setProviderLoading(null);
+    }
   }
 
   return (
-    <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
+    <div className="mt-6 grid gap-5">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <ProviderButton
+          provider="google"
+          label="Sign up with Google"
+          loading={providerLoading === "google"}
+          disabled={Boolean(providerLoading) || loading}
+          onClick={() => handleOAuth("google")}
+        />
+        <ProviderButton
+          provider="github"
+          label="Sign up with GitHub"
+          loading={providerLoading === "github"}
+          disabled={Boolean(providerLoading) || loading}
+          onClick={() => handleOAuth("github")}
+        />
+      </div>
+
+      <div className="flex items-center gap-3">
+        <span className="h-px flex-1 bg-[#e2e7fb]" />
+        <span className="text-xs font-bold uppercase tracking-wide text-[#8a958e]">or create with email</span>
+        <span className="h-px flex-1 bg-[#e2e7fb]" />
+      </div>
+
+      <form className="grid gap-4" onSubmit={handleSubmit}>
       <div className="grid gap-2">
         <label
           className="text-xs font-bold uppercase tracking-wide text-[#647269]"
@@ -204,12 +341,53 @@ export function CreateAccountForm() {
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || Boolean(providerLoading)}
         className="mt-2 inline-flex items-center justify-center gap-2 rounded-md bg-[#172554] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#2437b5] disabled:opacity-60"
       >
         {loading ? "Creating account..." : "Create account"}
         <ArrowRight className="h-4 w-4" />
       </button>
     </form>
+    </div>
+  );
+}
+
+function ProviderButton({
+  provider,
+  label,
+  loading,
+  disabled,
+  onClick,
+}: {
+  provider: OAuthProvider;
+  label: string;
+  loading: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#cbd5ff] bg-white px-4 py-2.5 text-sm font-bold text-[#172554] transition hover:border-[#3d52da] hover:bg-[#f8faff] disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {loading ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : provider === "github" ? (
+        <GitHubMark />
+      ) : (
+        <span className="flex h-4 w-4 items-center justify-center rounded-full text-sm font-black text-[#3d52da]">G</span>
+      )}
+      {label}
+    </button>
+  );
+}
+
+function GitHubMark() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+      <path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.72c-2.78.6-3.37-1.18-3.37-1.18a2.65 2.65 0 0 0-1.11-1.47c-.91-.62.07-.61.07-.61a2.1 2.1 0 0 1 1.53 1.03 2.13 2.13 0 0 0 2.91.83 2.12 2.12 0 0 1 .63-1.34c-2.22-.25-4.56-1.11-4.56-4.95a3.88 3.88 0 0 1 1.03-2.69 3.6 3.6 0 0 1 .1-2.65s.84-.27 2.75 1.03a9.46 9.46 0 0 1 5 0c1.91-1.3 2.75-1.03 2.75-1.03.37.85.41 1.82.1 2.65a3.87 3.87 0 0 1 1.03 2.69c0 3.85-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2Z" />
+    </svg>
   );
 }
