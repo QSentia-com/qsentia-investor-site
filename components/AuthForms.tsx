@@ -106,6 +106,7 @@ export function CreateAccountForm() {
           full_name: fullName.trim(),
           organization: organization.trim(),
         },
+        emailRedirectTo: `${window.location.origin}/dashboard`,
       },
     });
 
