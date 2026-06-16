@@ -32,10 +32,12 @@ const BTC_FUTURES_SENTIMENT_ALPHA_V2_MODEL_ID = 'qsentia_btc_futures_sentiment_a
 const BTC_ETF_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_etf_sentiment_alpha';
 const ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID =
   'qsentia_eth_micro_futures_sentiment_alpha';
+const CRYPTO_NARRATIVE_ALPHA_ALLOCATOR_MODEL_ID =
+  'qsentia_crypto_narrative_alpha_allocator';
 const BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRYPTO_SENTIMENT_MLP_MODEL_ID;
 const RETIRED_MODEL_IDS = new Set([
-  'qsentia_btc_eth_perp_basis_alpha',
+  BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID,
   'qsentia_btc_spot_sentiment_alpha',
   'qsentia_brppo_macro_rotation_alpaca',
   'real_crypto_carry_ibkr',
@@ -144,6 +146,18 @@ const REQUIRED_MODELS: ModelConfig[] = [
     color: '#8b5cf6',
     starting_capital: 994099,
     placeholder_account_value: 1000000,
+  },
+  {
+    id: CRYPTO_NARRATIVE_ALPHA_ALLOCATOR_MODEL_ID,
+    name: 'QSentia Crypto Narrative Alpha Allocator - IBKR',
+    description:
+      'Multi-asset crypto narrative allocator combining BTC, ETH, and SOL sentiment sleeves into confidence- and volatility-scaled IBKR CME micro futures exposure with trained-sleeve verification, live text gates, rollover controls, and dashboard logs.',
+    repo: 'FinTechEntrepreneurldz/qsentia-crypto-narrative-alpha-allocator',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#22c55e',
+    starting_capital: 1000000,
   },
 ];
 type CsvRow = Record<string, string>;
@@ -756,6 +770,48 @@ function actionCounts(rows: CsvRow[]) {
   }));
 }
 
+function latestSignalDecision(rows: CsvRow[]): CsvRow | null {
+  if (!rows.length) return null;
+
+  const maxTimestamp = Math.max(
+    ...rows.map((row) => timestampSortValue(row.timestamp_utc || row.timestamp || row.date))
+  );
+  const latestRows = rows.filter(
+    (row) => timestampSortValue(row.timestamp_utc || row.timestamp || row.date) === maxTimestamp
+  );
+  const sourceRows = latestRows.length ? latestRows : rows;
+  const assets = sourceRows
+    .map((row) => {
+      const asset = row.asset || row.symbol || 'asset';
+      const signal = row.signal || row.action || row.decision || 'unknown';
+      const confidenceValue = num(row.confidence);
+      const confidence = confidenceValue === null ? '' : ` ${confidenceValue.toFixed(3)}`;
+      return `${asset}:${signal}${confidence}`;
+    })
+    .join(', ');
+  const first: CsvRow = sourceRows[0] || {};
+  const textRows = sourceRows.reduce((sum, row) => sum + (num(row.text_rows) || 0), 0);
+  const confidenceValues = sourceRows
+    .map((row) => num(row.confidence))
+    .filter((value): value is number => value !== null);
+  const avgConfidence = confidenceValues.length
+    ? confidenceValues.reduce((sum, value) => sum + value, 0) / confidenceValues.length
+    : null;
+
+  return {
+    ...first,
+    action: 'multi_asset_allocator',
+    signal: assets || first.signal || first.action || 'multi_asset_allocator',
+    decision: assets || first.decision || first.signal || first.action || 'multi_asset_allocator',
+    confidence: avgConfidence === null ? first.confidence || '' : String(avgConfidence),
+    live_text_rows: String(textRows || first.live_text_rows || ''),
+    scored_text_rows: String(textRows || first.scored_text_rows || ''),
+    components_json: JSON.stringify({ assets: sourceRows }),
+    method: first.method || 'signals_csv_allocator',
+    source: first.source || 'signals_latest_signals',
+  };
+}
+
 async function fetchYahooBenchmark(ticker: string, startDate?: string) {
   try {
     const start = startDate ? new Date(`${startDate}T00:00:00Z`) : new Date('2024-01-01T00:00:00Z');
@@ -1182,6 +1238,8 @@ export async function GET(request: Request) {
     latestIbkrAccountRows,
     latestDecisionRows,
     decisionsRows,
+    latestSignalRows,
+    signalRows,
     targetWeightsRows,
     targetWeightHistoryRows,
     positionsRows,
@@ -1200,6 +1258,8 @@ export async function GET(request: Request) {
     fetchCsvFromModel(selectedModelConfig, 'portfolio/latest_ibkr_account.csv'),
     fetchCsvFromModel(selectedModelConfig, 'decisions/latest_decision.csv'),
     fetchCsvFromModel(selectedModelConfig, 'decisions/decisions.csv'),
+    fetchCsvFromModel(selectedModelConfig, 'signals/latest_signals.csv'),
+    fetchCsvFromModel(selectedModelConfig, 'signals/signals.csv'),
     fetchCsvFromModel(selectedModelConfig, 'target_weights/latest_target_weights.csv'),
     fetchCsvFromModel(selectedModelConfig, 'target_weights/target_weights.csv'),
     fetchCsvFromModel(selectedModelConfig, 'positions/latest_positions.csv'),
@@ -1228,6 +1288,13 @@ export async function GET(request: Request) {
     ? submittedOrdersPrimaryRows
     : submittedOrdersFallbackRows;
   const displayedPlannedOrdersRows = plannedOrdersRows.length ? plannedOrdersRows : plannedAllocationsRows;
+  const displayedDecisionRows = decisionsRows.length
+    ? decisionsRows
+    : signalRows.length
+      ? signalRows
+      : latestSignalRows;
+  const displayedLatestDecision = latest(latestDecisionRows) || latestSignalDecision(latestSignalRows);
+  const displayedSignalHistoryRows = signalHistoryRows.length ? signalHistoryRows : signalRows;
   const paperStatus = inferPaperStatus(positionsRows, submittedOrdersRows);
   const healthPaperStatus =
     typeof healthStatus?.paper_status === 'string'
@@ -1245,8 +1312,10 @@ export async function GET(request: Request) {
   const latestRunTimestamp =
     healthStatus?.updated_at_utc ||
     healthStatus?.timestamp_utc ||
-    latest(latestDecisionRows)?.timestamp_utc ||
-    latest(decisionsRows)?.timestamp_utc ||
+    displayedLatestDecision?.timestamp_utc ||
+    latest(displayedDecisionRows)?.timestamp_utc ||
+    latest(latestSignalRows)?.timestamp_utc ||
+    latest(signalRows)?.timestamp_utc ||
     latest(latestIbkrAccountRows)?.timestamp_utc ||
     latest(portfolioRows)?.timestamp_utc ||
     null;
@@ -1255,8 +1324,8 @@ export async function GET(request: Request) {
       portfolioRows,
       latestIbkrAccountRows,
       latestDecisionRows,
-      decisionsRows,
-      signalHistoryRows,
+      displayedDecisionRows,
+      displayedSignalHistoryRows,
     ]),
     ...healthStatusObservation(healthStatus),
   ];
@@ -1292,6 +1361,8 @@ export async function GET(request: Request) {
       latestAccountRows,
       latestDecisionRowsForModel,
       decisionsRowsForModel,
+      latestSignalRowsForModel,
+      signalRowsForModel,
       signalHistoryRowsForModel,
       modelHealthStatus,
     ] = await Promise.all([
@@ -1299,12 +1370,22 @@ export async function GET(request: Request) {
       fetchCsvFromModel(model, 'portfolio/latest_ibkr_account.csv'),
       fetchCsvFromModel(model, 'decisions/latest_decision.csv'),
       fetchCsvFromModel(model, 'decisions/decisions.csv'),
+      fetchCsvFromModel(model, 'signals/latest_signals.csv'),
+      fetchCsvFromModel(model, 'signals/signals.csv'),
       fetchCsvFromModel(model, 'health/signal_history.csv'),
       fetchJsonFromModel<Record<string, unknown>>(
         model,
         'health/health_status.json'
       ),
     ]);
+    const displayedDecisionsRowsForModel = decisionsRowsForModel.length
+      ? decisionsRowsForModel
+      : signalRowsForModel.length
+        ? signalRowsForModel
+        : latestSignalRowsForModel;
+    const displayedSignalHistoryRowsForModel = signalHistoryRowsForModel.length
+      ? signalHistoryRowsForModel
+      : signalRowsForModel;
     const daily = applyAccountValueOverrides(
       model,
       toDailyPortfolio([
@@ -1312,8 +1393,8 @@ export async function GET(request: Request) {
           rows,
           latestAccountRows,
           latestDecisionRowsForModel,
-          decisionsRowsForModel,
-          signalHistoryRowsForModel,
+          displayedDecisionsRowsForModel,
+          displayedSignalHistoryRowsForModel,
         ]),
         ...healthStatusObservation(modelHealthStatus),
       ])
@@ -1349,8 +1430,9 @@ export async function GET(request: Request) {
         rows.length +
         latestAccountRows.length +
         latestDecisionRowsForModel.length +
-        decisionsRowsForModel.length +
-        signalHistoryRowsForModel.length,
+        displayedDecisionsRowsForModel.length +
+        latestSignalRowsForModel.length +
+        displayedSignalHistoryRowsForModel.length,
       dailyRowCount: daily.length,
       inceptionDate: modelInceptionDate || null,
       benchmarks: modelBenchmarks,
@@ -1368,7 +1450,7 @@ export async function GET(request: Request) {
     selectedModelConfig,
     registry,
     latest: {
-        decision: latest(latestDecisionRows),
+        decision: displayedLatestDecision,
       
         // SOURCE OF TRUTH: latest broker account observation from portfolio logs or health status.
         // For new account-backed models, fall back to configured starting capital until first log lands.
@@ -1419,15 +1501,15 @@ export async function GET(request: Request) {
       drawdown: p.drawdown,
     })),
     modelComparison,
-    decisions: decisionsRows,
-    actionCounts: actionCounts(decisionsRows),
+    decisions: displayedDecisionRows,
+    actionCounts: actionCounts(displayedDecisionRows),
     targetWeights: targetWeightsRows,
     targetWeightHistory: targetWeightHistoryRows,
     positions: positionsRows,
     plannedOrders: displayedPlannedOrdersRows,
     submittedOrders: submittedOrdersRows,
     ordersHistory: ordersHistoryRows,
-    signalHistory: signalHistoryRows,
+    signalHistory: displayedSignalHistoryRows,
     healthStatus,
     executionRealism,
     readinessChecks: readinessChecksRows,
@@ -1464,13 +1546,15 @@ export async function GET(request: Request) {
         paperStatus
       })),
       selectedModelConfig,
-        rowCounts: {
-          portfolioRows: portfolioRows.length,
-          latestIbkrAccountRows: latestIbkrAccountRows.length,
-          healthStatusRows: healthStatus ? 1 : 0,
-          dailyPortfolioRows: dailyPortfolio.length,
+      rowCounts: {
+        portfolioRows: portfolioRows.length,
+        latestIbkrAccountRows: latestIbkrAccountRows.length,
+        healthStatusRows: healthStatus ? 1 : 0,
+        dailyPortfolioRows: dailyPortfolio.length,
         latestDecisionRows: latestDecisionRows.length,
-        decisionsRows: decisionsRows.length,
+        decisionsRows: displayedDecisionRows.length,
+        latestSignalRows: latestSignalRows.length,
+        signalRows: signalRows.length,
         targetWeightsRows: targetWeightsRows.length,
         targetWeightHistoryRows: targetWeightHistoryRows.length,
         positionsRows: positionsRows.length,
@@ -1478,7 +1562,7 @@ export async function GET(request: Request) {
         plannedAllocationsRows: plannedAllocationsRows.length,
         submittedOrdersRows: submittedOrdersRows.length,
         ordersHistoryRows: ordersHistoryRows.length,
-        signalHistoryRows: signalHistoryRows.length,
+        signalHistoryRows: displayedSignalHistoryRows.length,
         readinessChecksRows: readinessChecksRows.length,
       },
       modelComparisonRows: modelComparison.map((m) => ({
