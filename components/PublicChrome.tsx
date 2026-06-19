@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import AlexAssistant from '@/components/AlexAssistant';
+import CookieConsent from '@/components/CookieConsent';
 import SiteFooter from '@/components/SiteFooter';
 
 export default function PublicChrome() {
@@ -13,6 +14,7 @@ export default function PublicChrome() {
     <>
       <SiteFooter />
       <AlexAssistant />
+      <CookieConsent />
     </>
   );
 }

@@ -9,6 +9,7 @@ import {
   Mail,
   ShieldCheck,
 } from 'lucide-react';
+import CookieSettingsButton from '@/components/CookieSettingsButton';
 
 type FooterLink = {
   href: string;
@@ -75,6 +76,7 @@ const footerColumns: Array<{ title: string; links: FooterLink[] }> = [
       { href: '/', label: 'About QSentia' },
       { href: '/problem-solution', label: 'Problem & solution' },
       { href: '/careers', label: 'Careers' },
+      { href: '/compliance', label: 'Compliance centre' },
       { href: '/contact', label: 'Contact us' },
       { href: '/signin', label: 'Sign in' },
       { href: '/create-account', label: 'Create account' },
@@ -85,7 +87,12 @@ const footerColumns: Array<{ title: string; links: FooterLink[] }> = [
     links: [
       { href: '/disclaimer', label: 'Risk disclaimer' },
       { href: '/privacy-policy', label: 'Privacy policy' },
+      { href: '/cookie-policy', label: 'Cookie policy' },
+      { href: '/data-protection', label: 'Data protection & DPDP' },
+      { href: '/security', label: 'Security & ISO alignment' },
+      { href: '/acceptable-use-policy', label: 'Acceptable use' },
       { href: '/terms-and-conditions', label: 'Terms & conditions' },
+      { href: '/refund-cancellation-policy', label: 'Billing & cancellation' },
       { href: '/shipping-policy', label: 'Shipping policy' },
     ],
   },
@@ -95,7 +102,7 @@ const legalLinks = [
   { href: '/privacy-policy', label: 'Privacy' },
   { href: '/terms-and-conditions', label: 'Terms' },
   { href: '/disclaimer', label: 'Disclaimer' },
-  { href: '/shipping-policy', label: 'Shipping' },
+  { href: '/compliance', label: 'Compliance' },
 ];
 
 export default function SiteFooter() {
@@ -165,6 +172,7 @@ export default function SiteFooter() {
                 {link.label}
               </Link>
             ))}
+            <CookieSettingsButton className="transition-colors hover:text-[#2b36ff]" />
           </div>
         </div>
       </div>
