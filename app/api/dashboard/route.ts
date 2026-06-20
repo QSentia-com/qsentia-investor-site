@@ -34,6 +34,8 @@ const ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID =
   'qsentia_eth_micro_futures_sentiment_alpha';
 const CRYPTO_NARRATIVE_ALPHA_ALLOCATOR_MODEL_ID =
   'qsentia_crypto_narrative_alpha_allocator';
+const MODEL_C_PAPER_TRADING_MODEL_ID = 'model_c_paper_trading';
+const MODEL_C_ETF_MODEL_ID = 'model_c_mlp_regime_moe';
 const BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRYPTO_SENTIMENT_MLP_MODEL_ID;
 const RETIRED_MODEL_IDS = new Set([
@@ -48,8 +50,6 @@ const RETIRED_MODEL_IDS = new Set([
   'qsentia-model-c-sentiment-alpha',
   'model_c',
   'model-c',
-  'model_c_mlp_regime_moe',
-  'model-c-mlp-regime-moe',
   'qsentia_rl_alpha_allocator',
   'qsentia-rl-alpha-allocator',
   'model_a',
@@ -59,6 +59,8 @@ const RETIRED_MODEL_IDS = new Set([
 ]);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   BTC_ETF_SENTIMENT_ALPHA_MODEL_ID,
+  MODEL_C_PAPER_TRADING_MODEL_ID,
+  MODEL_C_ETF_MODEL_ID,
   'delta_neutral_crypto_funding',
 ]);
 const DEFAULT_ACCOUNT_STARTING_CAPITAL = Number(
@@ -157,6 +159,30 @@ const REQUIRED_MODELS: ModelConfig[] = [
     branch: 'main',
     enabled: true,
     color: '#22c55e',
+    starting_capital: 1000000,
+  },
+  {
+    id: MODEL_C_PAPER_TRADING_MODEL_ID,
+    name: 'Model C Reborn 130/30 - Alpaca',
+    description:
+      'Fresh-start Model C equity allocator using MLP-driven stock selection, Ichimoku/chart/trailing features, automatic model-gated target drift execution, and Alpaca paper trading from a new $1M account baseline.',
+    repo: 'FinTechEntrepreneurldz/Model_C_Paper_Trading',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#2563eb',
+    starting_capital: 1000000,
+  },
+  {
+    id: MODEL_C_ETF_MODEL_ID,
+    name: 'Model C ETF Regime MoE - Alpaca',
+    description:
+      'ETF regime mixture-of-experts allocator using model-gated automatic rebalancing, Alpaca paper execution, and daily 7AM New York scheduling from a clean $1M starting account.',
+    repo: 'FinTechEntrepreneurldz/model_c_etf',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#4f46e5',
     starting_capital: 1000000,
   },
 ];
