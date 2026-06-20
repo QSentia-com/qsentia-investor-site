@@ -85,6 +85,14 @@ export type ModelActivity = {
   lastViewedAt: string;
 };
 
+type ModelActivityRow = {
+  model_id: string;
+  slug: string | null;
+  name: string | null;
+  views: number;
+  last_viewed_at: string;
+};
+
 export type CommercialOffer = {
   id: string;
   code: string;
@@ -910,7 +918,7 @@ export async function readBackOfficeStore() {
     applications: applicationsResult.data || [],
     offers: offersResult.data || [],
     modelActivity: Object.fromEntries(
-      (modelActivityResult.data || []).map((entry: any) => [
+      ((modelActivityResult.data || []) as ModelActivityRow[]).map((entry) => [
         entry.model_id,
         {
           modelId: entry.model_id,

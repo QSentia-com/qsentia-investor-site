@@ -36,6 +36,9 @@ const CRYPTO_NARRATIVE_ALPHA_ALLOCATOR_MODEL_ID =
   'qsentia_crypto_narrative_alpha_allocator';
 const MODEL_C_PAPER_TRADING_MODEL_ID = 'model_c_paper_trading';
 const MODEL_C_ETF_MODEL_ID = 'model_c_mlp_regime_moe';
+const BASE_MODEL_BR_PPO_MODEL_ID = 'base_model_br_ppo';
+const BR_PPO_CRYPTO_V15_MODEL_ID = 'br_ppo_crypto_v15';
+const BRPPO_FIXED_INCOME_REGIME_MODEL_ID = 'brppo_fixed_income_regime';
 const BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRYPTO_SENTIMENT_MLP_MODEL_ID;
 const RETIRED_MODEL_IDS = new Set([
@@ -44,7 +47,6 @@ const RETIRED_MODEL_IDS = new Set([
   'qsentia_brppo_macro_rotation_alpaca',
   'real_crypto_carry_ibkr',
   'real-crypto-carry-ibkr',
-  'br_ppo_crypto_v15',
   'brppo-crypto-v15',
   'qsentia_model_c_sentiment_alpha',
   'qsentia-model-c-sentiment-alpha',
@@ -54,13 +56,15 @@ const RETIRED_MODEL_IDS = new Set([
   'qsentia-rl-alpha-allocator',
   'model_a',
   'brppo-v10-original-base',
-  'base_model_br_ppo',
   'base-model-br-ppo',
 ]);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   BTC_ETF_SENTIMENT_ALPHA_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
+  BASE_MODEL_BR_PPO_MODEL_ID,
+  BR_PPO_CRYPTO_V15_MODEL_ID,
+  BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
   'delta_neutral_crypto_funding',
 ]);
 const DEFAULT_ACCOUNT_STARTING_CAPITAL = Number(
@@ -183,6 +187,42 @@ const REQUIRED_MODELS: ModelConfig[] = [
     branch: 'main',
     enabled: true,
     color: '#4f46e5',
+    starting_capital: 1000000,
+  },
+  {
+    id: BASE_MODEL_BR_PPO_MODEL_ID,
+    name: 'Base Model BR PPO - Alpaca',
+    description:
+      'Production paper-trading BR-PPO baseline allocator prepared for a fresh Alpaca account, $1M starting equity, daily 7AM New York scheduled execution, and broker-sourced portfolio telemetry.',
+    repo: 'FinTechEntrepreneurldz/Base_Model_BR_PPO',
+    logs_path: 'logs/base_model_br_ppo',
+    branch: 'main',
+    enabled: true,
+    color: '#0891b2',
+    starting_capital: 1000000,
+  },
+  {
+    id: BR_PPO_CRYPTO_V15_MODEL_ID,
+    name: 'BR PPO Crypto V15 - Alpaca',
+    description:
+      'Crypto-focused BR-PPO v15 allocator prepared for Alpaca paper execution from a clean $1M account baseline, with dashboard tracking for scheduled 7AM New York model runs and account-level telemetry.',
+    repo: 'FinTechEntrepreneurldz/br_ppo_crypto_v15',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#db2777',
+    starting_capital: 1000000,
+  },
+  {
+    id: BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
+    name: 'BRPPO Fixed Income Regime - Alpaca',
+    description:
+      'Fixed-income regime BR-PPO allocator prepared for Alpaca paper trading from a new $1M account, daily 7AM New York execution, and hedge-fund-grade broker account tracking.',
+    repo: 'FinTechEntrepreneurldz/brppo_fixed_income_regime',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#7c2d12',
     starting_capital: 1000000,
   },
 ];
