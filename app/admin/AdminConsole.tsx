@@ -2,15 +2,17 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import useSWR from 'swr';
 import {
   AlertCircle,
   ArrowUpRight,
   BriefcaseBusiness,
+  Building2,
   CheckCircle2,
   CircleDollarSign,
   ClipboardList,
+  CreditCard,
   Eye,
   EyeOff,
   Gauge,
@@ -25,9 +27,13 @@ import {
   Settings2,
   SlidersHorizontal,
   UsersRound,
+  UploadCloud,
 } from 'lucide-react';
+import AuthSessionMenu from '@/components/AuthSessionMenu';
+import ApiCommerceWorkspace from '@/components/admin/ApiCommerceWorkspace';
+import ModelOnboardingWorkspace from '@/components/admin/ModelOnboardingWorkspace';
 
-type SectionId = 'overview' | 'models' | 'offers' | 'leads' | 'careers' | 'tickets';
+type SectionId = 'overview' | 'onboarding' | 'models' | 'customers' | 'apiAccess' | 'billing' | 'offers' | 'leads' | 'careers' | 'tickets';
 type AccessStatus = 'draft' | 'active' | 'private' | 'waitlist' | 'retired';
 type BillingInterval = 'monthly' | 'annual' | 'one_time' | 'custom';
 type Visibility = 'public' | 'hidden';
@@ -146,7 +152,6 @@ type Offer = {
 };
 
 type AdminOverview = {
-  authMode: 'development' | 'protected';
   updatedAt: string | null;
   metrics: {
     models: number;
@@ -176,8 +181,6 @@ type AdminOverview = {
 
 type ApiError = Error & { status?: number };
 
-const STORAGE_KEY = 'qsentia-admin-key';
-
 const EMPTY_SETTING: AdminSetting = {
   pricing: 'Contact sales',
   billingInterval: 'monthly',
@@ -194,12 +197,16 @@ const EMPTY_SETTING: AdminSetting = {
 };
 
 const sections: Array<{ id: SectionId; label: string; detail: string; icon: ReactNode }> = [
-  { id: 'overview', label: 'Command center', detail: 'Sales, views, and operations', icon: <Gauge className="h-4 w-4" /> },
-  { id: 'models', label: 'Model commerce', detail: 'Pricing, access, sales', icon: <CircleDollarSign className="h-4 w-4" /> },
-  { id: 'offers', label: 'Trials & codes', detail: 'Free trials and discounts', icon: <KeyRound className="h-4 w-4" /> },
-  { id: 'leads', label: 'Leads & CRM', detail: 'Signup, contact, Google sources', icon: <UsersRound className="h-4 w-4" /> },
-  { id: 'careers', label: 'Careers', detail: 'Roles and candidates', icon: <BriefcaseBusiness className="h-4 w-4" /> },
-  { id: 'tickets', label: 'Internal tickets', detail: 'QSentia team issues', icon: <MessageSquarePlus className="h-4 w-4" /> },
+  { id: 'overview', label: 'Overview', detail: 'Commercial and operating health', icon: <Gauge className="h-4 w-4" /> },
+  { id: 'onboarding', label: 'Model onboarding', detail: 'Research submission, review, and publication', icon: <UploadCloud className="h-4 w-4" /> },
+  { id: 'models', label: 'Models & pricing', detail: 'Catalog, access, and licensing', icon: <CircleDollarSign className="h-4 w-4" /> },
+  { id: 'customers', label: 'Customers', detail: 'Accounts, plans, and renewals', icon: <Building2 className="h-4 w-4" /> },
+  { id: 'apiAccess', label: 'API access', detail: 'Entitlements, keys, and quotas', icon: <KeyRound className="h-4 w-4" /> },
+  { id: 'billing', label: 'Billing', detail: 'Revenue and payment operations', icon: <CreditCard className="h-4 w-4" /> },
+  { id: 'offers', label: 'Offers', detail: 'Trials and discount controls', icon: <KeyRound className="h-4 w-4" /> },
+  { id: 'leads', label: 'CRM', detail: 'Pipeline and account interest', icon: <UsersRound className="h-4 w-4" /> },
+  { id: 'careers', label: 'Careers', detail: 'Open roles and candidates', icon: <BriefcaseBusiness className="h-4 w-4" /> },
+  { id: 'tickets', label: 'Service desk', detail: 'Internal issues and requests', icon: <MessageSquarePlus className="h-4 w-4" /> },
 ];
 
 const accessOptions: Array<{ value: AccessStatus; label: string }> = [
@@ -256,26 +263,8 @@ const leadInterests = ['Model licensing', 'Investor diligence', 'Dashboard acces
 const pricingLabels = ['Contact sales', 'Custom quote', 'Trial access', 'Enterprise plan'] as const;
 const commercialOwners = ['Investor Relations', 'Research', 'Engineering', 'CEO office', 'Operations'] as const;
 
-function subscribeAdminKey(callback: () => void) {
-  if (typeof window === 'undefined') return () => {};
-  window.addEventListener('storage', callback);
-  return () => window.removeEventListener('storage', callback);
-}
-
-function getAdminKeySnapshot() {
-  if (typeof window === 'undefined') return '';
-  return window.localStorage.getItem(STORAGE_KEY) || '';
-}
-
-function getServerAdminKeySnapshot() {
-  return '';
-}
-
-async function adminFetcher([url, adminKey]: [string, string]) {
-  const response = await fetch(url, {
-    headers: adminKey ? { 'x-qsentia-admin-key': adminKey } : undefined,
-    cache: 'no-store',
-  });
+async function adminFetcher(url: string) {
+  const response = await fetch(url, { cache: 'no-store' });
 
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
@@ -327,21 +316,14 @@ function settingForEdit(setting: AdminSetting | undefined): AdminSetting {
 }
 
 function statusClasses(status: string) {
-  if (['active', 'won', 'open'].includes(status)) return 'border-[#20c997]/30 bg-[#062c2a] text-[#65f0dc]';
-  if (['private', 'proposal', 'in_progress'].includes(status)) return 'border-[#8ea0ff]/30 bg-[#12183a] text-[#b7c5ff]';
-  if (['waitlist', 'demo', 'waiting', 'paused', 'high'].includes(status)) return 'border-[#f7c948]/30 bg-[#33270a] text-[#ffe08a]';
-  if (['retired', 'lost', 'closed', 'resolved', 'urgent'].includes(status)) return 'border-[#ef4444]/30 bg-[#351116] text-[#fda4af]';
-  return 'border-[#4b587a] bg-[#121827] text-[#a9b4cf]';
+  if (['active', 'won', 'open'].includes(status)) return 'border-[#a7e8cc] bg-[#ecfdf5] text-[#047857]';
+  if (['private', 'proposal', 'in_progress'].includes(status)) return 'border-[#c7d2fe] bg-[#eef2ff] text-[#3046c8]';
+  if (['waitlist', 'demo', 'waiting', 'paused', 'high'].includes(status)) return 'border-[#fde68a] bg-[#fffbeb] text-[#a16207]';
+  if (['retired', 'lost', 'closed', 'resolved', 'urgent'].includes(status)) return 'border-[#fecdd3] bg-[#fff1f2] text-[#be123c]';
+  return 'border-[#d9e0ec] bg-[#f8fafc] text-[#46554b]';
 }
 
 export default function AdminConsole({ initialData = null }: { initialData?: AdminOverview | null }) {
-  const storedAdminKey = useSyncExternalStore(
-    subscribeAdminKey,
-    getAdminKeySnapshot,
-    getServerAdminKeySnapshot
-  );
-  const [adminKeyDraft, setAdminKeyDraft] = useState<string | null>(null);
-  const adminKey = adminKeyDraft ?? storedAdminKey;
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [modelQuery, setModelQuery] = useState('');
@@ -405,7 +387,7 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
   });
 
   const { data, error, isLoading, mutate } = useSWR<AdminOverview>(
-    ['/api/admin/overview', adminKey],
+    '/api/admin/overview',
     adminFetcher,
     { fallbackData: initialData || undefined, shouldRetryOnError: false }
   );
@@ -429,14 +411,7 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
     );
   });
 
-  const protectedMode = data?.authMode === 'protected' || (error as ApiError | undefined)?.status === 401;
-
-  function saveAdminKey() {
-    window.localStorage.setItem(STORAGE_KEY, adminKey);
-    setAdminKeyDraft(adminKey);
-    setMessage(null);
-    void mutate();
-  }
+  const activeSectionMeta = sections.find((section) => section.id === activeSection) || sections[0];
 
   function updateDraft<K extends keyof AdminSetting>(field: K, value: AdminSetting[K]) {
     if (!selectedModel) return;
@@ -462,7 +437,6 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          ...(adminKey ? { 'x-qsentia-admin-key': adminKey } : {}),
         },
         body: JSON.stringify({
           modelId: selectedModel.id,
@@ -496,7 +470,6 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
       method: id ? 'PATCH' : 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(adminKey ? { 'x-qsentia-admin-key': adminKey } : {}),
       },
       body: JSON.stringify({ type, id, payload }),
     });
@@ -625,51 +598,21 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
   }
 
   return (
-    <main className="min-h-screen bg-[#050714] text-white">
-      <div className="border-b border-[#17213c] bg-[#050714]/95">
-        <div className="mx-auto flex max-w-[1540px] flex-col gap-5 px-4 py-5 sm:px-6 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex min-w-0 items-center gap-4">
-            <Link href="/" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[#24304d] bg-white">
-              <Image src="/logo/qsentia-primary.png" alt="QSentia" width={28} height={28} className="h-7 w-7 object-contain" />
+    <main className="admin-portal min-h-screen bg-[#f4f6fa] text-[#0f172a]">
+      <div className="mx-auto min-h-screen max-w-[1720px] md:grid md:grid-cols-[236px_minmax(0,1fr)] xl:grid-cols-[248px_minmax(0,1fr)]">
+        <aside className="flex flex-col border-b border-[#1d2942] bg-[#0b1220] p-4 text-white md:sticky md:top-0 md:min-h-screen md:self-start md:border-b-0 md:border-r">
+          <div className="flex items-center gap-3 border-b border-white/10 pb-5">
+            <Link href="/" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white" aria-label="QSentia home">
+              <Image src="/logo/qsentia-primary.png" alt="QSentia" width={27} height={27} className="h-7 w-7 object-contain" />
             </Link>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#8ea0ff]">QSentia operations</p>
-              <h1 className="mt-1 text-2xl font-semibold tracking-normal text-white">Admin command center</h1>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold text-white">QSentia</div>
+              <div className="mt-0.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#8ea0ff]">Administration</div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex min-w-0 items-center gap-2 rounded-md border border-[#24304d] bg-[#080d1c] px-3 py-2">
-              <LockKeyhole className="h-4 w-4 shrink-0 text-[#8ea0ff]" />
-              <input
-                type="password"
-                value={adminKey}
-                onChange={(event) => setAdminKeyDraft(event.target.value)}
-                placeholder={protectedMode ? 'Admin access key' : 'Optional admin key'}
-                className="min-w-0 bg-transparent text-sm text-white outline-none placeholder:text-[#62708f]"
-              />
-              <button
-                type="button"
-                onClick={saveAdminKey}
-                className="rounded-md border border-[#324065] px-2.5 py-1 text-xs font-bold text-[#dbe4ff] transition hover:border-[#8ea0ff]"
-              >
-                Apply
-              </button>
-            </div>
-            <Link
-              href="/marketplace"
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-[#24304d] px-3 py-2 text-sm font-semibold text-[#dbe4ff] transition hover:border-[#8ea0ff] hover:text-white"
-            >
-              Public site
-              <ArrowUpRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-auto grid max-w-[1540px] gap-6 px-4 py-6 sm:px-6 xl:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="h-fit rounded-[12px] border border-[#18233f] bg-[#080d1c] p-3 xl:sticky xl:top-6">
-          <nav className="grid gap-1" aria-label="Admin sections">
+          <div className="mt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#73809d]">Workspace</div>
+          <nav className="mt-3 grid grid-cols-2 gap-1 sm:grid-cols-3 md:grid-cols-1" aria-label="Admin sections">
             {sections.map((section) => (
               <button
                 key={section.id}
@@ -678,57 +621,75 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
                   setActiveSection(section.id);
                   setMessage(null);
                 }}
-                className={`flex w-full items-start gap-3 rounded-md px-3 py-3 text-left transition ${
+                className={`flex min-h-10 w-full items-center gap-3 rounded-md px-2.5 py-2 text-left transition ${
                   activeSection === section.id
-                    ? 'bg-[#10172b] text-white'
-                    : 'text-[#b8c2dd] hover:bg-[#10172b]/70 hover:text-white'
+                    ? 'bg-white/10 text-white'
+                    : 'text-[#bac4d8] hover:bg-white/5 hover:text-white'
                 }`}
               >
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#24304d] bg-[#050714] text-[#8ea0ff]">
+                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${activeSection === section.id ? 'bg-[#3d52da] text-white' : 'bg-[#131e32] text-[#9dacff]'}`}>
                   {section.icon}
                 </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold">{section.label}</span>
-                  <span className="mt-0.5 block text-xs leading-5 text-[#7f8baa]">{section.detail}</span>
-                </span>
+                <span className="min-w-0 truncate text-[13px] font-semibold">{section.label}</span>
               </button>
             ))}
           </nav>
 
-          <div className="mt-5 rounded-md border border-[#24304d] bg-[#050714] p-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-white">
-              <KeyRound className="h-4 w-4 text-[#8ea0ff]" />
-              {data?.authMode === 'protected' ? 'Protected mode' : 'Development mode'}
+          <div className="mt-5 grid gap-1 border-t border-white/10 pt-4 md:mt-auto">
+            <div className="flex items-center gap-2 px-2 py-2 text-xs font-semibold text-[#cbd5e1]">
+                <LockKeyhole className="h-4 w-4 text-[#9dacff]" />
+                Admin role verified
             </div>
-            <p className="mt-2 text-xs leading-5 text-[#8d98b5]">
-              Set `QSENTIA_ADMIN_KEY` before deployment to require the admin key for writes.
-            </p>
+            <Link href="/" className="inline-flex items-center justify-between rounded-md px-2 py-2 text-xs font-semibold text-[#dbe4ff] hover:bg-white/5">
+              Public site
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
           </div>
         </aside>
 
         <section className="min-w-0">
-          {error && (
-            <StatusMessage tone="error">
-              {(error as ApiError).message || 'Admin data could not be loaded.'}
-            </StatusMessage>
-          )}
-          {message && <StatusMessage tone={message.tone}>{message.text}</StatusMessage>}
-
-          {showInitialLoading && (
-            <WorkspacePanel title="Loading admin workspace" icon={<RefreshCw className="h-4 w-4 animate-spin" />}>
-              <div className="grid gap-3 md:grid-cols-3">
-                {Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className="h-28 animate-pulse rounded-md border border-[#18233f] bg-[#050714]" />
-                ))}
+          <header className="sticky top-0 z-40 border-b border-[#dfe5f2] bg-white/95 backdrop-blur">
+            <div className="flex min-h-16 flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between xl:px-8">
+              <div className="min-w-0">
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#647269]">Operations workspace</div>
+                <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <h1 className="text-xl font-semibold text-[#0f172a]">{activeSectionMeta.label}</h1>
+                  <span className="text-sm text-[#647269]">{activeSectionMeta.detail}</span>
+                </div>
               </div>
-            </WorkspacePanel>
-          )}
+              <div className="flex items-center gap-3">
+                <span className="hidden text-xs text-[#647269] lg:block">Updated {shortDate(data?.updatedAt)}</span>
+                <AuthSessionMenu />
+              </div>
+            </div>
+          </header>
 
-          {data && activeSection === 'overview' && (
-            <OverviewSection data={data} onRefresh={() => void mutate()} />
-          )}
+          <div className="min-w-0 p-4 sm:p-6 xl:p-8">
+            {error && (
+              <StatusMessage tone="error">
+                {(error as ApiError).message || 'Admin data could not be loaded.'}
+              </StatusMessage>
+            )}
+            {message && <StatusMessage tone={message.tone}>{message.text}</StatusMessage>}
 
-          {data && activeSection === 'models' && (
+            {showInitialLoading && (
+              <WorkspacePanel title="Loading operations" icon={<RefreshCw className="h-4 w-4 animate-spin" />}>
+                <div className="grid gap-3 md:grid-cols-3">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="h-28 animate-pulse rounded-md border border-[#dfe5f2] bg-[#f8faff]" />
+                  ))}
+                </div>
+              </WorkspacePanel>
+            )}
+
+            {data && activeSection === 'overview' && (
+              <>
+                <OverviewSection data={data} onRefresh={() => void mutate()} />
+                <ApiCommerceWorkspace view="summary" models={data.models.map(({ id, name }) => ({ id, name }))} />
+              </>
+            )}
+
+            {data && activeSection === 'models' && (
             <ModelsSection
               draft={draft}
               filteredModels={filteredModels}
@@ -744,9 +705,11 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
               saving={saving}
               selectedModel={selectedModel}
             />
-          )}
+            )}
 
-          {data && activeSection === 'offers' && (
+            {activeSection === 'onboarding' && <ModelOnboardingWorkspace />}
+
+            {data && activeSection === 'offers' && (
             <OffersSection
               models={data.models}
               offerForm={offerForm}
@@ -763,9 +726,21 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
               }
               saving={saving}
             />
-          )}
+            )}
 
-          {data && activeSection === 'leads' && (
+            {data && activeSection === 'customers' && (
+              <ApiCommerceWorkspace view="customers" models={data.models.map(({ id, name }) => ({ id, name }))} />
+            )}
+
+            {data && activeSection === 'apiAccess' && (
+              <ApiCommerceWorkspace view="apiAccess" models={data.models.map(({ id, name }) => ({ id, name }))} />
+            )}
+
+            {data && activeSection === 'billing' && (
+              <ApiCommerceWorkspace view="billing" models={data.models.map(({ id, name }) => ({ id, name }))} />
+            )}
+
+            {data && activeSection === 'leads' && (
             <LeadsSection
               leadForm={leadForm}
               leads={data.leads}
@@ -781,9 +756,9 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
               }
               saving={saving}
             />
-          )}
+            )}
 
-          {data && activeSection === 'careers' && (
+            {data && activeSection === 'careers' && (
             <CareersSection
               applications={data.applications}
               onCreate={createCareerRole}
@@ -792,9 +767,9 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
               roles={data.careerRoles}
               saving={saving}
             />
-          )}
+            )}
 
-          {data && activeSection === 'tickets' && (
+            {data && activeSection === 'tickets' && (
             <TicketsSection
               onCreate={createTicket}
               onForm={setTicketForm}
@@ -810,7 +785,8 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
               ticketForm={ticketForm}
               tickets={data.tickets}
             />
-          )}
+            )}
+          </div>
         </section>
       </div>
     </main>
@@ -841,7 +817,7 @@ function OverviewSection({ data, onRefresh }: { data: AdminOverview; onRefresh: 
           icon={<Gauge className="h-4 w-4" />}
           action={
             <div className="flex items-center gap-3">
-              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7f8baa]">
+              <span className="text-xs font-semibold uppercase tracking-wide text-[#647269]">
                 {data.bestPerforming.length} models
               </span>
               <button type="button" onClick={onRefresh} className="admin-secondary-button">
@@ -854,7 +830,7 @@ function OverviewSection({ data, onRefresh }: { data: AdminOverview; onRefresh: 
           {data.bestPerforming.length ? (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-left text-sm">
-                <thead className="text-xs uppercase tracking-[0.16em] text-[#7f8baa]">
+                <thead className="text-xs uppercase tracking-wide text-[#647269]">
                   <tr>
                     <th className="pb-3">Model</th>
                     <th className="pb-3">Sharpe</th>
@@ -863,14 +839,14 @@ function OverviewSection({ data, onRefresh }: { data: AdminOverview; onRefresh: 
                     <th className="pb-3">Sold</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#18233f]">
+                <tbody className="divide-y divide-[#e2e7fb]">
                   {data.bestPerforming.map((model) => (
                     <tr key={model.id}>
-                      <td className="py-3 font-semibold text-white">{model.name}</td>
-                      <td className="py-3 text-[#dbe4ff]">{formatRatio(model.performance.sharpeRatio)}</td>
+                      <td className="py-3 font-semibold text-[#0f172a]">{model.name}</td>
+                      <td className="py-3 text-[#172554]">{formatRatio(model.performance.sharpeRatio)}</td>
                       <td className="py-3 text-[#65f0dc]">{formatPct(model.performance.annualizedReturn, true)}</td>
                       <td className="py-3 text-[#fda4af]">{formatPct(model.performance.maxDrawdown, true)}</td>
-                      <td className="py-3 text-[#dbe4ff]">{formatNumber(model.sales.soldUnits)}</td>
+                      <td className="py-3 text-[#172554]">{formatNumber(model.sales.soldUnits)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -884,9 +860,9 @@ function OverviewSection({ data, onRefresh }: { data: AdminOverview; onRefresh: 
         <WorkspacePanel title="Commercial funnel" icon={<SlidersHorizontal className="h-4 w-4" />}>
           <div className="grid gap-3">
             {funnel.map((row) => (
-              <div key={row.label} className="flex items-center justify-between rounded-md border border-[#18233f] bg-[#050714] px-4 py-3">
-                <span className="text-sm text-[#b8c2dd]">{row.label}</span>
-                <span className="text-xl font-semibold text-white">{formatNumber(row.value)}</span>
+              <div key={row.label} className="flex items-center justify-between rounded-md border border-[#dfe5f2] bg-[#f8fafc] px-4 py-3">
+                <span className="text-sm text-[#46554b]">{row.label}</span>
+                <span className="text-xl font-semibold text-[#0f172a]">{formatNumber(row.value)}</span>
               </div>
             ))}
           </div>
@@ -957,19 +933,19 @@ function ModelsSection({
                 onClick={() => onSelectModel(model.id)}
                 className={`mb-2 w-full rounded-md border p-3 text-left transition ${
                   selectedModel?.id === model.id
-                    ? 'border-[#8ea0ff] bg-[#10172b]'
-                    : 'border-[#18233f] bg-[#050714] hover:border-[#33446f]'
+                    ? 'border-[#3d52da] bg-[#eef2ff]'
+                    : 'border-[#dfe5f2] bg-white hover:border-[#aab8eb]'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-white">{model.name}</div>
-                    <div className="mt-1 truncate text-xs text-[#8d98b5]">{model.id}</div>
+                    <div className="truncate text-sm font-semibold text-[#0f172a]">{model.name}</div>
+                    <div className="mt-1 truncate text-xs text-[#647269]">{model.id}</div>
                   </div>
                   {model.settings.visibility === 'hidden' ? (
-                    <EyeOff className="h-4 w-4 shrink-0 text-[#8d98b5]" />
+                    <EyeOff className="h-4 w-4 shrink-0 text-[#647269]" />
                   ) : (
-                    <Eye className="h-4 w-4 shrink-0 text-[#8ea0ff]" />
+                    <Eye className="h-4 w-4 shrink-0 text-[#3d52da]" />
                   )}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -1125,12 +1101,12 @@ function ModelsSection({
             </div>
 
             <div className="mt-6 grid gap-3">
-              <label className="flex items-center gap-3 rounded-md border border-[#24304d] bg-[#050714] p-3 text-sm font-semibold text-[#dbe4ff]">
+              <label className="flex items-center gap-3 rounded-md border border-[#dfe5f2] bg-[#f8fafc] p-3 text-sm font-semibold text-[#172554]">
                 <input
                   type="checkbox"
                   checked={draft.featured}
                   onChange={(event) => onUpdateDraft('featured', event.target.checked)}
-                  className="h-4 w-4 rounded border-[#33446f] bg-[#050714] accent-[#4f63ff]"
+                  className="h-4 w-4 border-[#cbd5e1] accent-[#3d52da]"
                 />
                 Feature this model in marketplace ordering and commercial review.
               </label>
@@ -1313,7 +1289,7 @@ function OffersSection({
         {offers.length ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px] text-left text-sm">
-              <thead className="text-xs uppercase tracking-[0.16em] text-[#7f8baa]">
+              <thead className="text-xs uppercase tracking-wide text-[#647269]">
                 <tr>
                   <th className="pb-3">Code</th>
                   <th className="pb-3">Offer</th>
@@ -1323,21 +1299,21 @@ function OffersSection({
                   <th className="pb-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#18233f]">
+              <tbody className="divide-y divide-[#e2e7fb]">
                 {offers.map((offer) => {
                   const model = models.find((candidate) => candidate.id === offer.modelId);
                   return (
                     <tr key={offer.id}>
-                      <td className="py-3 font-mono font-semibold text-white">{offer.code}</td>
+                    <td className="py-3 font-mono font-semibold text-[#0f172a]">{offer.code}</td>
                       <td className="py-3">
-                        <div className="font-semibold text-white">{offer.title}</div>
-                        <div className="mt-1 text-xs text-[#8d98b5]">Expires: {offer.expiresAt ? shortDate(offer.expiresAt) : 'No expiry'}</div>
+                        <div className="font-semibold text-[#0f172a]">{offer.title}</div>
+                        <div className="mt-1 text-xs text-[#647269]">Expires: {offer.expiresAt ? shortDate(offer.expiresAt) : 'No expiry'}</div>
                       </td>
-                      <td className="py-3 text-[#dbe4ff]">{model?.name || 'All models'}</td>
-                      <td className="py-3 text-[#dbe4ff]">
+                    <td className="py-3 text-[#172554]">{model?.name || 'All models'}</td>
+                    <td className="py-3 text-[#172554]">
                         {offer.trialDays} trial days, {labelFromToken(offer.discountType)} {offer.discountValue}
                       </td>
-                      <td className="py-3 text-[#dbe4ff]">
+                    <td className="py-3 text-[#172554]">
                         {formatNumber(offer.redemptions)} / {offer.maxRedemptions ?? 'Unlimited'}
                       </td>
                       <td className="py-3">
@@ -1431,7 +1407,7 @@ function LeadsSection({
           {leads.length ? (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] text-left text-sm">
-                <thead className="text-xs uppercase tracking-[0.16em] text-[#7f8baa]">
+                <thead className="text-xs uppercase tracking-wide text-[#647269]">
                   <tr>
                     <th className="pb-3">Contact</th>
                     <th className="pb-3">Source</th>
@@ -1440,16 +1416,16 @@ function LeadsSection({
                     <th className="pb-3">Created</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#18233f]">
+                <tbody className="divide-y divide-[#e2e7fb]">
                   {leads.map((lead) => (
                     <tr key={lead.id}>
                       <td className="py-3">
-                        <div className="font-semibold text-white">{lead.name}</div>
-                        <div className="text-xs text-[#8d98b5]">{lead.email}</div>
-                        {lead.organization && <div className="text-xs text-[#8d98b5]">{lead.organization}</div>}
+                        <div className="font-semibold text-[#0f172a]">{lead.name}</div>
+                        <div className="text-xs text-[#647269]">{lead.email}</div>
+                        {lead.organization && <div className="text-xs text-[#647269]">{lead.organization}</div>}
                       </td>
                       <td className="py-3"><Chip>{labelFromToken(lead.source)}</Chip></td>
-                      <td className="py-3 text-[#dbe4ff]">{compactText(lead.interest)}</td>
+                      <td className="py-3 text-[#172554]">{compactText(lead.interest)}</td>
                       <td className="py-3">
                         <select
                           value={lead.stage}
@@ -1461,7 +1437,7 @@ function LeadsSection({
                           ))}
                         </select>
                       </td>
-                      <td className="py-3 text-[#8d98b5]">{shortDate(lead.createdAt)}</td>
+                      <td className="py-3 text-[#647269]">{shortDate(lead.createdAt)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1537,15 +1513,15 @@ function CareersSection({
           {roles.length ? (
             <div className="grid gap-3">
               {roles.map((role) => (
-                <div key={role.id} className="rounded-md border border-[#18233f] bg-[#050714] p-4">
+                <div key={role.id} className="rounded-md border border-[#dfe5f2] bg-[#f8fafc] p-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
-                      <div className="font-semibold text-white">{role.title}</div>
-                      <div className="mt-1 text-sm text-[#8d98b5]">{role.department} - {role.location}</div>
+                      <div className="font-semibold text-[#0f172a]">{role.title}</div>
+                      <div className="mt-1 text-sm text-[#647269]">{role.department} - {role.location}</div>
                     </div>
                     <Chip tone={role.status}>{labelFromToken(role.status)}</Chip>
                   </div>
-                  <div className="mt-3 text-xs text-[#8d98b5]">Hiring manager: {compactText(role.hiringManager)}</div>
+                  <div className="mt-3 text-xs text-[#647269]">Hiring manager: {compactText(role.hiringManager)}</div>
                 </div>
               ))}
             </div>
@@ -1558,9 +1534,9 @@ function CareersSection({
           {applications.length ? (
             <div className="grid gap-3">
               {applications.map((application) => (
-                <div key={application.id} className="rounded-md border border-[#18233f] bg-[#050714] p-4">
-                  <div className="font-semibold text-white">{application.candidateName}</div>
-                  <div className="mt-1 text-sm text-[#8d98b5]">{application.email}</div>
+                <div key={application.id} className="rounded-md border border-[#dfe5f2] bg-[#f8fafc] p-4">
+                  <div className="font-semibold text-[#0f172a]">{application.candidateName}</div>
+                  <div className="mt-1 text-sm text-[#647269]">{application.email}</div>
                   <div className="mt-3"><Chip tone={application.stage}>{labelFromToken(application.stage)}</Chip></div>
                 </div>
               ))}
@@ -1633,11 +1609,11 @@ function TicketsSection({
         {tickets.length ? (
           <div className="grid gap-3">
             {tickets.map((ticket) => (
-              <div key={ticket.id} className="rounded-md border border-[#18233f] bg-[#050714] p-4">
+              <div key={ticket.id} className="rounded-md border border-[#dfe5f2] bg-[#f8fafc] p-4">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div>
-                    <div className="font-semibold text-white">{ticket.title}</div>
-                    <div className="mt-1 text-sm text-[#8d98b5]">{ticket.category} - {shortDate(ticket.createdAt)}</div>
+                    <div className="font-semibold text-[#0f172a]">{ticket.title}</div>
+                    <div className="mt-1 text-sm text-[#647269]">{ticket.category} - {shortDate(ticket.createdAt)}</div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Chip tone={ticket.priority}>{labelFromToken(ticket.priority)}</Chip>
@@ -1652,8 +1628,8 @@ function TicketsSection({
                     </select>
                   </div>
                 </div>
-                <p className="mt-3 text-sm leading-6 text-[#b8c2dd]">{ticket.description}</p>
-                <div className="mt-3 text-xs text-[#8d98b5]">Owner: {compactText(ticket.owner)}</div>
+                <p className="mt-3 text-sm leading-6 text-[#46554b]">{ticket.description}</p>
+                <div className="mt-3 text-xs text-[#647269]">Owner: {compactText(ticket.owner)}</div>
               </div>
             ))}
           </div>
@@ -1667,15 +1643,15 @@ function TicketsSection({
 
 function MetricCard({ helper, icon, label, value }: { helper: string; icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-[10px] border border-[#18233f] bg-[#080d1c] p-5">
+    <div className="rounded-md border border-[#dfe5f2] bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
-        <span className="flex h-10 w-10 items-center justify-center rounded-md border border-[#24304d] bg-[#050714] text-[#8ea0ff]">
+        <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#eef2ff] text-[#3d52da]">
           {icon}
         </span>
-        <span className="text-3xl font-semibold text-white">{value}</span>
+        <span className="text-3xl font-semibold text-[#0f172a]">{value}</span>
       </div>
-      <div className="mt-4 text-xs font-bold uppercase tracking-[0.18em] text-[#8d98b5]">{label}</div>
-      <p className="mt-2 text-sm leading-5 text-[#7f8baa]">{helper}</p>
+      <div className="mt-4 text-xs font-bold uppercase tracking-wide text-[#647269]">{label}</div>
+      <p className="mt-2 text-sm leading-5 text-[#647269]">{helper}</p>
     </div>
   );
 }
@@ -1692,13 +1668,13 @@ function WorkspacePanel({
   title: string;
 }) {
   return (
-    <section className="rounded-[12px] border border-[#18233f] bg-[#080d1c] p-5">
+    <section className="rounded-md border border-[#dfe5f2] bg-white p-5 shadow-sm">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-md border border-[#24304d] bg-[#050714] text-[#8ea0ff]">
+          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[#eef2ff] text-[#3d52da]">
             {icon}
           </span>
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
+          <h2 className="text-lg font-semibold text-[#0f172a]">{title}</h2>
         </div>
         {action}
       </div>
@@ -1710,7 +1686,7 @@ function WorkspacePanel({
 function Field({ children, label }: { children: ReactNode; label: string }) {
   return (
     <label className="grid gap-2">
-      <span className="text-xs font-bold uppercase tracking-[0.16em] text-[#8d98b5]">{label}</span>
+      <span className="text-xs font-bold uppercase tracking-wide text-[#647269]">{label}</span>
       {children}
     </label>
   );
@@ -1719,8 +1695,8 @@ function Field({ children, label }: { children: ReactNode; label: string }) {
 function LockedField({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid gap-2">
-      <span className="text-xs font-bold uppercase tracking-[0.16em] text-[#8d98b5]">{label}</span>
-      <div className="rounded-md border border-[#24304d] bg-[#050714] px-3 py-2.5 text-sm font-semibold text-[#dbe4ff]">
+      <span className="text-xs font-bold uppercase tracking-wide text-[#647269]">{label}</span>
+      <div className="rounded-md border border-[#d9e0ec] bg-[#f8fafc] px-3 py-2.5 text-sm font-semibold text-[#172554]">
         {value}
       </div>
     </div>
@@ -1729,9 +1705,9 @@ function LockedField({ label, value }: { label: string; value: string }) {
 
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-md border border-[#18233f] bg-[#050714] p-4">
-      <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#7f8baa]">{label}</div>
-      <div className="mt-2 text-2xl font-semibold text-white">{formatNumber(value)}</div>
+    <div className="rounded-md border border-[#dfe5f2] bg-[#f8fafc] p-4">
+      <div className="text-xs font-bold uppercase tracking-wide text-[#647269]">{label}</div>
+      <div className="mt-2 text-2xl font-semibold text-[#0f172a]">{formatNumber(value)}</div>
     </div>
   );
 }
@@ -1746,9 +1722,9 @@ function Chip({ children, tone }: { children: ReactNode; tone?: string }) {
 
 function EmptyPanel({ body, title }: { body: string; title: string }) {
   return (
-    <div className="rounded-md border border-dashed border-[#33446f] bg-[#050714] p-6 text-center">
-      <div className="font-semibold text-white">{title}</div>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#8d98b5]">{body}</p>
+    <div className="rounded-md border border-dashed border-[#cbd5e1] bg-[#f8fafc] p-6 text-center">
+      <div className="font-semibold text-[#0f172a]">{title}</div>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#647269]">{body}</p>
     </div>
   );
 }
@@ -1758,8 +1734,8 @@ function StatusMessage({ children, tone }: { children: ReactNode; tone: 'success
     <div
       className={`mb-5 flex items-start gap-2 rounded-md border p-3 text-sm leading-5 ${
         tone === 'success'
-          ? 'border-[#20c997]/30 bg-[#062c2a] text-[#b5fff3]'
-          : 'border-[#ef4444]/30 bg-[#351116] text-[#fecdd3]'
+          ? 'border-[#a7e8cc] bg-[#ecfdf5] text-[#047857]'
+          : 'border-[#fecdd3] bg-[#fff1f2] text-[#be123c]'
       }`}
     >
       {tone === 'success' ? (

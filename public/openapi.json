@@ -1,0 +1,10 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "QSentia Public API", "version": "1.0.0", "description": "Current same-origin public endpoint contract." },
+  "servers": [{ "url": "/" }],
+  "paths": {
+    "/api/dashboard": { "get": { "summary": "Get repository-backed dashboard telemetry", "responses": { "200": { "description": "Dashboard telemetry" } } } },
+    "/api/models": { "get": { "summary": "List published models", "responses": { "200": { "description": "Model list" } } } },
+    "/api/models/{slug}": { "get": { "summary": "Get a published model card", "parameters": [{ "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Model card" }, "404": { "description": "Model not found" } } } }
+  }
+}

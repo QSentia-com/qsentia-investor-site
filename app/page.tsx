@@ -133,10 +133,31 @@ const fetcher = async (url: string) => {
 };
 
 const navItems = [
-  { href: '/marketplace', label: 'Products' },
   {
-    href: '/research',
-    label: 'Research',
+    href: '/strategies',
+    label: 'Investors',
+    children: [
+      { href: '/strategies', label: 'Investment strategies', description: 'Published strategy objectives and evidence.' },
+      { href: '/performance', label: 'Performance center', description: 'Returns, benchmarks, and rolling risk.' },
+      { href: '/risk-management', label: 'Risk management', description: 'Controls, limits, and execution evidence.' },
+      { href: '/data-room', label: 'Investor data room', description: 'Qualification and controlled materials.' },
+      { href: '/firm', label: 'Firm & methodology', description: 'Research philosophy and investment process.' },
+    ],
+  },
+  {
+    href: '/platform',
+    label: 'Platform',
+    children: [
+      { href: '/platform', label: 'Platform overview', description: 'Telemetry, validation, and audit trails.' },
+      { href: '/marketplace', label: 'Model marketplace', description: 'Published models and commercial access.' },
+      { href: '/pricing', label: 'Plans', description: 'Packages for research through enterprise.' },
+      { href: '/demo', label: 'Interactive demo', description: 'Clearly labeled synthetic sandbox.' },
+      { href: '/integrations', label: 'Integrations', description: 'Current and planned connectivity.' },
+      { href: '/developers', label: 'Developer center', description: 'API contracts, keys, and OpenAPI.' },
+    ],
+  },
+  {
+    href: '/research', label: 'Research',
     children: [
       {
         href: '/research',
@@ -150,7 +171,6 @@ const navItems = [
       },
     ],
   },
-  { href: '/docs', label: 'Docs' },
   { href: '/contact', label: 'Contact' },
 ];
 
@@ -530,6 +550,31 @@ export default function HomePage() {
                   <div className="mt-1 text-xl font-semibold text-[#06130c]">{metric.value}</div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-[#e2e7fb] bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-16">
+          <div className="grid gap-px overflow-hidden rounded-[10px] border border-[#dbe3ff] bg-[#dbe3ff] lg:grid-cols-2">
+            <div className="bg-white p-7 sm:p-9">
+              <p className="text-xs font-bold uppercase tracking-wide text-[#3d52da]">For investors</p>
+              <h2 className="mt-4 text-3xl font-semibold text-[#06130c]">Diligence the strategy and the controls</h2>
+              <p className="mt-4 max-w-xl text-sm leading-7 text-[#5a685f]">Review published strategies, return methodology, drawdown behavior, benchmark context, operating risk, and controlled investor materials.</p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link href="/strategies" className="inline-flex items-center gap-2 rounded-md bg-[#172554] px-5 py-3 text-sm font-semibold text-white hover:bg-[#2437b5]">Explore strategies<ArrowRight className="h-4 w-4"/></Link>
+                <Link href="/performance" className="inline-flex items-center gap-2 rounded-md border border-[#cbd5ff] px-5 py-3 text-sm font-semibold text-[#172554]">Performance center</Link>
+              </div>
+            </div>
+            <div className="bg-[#f8faff] p-7 sm:p-9">
+              <p className="text-xs font-bold uppercase tracking-wide text-[#3d52da]">For platform teams</p>
+              <h2 className="mt-4 text-3xl font-semibold text-[#06130c]">Operate models with evidence</h2>
+              <p className="mt-4 max-w-xl text-sm leading-7 text-[#5a685f]">Validate research, monitor paper and live states, manage API access, prepare broker workflows, and retain an auditable operating record.</p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link href="/platform" className="inline-flex items-center gap-2 rounded-md bg-[#172554] px-5 py-3 text-sm font-semibold text-white hover:bg-[#2437b5]">Platform overview<ArrowRight className="h-4 w-4"/></Link>
+                <Link href="/demo" className="inline-flex items-center gap-2 rounded-md border border-[#cbd5ff] bg-white px-5 py-3 text-sm font-semibold text-[#172554]">Open sandbox</Link>
+              </div>
             </div>
           </div>
         </div>

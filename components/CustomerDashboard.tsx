@@ -26,6 +26,7 @@ import {
 import { SectionCard } from '@/components/PageChrome';
 import { fmtNum, fmtPct } from '@/lib/metrics';
 import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
+import CustomerControlCenter from '@/components/CustomerControlCenter';
 
 type CustomerUser = {
   name: string;
@@ -54,25 +55,26 @@ type ModelsResponse = {
 
 type BillingResponse = {
   account: {
-    id: string;
+    id: string | null;
     billingStatus: string;
     billingEmail: string;
-    billingEntity: string;
-    taxStatus: string;
+    billingEntity: string | null;
+    taxStatus: string | null;
   };
   subscription: {
-    plan: string;
+    plan: string | null;
     status: string;
-    interval: string;
+    interval: string | null;
     currency: string;
-    monthlyAmount: number;
+    monthlyAmount: number | null;
     trialEndsAt: string | null;
     nextInvoiceAt: string | null;
     activeSeats: number;
     includedModels: number;
+    modelIds: string[];
   };
   paymentMethod: {
-    status: string;
+    status: string | null;
     brand: string | null;
     last4: string | null;
     autopay: boolean;
@@ -91,49 +93,49 @@ type BillingResponse = {
 
 type WorkspaceResponse = {
   account: {
-    workspaceId: string;
+    workspaceId: string | null;
     stage: string;
     environment: string;
-    onboardingOwner: string;
+    onboardingOwner: string | null;
   };
   billingAddress: {
-    company: string;
+    company: string | null;
     contact: string;
-    line1: string;
-    line2: string;
-    city: string;
-    region: string;
-    postalCode: string;
-    country: string;
+    line1: string | null;
+    line2: string | null;
+    city: string | null;
+    region: string | null;
+    postalCode: string | null;
+    country: string | null;
   };
   broker: {
     status: string;
-    provider: string;
-    accountMode: string;
-    credentialsVault: string;
+    provider: string | null;
+    accountMode: string | null;
+    credentialsVault: string | null;
   };
   apiAccess: {
     keyStatus: string;
-    keyScope: string;
+    keyScope: string | null;
     webhookStatus: string;
     environment: string;
     lastRotation: string | null;
   };
   automation: {
     status: string;
-    scheduler: string;
-    workerRuntime: string;
-    cronExpression: string;
-    cadence: string;
-    timezone: string;
+    scheduler: string | null;
+    workerRuntime: string | null;
+    cronExpression: string | null;
+    cadence: string | null;
+    timezone: string | null;
     nextRunAt: string | null;
-    approvalPolicy: string;
+    approvalPolicy: string | null;
   };
   risk: {
-    capitalLimit: string;
-    maxDailyLoss: string;
-    orderType: string;
-    approvalMode: string;
+    capitalLimit: string | null;
+    maxDailyLoss: string | null;
+    orderType: string | null;
+    approvalMode: string | null;
   };
   readiness: Array<{ label: string; status: string; owner: string }>;
   activity: Array<{ title: string; body: string; timestamp: string }>;
@@ -190,7 +192,8 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
 
   const models = modelData?.models || [];
   const includedModels = billing?.subscription.includedModels ?? 0;
-  const licensedModels = models.slice(0, Math.max(includedModels, 4));
+  const licensedModelIds = new Set(billing?.subscription.modelIds || []);
+  const licensedModels = models.filter((model) => licensedModelIds.has(model.id));
   const isLoading = loadingModels || loadingBilling || loadingWorkspace;
   const billingStatus = billing?.account.billingStatus || 'Not configured';
   const billingAmount = currency(
@@ -288,27 +291,29 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
           icon={<ReceiptText className="h-5 w-5" />}
           label="Subscription"
           value={billingStatus}
-          helper={billing?.subscription.plan || 'No active plan'}
+          helper={billing?.subscription.plan || 'No commercial account'}
         />
         <MetricTile
           icon={<Database className="h-5 w-5" />}
           label="Model access"
           value={`${includedModels} seats`}
-          helper={`${models.length || 0} models available`}
+          helper={`${licensedModels.length} active entitlements`}
         />
         <MetricTile
           icon={<PlugZap className="h-5 w-5" />}
           label="Broker status"
           value={workspace?.broker.status || 'Not connected'}
-          helper={workspace?.broker.provider || 'Broker pending'}
+          helper={workspace?.broker.provider || 'No broker authorization'}
         />
         <MetricTile
           icon={<Bot className="h-5 w-5" />}
           label="Automation"
-          value={workspace?.automation.status || 'Draft'}
-          helper={isLoading ? 'Refreshing setup' : workspace?.automation.scheduler || 'Scheduler pending'}
+          value={workspace?.automation.status || 'Not configured'}
+          helper={isLoading ? 'Refreshing setup' : workspace?.automation.scheduler || 'No scheduler configured'}
         />
       </div>
+
+      <CustomerControlCenter />
 
       <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
         <aside className="grid gap-6 self-start">
@@ -334,21 +339,21 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
               <ProfileRow icon={<KeyRound className="h-4 w-4" />} label="Billing email" value={billing?.account.billingEmail || sessionUser.email} />
               <ProfileRow icon={<FileText className="h-4 w-4" />} label="Tax status" value={billing?.account.taxStatus || 'Not configured'} />
             </div>
-            <button
-              type="button"
+            <Link
+              href="/contact"
               className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#172554] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2437b5]"
             >
-              Edit billing address
+              Request billing update
               <ArrowRight className="h-4 w-4" />
-            </button>
+            </Link>
           </SectionCard>
 
           <SectionCard className="p-5 md:p-6">
             <div className="text-xs font-bold uppercase tracking-wide text-[#647269]">Account</div>
             <div className="mt-5 grid gap-3">
-              <ProfileRow icon={<Building2 className="h-4 w-4" />} label="Workspace" value={workspace?.account.workspaceId || 'Pending'} />
-              <ProfileRow icon={<ShieldCheck className="h-4 w-4" />} label="Stage" value={workspace?.account.stage || 'Setup'} />
-              <ProfileRow icon={<Database className="h-4 w-4" />} label="Environment" value={workspace?.account.environment || 'Paper'} />
+              <ProfileRow icon={<Building2 className="h-4 w-4" />} label="Workspace" value={workspace?.account.workspaceId || 'Not configured'} />
+              <ProfileRow icon={<ShieldCheck className="h-4 w-4" />} label="Stage" value={workspace?.account.stage || 'Not configured'} />
+              <ProfileRow icon={<Database className="h-4 w-4" />} label="Environment" value={workspace?.account.environment || 'Not configured'} />
             </div>
           </SectionCard>
         </aside>
@@ -372,18 +377,19 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
               />
               <BillingSummary
                 icon={<CalendarDays className="h-4 w-4" />}
-                label="Trial window"
-                value={shortDate(billing?.subscription.trialEndsAt)}
-                detail="Conversion before live execution"
+                label={billing?.subscription.status === 'trial' ? 'Trial end' : 'Next renewal'}
+                value={shortDate(billing?.subscription.trialEndsAt || billing?.subscription.nextInvoiceAt)}
+                detail={billing?.subscription.status || 'Not configured'}
               />
               <BillingSummary
                 icon={<CreditCard className="h-4 w-4" />}
                 label="Payment method"
                 value={billing?.paymentMethod.brand && billing?.paymentMethod.last4 ? `${billing.paymentMethod.brand} ${billing.paymentMethod.last4}` : 'Not added'}
-                detail={billing?.paymentMethod.status || 'Required'}
+                detail={billing?.paymentMethod.status || 'Not configured'}
               />
             </div>
 
+            {(billing?.invoices || []).length ? (
             <div className="mt-6 overflow-x-auto">
               <table className="w-full min-w-[720px] text-left text-sm">
                 <thead className="border-b border-[#e2e7fb] text-xs uppercase tracking-wide text-[#647269]">
@@ -420,6 +426,9 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
                 </tbody>
               </table>
             </div>
+            ) : (
+              <InlineEmpty title="No invoices" body="Invoices will appear after billing is connected to the customer account." />
+            )}
           </SectionCard>
 
           <div className="grid gap-6 xl:grid-cols-2">
@@ -432,18 +441,18 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
                 <StatusPill value={workspace?.broker.status || 'Not connected'} />
               </div>
               <div className="mt-5 grid gap-3">
-                <ControlRow label="Provider" value={workspace?.broker.provider || 'Pending'} tone="neutral" />
-                <ControlRow label="Account mode" value={workspace?.broker.accountMode || 'Paper first'} tone="blue" />
-                <ControlRow label="Credentials vault" value={workspace?.broker.credentialsVault || 'Required'} tone="amber" />
-                <ControlRow label="Risk approval" value={workspace?.risk.approvalMode || 'Manual'} tone="green" />
+                <ControlRow label="Provider" value={workspace?.broker.provider || 'Not configured'} tone="neutral" />
+                <ControlRow label="Account mode" value={workspace?.broker.accountMode || 'Not configured'} tone="blue" />
+                <ControlRow label="Credentials vault" value={workspace?.broker.credentialsVault || 'Not configured'} tone="amber" />
+                <ControlRow label="Risk approval" value={workspace?.risk.approvalMode || 'Not configured'} tone="green" />
               </div>
-              <button
-                type="button"
+              <Link
+                href="/contact"
                 className="mt-5 inline-flex items-center gap-2 rounded-md bg-[#172554] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2437b5]"
               >
-                Start broker authorization
+                Request broker onboarding
                 <ArrowRight className="h-4 w-4" />
-              </button>
+              </Link>
             </SectionCard>
 
             <SectionCard className="p-5 md:p-6">
@@ -456,18 +465,11 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
               </div>
               <div className="mt-5 grid gap-3">
                 <ControlRow label="API key" value={workspace?.apiAccess.keyStatus || 'Not issued'} tone="amber" />
-                <ControlRow label="Scope" value={workspace?.apiAccess.keyScope || 'Read only'} tone="blue" />
+                <ControlRow label="Scope" value={workspace?.apiAccess.keyScope || 'Not configured'} tone="blue" />
                 <ControlRow label="Webhook" value={workspace?.apiAccess.webhookStatus || 'Not configured'} tone="neutral" />
-                <ControlRow label="Environment" value={workspace?.apiAccess.environment || 'Sandbox'} tone="green" />
+                <ControlRow label="Environment" value={workspace?.apiAccess.environment || 'Not configured'} tone="green" />
               </div>
               <div className="mt-5 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-2 rounded-md bg-[#172554] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2437b5]"
-                >
-                  Generate API key
-                  <KeyRound className="h-4 w-4" />
-                </button>
                 <Link
                   href="/docs"
                   className="inline-flex items-center gap-2 rounded-md border border-[#cbd5ff] px-4 py-2 text-sm font-semibold text-[#172554] transition hover:border-[#3d52da]"
@@ -485,33 +487,33 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
                 <div className="text-xs font-bold uppercase tracking-wide text-[#647269]">Scheduler / CRON</div>
                 <h2 className="mt-2 text-2xl font-semibold text-[#06130c]">Automated model execution</h2>
               </div>
-              <StatusPill value={workspace?.automation.status || 'Draft'} />
+              <StatusPill value={workspace?.automation.status || 'Not configured'} />
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <BillingSummary
                 icon={<Clock3 className="h-4 w-4" />}
                 label="Cadence"
-                value={workspace?.automation.cadence || 'Not set'}
-                detail={workspace?.automation.timezone || 'Timezone pending'}
+                value={workspace?.automation.cadence || 'Not configured'}
+                detail={workspace?.automation.timezone || 'No timezone configured'}
               />
               <BillingSummary
                 icon={<Bot className="h-4 w-4" />}
                 label="Worker"
-                value={workspace?.automation.workerRuntime || 'Not selected'}
-                detail={workspace?.automation.scheduler || 'Scheduler pending'}
+                value={workspace?.automation.workerRuntime || 'Not configured'}
+                detail={workspace?.automation.scheduler || 'No scheduler configured'}
               />
               <BillingSummary
                 icon={<FileText className="h-4 w-4" />}
                 label="CRON"
-                value={workspace?.automation.cronExpression || 'Not set'}
-                detail="Market-day execution window"
+                value={workspace?.automation.cronExpression || 'Not configured'}
+                detail="No execution schedule"
               />
               <BillingSummary
                 icon={<CalendarDays className="h-4 w-4" />}
                 label="Next run"
                 value={shortDate(workspace?.automation.nextRunAt)}
-                detail={workspace?.automation.approvalPolicy || 'Approval pending'}
+                detail={workspace?.automation.approvalPolicy || 'Not configured'}
               />
             </div>
 
@@ -535,6 +537,7 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
                 </Link>
               </div>
 
+              {licensedModels.length ? (
               <div className="mt-5 overflow-x-auto">
                 <table className="w-full min-w-[720px] text-left text-sm">
                   <thead className="border-b border-[#e2e7fb] text-xs uppercase tracking-wide text-[#647269]">
@@ -565,6 +568,9 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
                   </tbody>
                 </table>
               </div>
+              ) : (
+                <InlineEmpty title="No licensed models" body="Approved model entitlements from the admin portal will appear here." />
+              )}
             </SectionCard>
 
             <div className="grid gap-6">
@@ -585,11 +591,15 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
 
               <SectionCard className="p-5 md:p-6">
                 <div className="text-xs font-bold uppercase tracking-wide text-[#647269]">Usage & limits</div>
+                {(billing?.usage || []).length ? (
                 <div className="mt-5 grid gap-4">
                   {(billing?.usage || []).map((item) => (
                     <UsageMeter key={item.label} label={item.label} used={item.used} limit={item.limit} />
                   ))}
                 </div>
+                ) : (
+                  <InlineEmpty title="No usage recorded" body="Usage appears after an entitled API credential sends requests." />
+                )}
               </SectionCard>
             </div>
           </div>
@@ -738,6 +748,15 @@ function UsageMeter({ label, used, limit }: { label: string; used: number; limit
       <div className="mt-4 h-2 rounded-full bg-[#e2e7fb]">
         <div className="h-full rounded-full bg-[#3d52da]" style={{ width: `${percent}%` }} />
       </div>
+    </div>
+  );
+}
+
+function InlineEmpty({ body, title }: { body: string; title: string }) {
+  return (
+    <div className="mt-5 border-t border-[#e2e7fb] py-6 text-center">
+      <div className="text-sm font-semibold text-[#06130c]">{title}</div>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#5a685f]">{body}</p>
     </div>
   );
 }

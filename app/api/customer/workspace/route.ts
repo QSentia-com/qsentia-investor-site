@@ -1,124 +1,107 @@
-import { createServerClient } from '@supabase/ssr';
-import type { User } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
+import { getRequestUser } from '@/lib/adminAuth';
+import { readCommerceOverview } from '@/lib/adminApiCommerce';
+import { readCustomerControls } from '@/lib/customerControls';
 
-async function sessionUser(request: NextRequest) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseAnonKey) return null;
-
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll() {},
-    },
-  });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  return user;
-}
-
-function customerProfile(user: User | null) {
-  const metadata = user?.user_metadata || {};
-  const name =
-    typeof metadata.full_name === 'string'
-      ? metadata.full_name
-      : typeof metadata.name === 'string'
-        ? metadata.name
-        : user?.email?.split('@')[0] || 'Customer';
-  const organization =
-    typeof metadata.organization === 'string' && metadata.organization.trim()
-      ? metadata.organization.trim()
-      : 'QSentia customer workspace';
-
-  return {
-    name,
-    email: user?.email || 'Authenticated account',
-    organization,
-  };
+function userName(user: { email?: string; user_metadata?: Record<string, unknown> }) {
+  const metadata = user.user_metadata || {};
+  const name = metadata.full_name || metadata.name;
+  return typeof name === 'string' && name.trim() ? name.trim() : user.email?.split('@')[0] || 'Customer';
 }
 
 export async function GET(request: NextRequest) {
-  const profile = customerProfile(await sessionUser(request));
+  const user = await getRequestUser(request);
+  if (!user?.email) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
+
+  const commerce = await readCommerceOverview();
+  const customer = commerce.customers.find((record) => record.email.toLowerCase() === user.email?.toLowerCase()) || null;
+  const entitlements = customer
+    ? commerce.entitlements.filter((record) => record.customerId === customer.id && record.status === 'active')
+    : [];
+  const keys = customer
+    ? commerce.apiKeys.filter((record) => record.customerId === customer.id && record.status === 'active')
+    : [];
+  const relatedIds = new Set([
+    ...(customer ? [customer.id] : []),
+    ...entitlements.map((record) => record.id),
+    ...keys.map((record) => record.id),
+  ]);
+  const environment = entitlements.some((record) => record.environment === 'live')
+    ? 'Live'
+    : entitlements.some((record) => record.environment === 'paper')
+      ? 'Paper'
+      : entitlements.some((record) => record.environment === 'sandbox')
+        ? 'Sandbox'
+        : 'Not configured';
+  const metadata = user.user_metadata || {};
+  const organization = customer?.organization
+    || (typeof metadata.organization === 'string' ? metadata.organization : null);
+  const scopes = Array.from(new Set(entitlements.map((record) => record.scope)));
+  const controls = customer ? await readCustomerControls(customer.id) : null;
 
   return NextResponse.json(
     {
       account: {
-        workspaceId: `QS-${profile.email.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24)}`,
-        stage: 'Setup review',
-        environment: 'Paper trading',
-        onboardingOwner: 'Investor relations',
+        workspaceId: customer?.id || null,
+        stage: customer?.status || 'Not configured',
+        environment,
+        onboardingOwner: customer?.salesOwner || null,
       },
       billingAddress: {
-        company: profile.organization,
-        contact: profile.name,
-        line1: 'Billing address pending',
-        line2: '',
-        city: 'Not configured',
-        region: '',
-        postalCode: '',
-        country: 'United States',
+        company: organization,
+        contact: userName(user),
+        line1: null,
+        line2: null,
+        city: null,
+        region: null,
+        postalCode: null,
+        country: null,
       },
       broker: {
-        status: 'Not connected',
-        provider: 'Alpaca or IBKR',
-        accountMode: 'Paper first',
-        credentialsVault: 'Required',
+        status: controls?.brokerStatus === 'onboarding_requested' ? 'Onboarding requested' : 'Not configured',
+        provider: controls?.brokerProvider === 'none' ? null : controls?.brokerProvider || null,
+        accountMode: controls?.executionMode || null,
+        credentialsVault: controls?.brokerStatus === 'onboarding_requested' ? 'Server-side onboarding' : null,
       },
       apiAccess: {
-        keyStatus: 'Not issued',
-        keyScope: 'Read + paper trade',
+        keyStatus: keys.length ? 'Active' : 'Not issued',
+        keyScope: scopes.length ? scopes.join(', ') : null,
         webhookStatus: 'Not configured',
-        environment: 'Sandbox',
-        lastRotation: null,
+        environment,
+        lastRotation: keys.reduce<string | null>((latest, key) => {
+          if (!latest || new Date(key.createdAt) > new Date(latest)) return key.createdAt;
+          return latest;
+        }, null),
       },
       automation: {
-        status: 'Draft',
-        scheduler: 'QSentia managed worker',
-        workerRuntime: 'Server CRON',
-        cronExpression: '30 14 * * 1-5',
-        cadence: 'Market days',
-        timezone: 'UTC',
+        status: controls?.schedule !== 'manual' ? 'Configured' : 'Not configured',
+        scheduler: controls?.schedule || null,
+        workerRuntime: null,
+        cronExpression: controls?.schedule === 'hourly' ? '0 * * * *' : controls?.schedule === 'daily' ? '0 13 * * *' : controls?.schedule === 'weekdays' ? '0 13 * * 1-5' : null,
+        cadence: controls?.schedule || null,
+        timezone: controls?.timezone || null,
         nextRunAt: null,
-        approvalPolicy: 'Manual approval before live',
+        approvalPolicy: controls?.approvalPolicy || null,
       },
       risk: {
-        capitalLimit: 'Required',
-        maxDailyLoss: 'Required',
-        orderType: 'Market or limit',
-        approvalMode: 'Manual review',
+        capitalLimit: controls?.maxNotional ? `$${controls.maxNotional.toLocaleString('en-US')}` : null,
+        maxDailyLoss: controls?.maxDailyLossPct ? `${controls.maxDailyLossPct}%` : null,
+        orderType: null,
+        approvalMode: controls?.approvalPolicy || null,
       },
       readiness: [
-        { label: 'Billing address', status: 'Pending', owner: 'Customer' },
-        { label: 'Payment method', status: 'Required', owner: 'Customer' },
-        { label: 'Broker credentials', status: 'Required', owner: 'Customer' },
-        { label: 'API key', status: 'Not issued', owner: 'QSentia' },
-        { label: 'Webhook endpoint', status: 'Pending', owner: 'Customer' },
-        { label: 'Risk limits', status: 'Pending', owner: 'Customer + QSentia' },
-        { label: 'Paper validation', status: 'Not started', owner: 'QSentia' },
+        { label: 'Commercial account', status: customer ? 'Complete' : 'Not configured', owner: 'QSentia' },
+        { label: 'Model entitlement', status: entitlements.length ? 'Complete' : 'Not configured', owner: 'QSentia' },
+        { label: 'API credential', status: keys.length ? 'Complete' : 'Not issued', owner: 'QSentia' },
+        { label: 'Broker connection', status: controls?.brokerStatus === 'onboarding_requested' ? 'Pending review' : 'Not configured', owner: 'Customer' },
+        { label: 'Risk limits', status: controls && [controls.confidenceFloor,controls.maxDailyLossPct,controls.maxNotional,controls.maxContracts,controls.staleQuoteSeconds].every(value=>value!==null) ? 'Complete' : 'Not configured', owner: 'Customer and QSentia' },
       ],
-      activity: [
-        {
-          title: 'Customer workspace created',
-          body: `${profile.email} was granted access to the setup console.`,
-          timestamp: '2026-06-13T00:00:00.000Z',
-        },
-        {
-          title: 'Commercial setup opened',
-          body: 'Billing profile and payment method are awaiting completion.',
-          timestamp: '2026-06-13T00:05:00.000Z',
-        },
-        {
-          title: 'Automation parked',
-          body: 'Scheduler remains draft until broker and risk approval are complete.',
-          timestamp: '2026-06-13T00:10:00.000Z',
-        },
-      ],
+      activity: commerce.auditEvents
+        .filter((entry) => relatedIds.has(entry.entityId))
+        .slice(0, 12)
+        .map((entry) => ({ title: entry.action, body: entry.detail, timestamp: entry.createdAt })),
     },
     { headers: { 'Cache-Control': 'no-store' } }
   );

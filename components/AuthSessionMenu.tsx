@@ -20,6 +20,7 @@ function providerLabel(provider?: string | null) {
   if (!provider) return 'Email';
   if (provider === 'github') return 'GitHub';
   if (provider === 'google') return 'Google';
+  if (provider === 'temporary') return 'Temporary access';
   return provider.charAt(0).toUpperCase() + provider.slice(1);
 }
 
@@ -71,6 +72,7 @@ export default function AuthSessionMenu({ theme = 'light' }: { theme?: 'light' |
   async function signOut() {
     const supabase = getSupabaseBrowserClient();
     if (supabase) await supabase.auth.signOut();
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => null);
     setSession({ authenticated: false, user: null });
     window.location.href = '/signin';
   }

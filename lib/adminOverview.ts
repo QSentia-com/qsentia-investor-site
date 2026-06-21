@@ -1,4 +1,3 @@
-import { adminAuthMode } from "@/lib/adminAuth";
 import { readBackOfficeStore } from "@/lib/adminBackOffice";
 import {
   mergeAdminModelSetting,
@@ -105,7 +104,6 @@ export async function buildAdminOverview(request: Request) {
   };
 
   return {
-    authMode: adminAuthMode(),
     updatedAt: backOffice.updatedAt || settingsFile.updatedAt,
     metrics,
     models: enrichedModels,

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { unauthorizedAdminResponse } from '@/lib/adminAuth';
 import {
   upsertApplication,
@@ -40,8 +40,8 @@ async function writeRecord(body: BackOfficePayload) {
   return null;
 }
 
-export async function POST(request: Request) {
-  const authError = unauthorizedAdminResponse(request);
+export async function POST(request: NextRequest) {
+  const authError = await unauthorizedAdminResponse(request);
   if (authError) return authError;
 
   try {
@@ -65,8 +65,8 @@ export async function POST(request: Request) {
   }
 }
 
-export async function PATCH(request: Request) {
-  const authError = unauthorizedAdminResponse(request);
+export async function PATCH(request: NextRequest) {
+  const authError = await unauthorizedAdminResponse(request);
   if (authError) return authError;
 
   try {

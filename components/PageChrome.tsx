@@ -3,15 +3,39 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { ChevronDown, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, Loader2, Menu, X } from 'lucide-react';
 import AuthSessionMenu from '@/components/AuthSessionMenu';
 
 const navItems = [
-  { href: '/marketplace', label: 'Products' },
   {
-    href: '/research',
-    label: 'Research',
+    href: '/strategies',
+    label: 'Investors',
     children: [
+      { href: '/strategies', label: 'Investment strategies', description: 'Objectives, operating status, and published model evidence.' },
+      { href: '/performance', label: 'Performance center', description: 'Returns, benchmarks, rolling risk, and methodology.' },
+      { href: '/risk-management', label: 'Risk management', description: 'Signal gates, limits, reconciliation, and controls.' },
+      { href: '/data-room', label: 'Investor data room', description: 'Qualification and controlled diligence materials.' },
+      { href: '/methodology', label: 'Methodology', description: 'The process from inputs through monitored execution.' },
+      { href: '/firm', label: 'Firm', description: 'Research philosophy, operating model, and verified team profiles.' },
+      { href: '/insights', label: 'Letters & research', description: 'Firm-approved commentary and methodology updates.' },
+    ],
+  },
+  {
+    href: '/platform',
+    label: 'Platform',
+    children: [
+      { href: '/platform', label: 'Platform overview', description: 'Telemetry, validation, broker readiness, and audit trails.' },
+      { href: '/marketplace', label: 'Model marketplace', description: 'Published model cards and commercial access.' },
+      { href: '/pricing', label: 'Plans', description: 'Research, marketplace, monitoring, and enterprise packaging.' },
+      { href: '/demo', label: 'Interactive demo', description: 'A clearly labeled synthetic product sandbox.' },
+      { href: '/integrations', label: 'Integrations', description: 'Current connectivity and planned connector status.' },
+      { href: '/security', label: 'Security', description: 'Access, encryption, audit, incident, and retention controls.' },
+      { href: '/developers', label: 'Developer center', description: 'API contracts, keys, schemas, and OpenAPI.' },
+    ],
+  },
+  {
+    href: '/research', label: 'Research', children: [
       {
         href: '/research',
         label: 'Research terminal',
@@ -24,13 +48,12 @@ const navItems = [
       },
     ],
   },
-  { href: '/docs', label: 'Docs' },
-  { href: '/careers', label: 'Careers' },
   { href: '/contact', label: 'Contact' },
 ];
 
 export function SiteHeader({ active, theme = 'light' }: { active?: string; theme?: 'light' | 'dark' }) {
   const dark = theme === 'dark';
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header
@@ -73,7 +96,7 @@ export function SiteHeader({ active, theme = 'light' }: { active?: string; theme
                     {item.label}
                     <ChevronDown className="h-3.5 w-3.5" />
                   </Link>
-                  <div className="pointer-events-none absolute left-0 top-full z-50 w-[310px] translate-y-2 pt-2 opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
+                  <div className="pointer-events-none absolute left-0 top-full z-50 w-[330px] translate-y-2 pt-2 opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
                     <div
                       className={`rounded-[10px] border p-2 shadow-[0_18px_50px_rgba(15,31,22,0.14)] ${
                         dark ? 'border-[#18233f] bg-[#070b19]' : 'border-[#e2e7fb] bg-white'
@@ -128,7 +151,29 @@ export function SiteHeader({ active, theme = 'light' }: { active?: string; theme
         <div className="hidden items-center gap-2 md:flex">
           <AuthSessionMenu theme={theme} />
         </div>
+        <button
+          type="button"
+          aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((value) => !value)}
+          className={`flex h-10 w-10 items-center justify-center rounded-md border md:hidden ${dark ? 'border-[#24304d] text-white' : 'border-[#dbe3ff] text-[#172554]'}`}
+        >
+          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
+      {menuOpen ? (
+        <nav className={`border-t px-4 py-4 md:hidden ${dark ? 'border-[#18233f] bg-[#050714]' : 'border-[#e2e7fb] bg-white'}`} aria-label="Mobile navigation">
+          <div className="mx-auto grid max-w-7xl gap-1">
+            {navItems.map((item) => (
+              <div key={item.href}>
+                <Link href={item.href} onClick={() => setMenuOpen(false)} className={`block rounded-md px-3 py-2 text-sm font-semibold ${dark ? 'text-white hover:bg-[#10172b]' : 'text-[#172554] hover:bg-[#eef2ff]'}`}>{item.label}</Link>
+                {item.children ? <div className={`ml-3 grid gap-1 border-l pl-3 ${dark ? 'border-[#24304d]' : 'border-[#dbe3ff]'}`}>{item.children.map((child) => <Link key={child.href} href={child.href} onClick={() => setMenuOpen(false)} className={`rounded-md px-3 py-2 text-sm ${dark ? 'text-[#aeb9d1] hover:bg-[#10172b]' : 'text-[#5a685f] hover:bg-[#f8faff]'}`}>{child.label}</Link>)}</div> : null}
+              </div>
+            ))}
+            <div className="mt-3 border-t pt-3"><AuthSessionMenu theme={theme} /></div>
+          </div>
+        </nav>
+      ) : null}
     </header>
   );
 }

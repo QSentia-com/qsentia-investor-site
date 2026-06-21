@@ -113,10 +113,26 @@ Example:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+QSENTIA_ADMIN_EMAILS=admin@example.com
+QSENTIA_DEV_ADMIN_PASSWORD=
+QSENTIA_ENABLE_DEV_ADMIN=0
 
 ```
 
 > Never commit secrets or production keys to the repository.
+
+### Admin access
+
+The admin portal uses the same `/signin` flow as every other account. There is no separate admin password or admin login page.
+
+Grant access with either of these server-controlled methods:
+
+- Set the Supabase user's `app_metadata.role` to `admin`, `super_admin`, or `operations_admin` using a trusted server/admin process.
+- Add one or more comma-separated email addresses to `QSENTIA_ADMIN_EMAILS` in the deployment environment.
+
+Do not place an admin role in user-editable profile metadata. The `/admin` page and `/api/admin/*` routes both enforce the server-side role check.
+
+For local development only, `/signin?next=/admin` also presents temporary admin access. Set `QSENTIA_DEV_ADMIN_PASSWORD` to override the local password. When a machine forces `NODE_ENV=production`, set `QSENTIA_ENABLE_DEV_ADMIN=1` only in the local shell. Never set this flag in a deployment environment.
 
 ---
 

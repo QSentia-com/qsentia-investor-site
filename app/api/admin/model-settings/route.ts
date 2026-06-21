@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { adminAuthMode, unauthorizedAdminResponse } from '@/lib/adminAuth';
+import { NextResponse, type NextRequest } from 'next/server';
+import { unauthorizedAdminResponse } from '@/lib/adminAuth';
 import {
   mergeAdminModelSetting,
   readAdminModelSettings,
@@ -8,8 +8,8 @@ import {
 } from '@/lib/adminModelSettings';
 import { getLiveMarketplaceModels } from '@/lib/modelCatalog';
 
-export async function GET(request: Request) {
-  const authError = unauthorizedAdminResponse(request);
+export async function GET(request: NextRequest) {
+  const authError = await unauthorizedAdminResponse(request);
   if (authError) return authError;
 
   try {
@@ -20,7 +20,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json(
       {
-        authMode: adminAuthMode(),
         updatedAt: settingsFile.updatedAt,
         models: models.map((model) => {
           const setting = settingsFile.models[model.id];
@@ -48,8 +47,8 @@ export async function GET(request: Request) {
   }
 }
 
-export async function PATCH(request: Request) {
-  const authError = unauthorizedAdminResponse(request);
+export async function PATCH(request: NextRequest) {
+  const authError = await unauthorizedAdminResponse(request);
   if (authError) return authError;
 
   try {

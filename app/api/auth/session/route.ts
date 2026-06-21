@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { DEV_ADMIN_COOKIE, validDevAdminSession } from '@/lib/devAdminAuth';
 
 function authConfig() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -24,6 +25,24 @@ function displayNameFor(user: {
 }
 
 export async function GET(request: NextRequest) {
+  if (validDevAdminSession(request.cookies.get(DEV_ADMIN_COOKIE)?.value)) {
+    return NextResponse.json(
+      {
+        authenticated: true,
+        authConfigured: false,
+        user: {
+          id: 'local-dev-admin',
+          email: 'local-admin@qsentia.dev',
+          name: 'Temporary Admin',
+          avatarUrl: null,
+          provider: 'temporary',
+          lastSignInAt: null,
+        },
+      },
+      { headers: { 'Cache-Control': 'no-store' } }
+    );
+  }
+
   const config = authConfig();
 
   if (!config) {

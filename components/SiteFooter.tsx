@@ -49,31 +49,32 @@ const resourceLinks: IconLink[] = [
 
 const footerColumns: Array<{ title: string; links: FooterLink[] }> = [
   {
-    title: 'Platform',
+    title: 'Investors',
     links: [
-      { href: '/marketplace', label: 'Model marketplace' },
-      { href: '/dashboard', label: 'Investor dashboard' },
-      { href: '/research', label: 'Research terminal' },
-      { href: '/mleq', label: 'MLEQ engine' },
+      { href: '/strategies', label: 'Investment strategies' },
+      { href: '/performance', label: 'Performance center' },
+      { href: '/risk-management', label: 'Risk management' },
+      { href: '/data-room', label: 'Investor data room' },
+      { href: '/methodology', label: 'Methodology' },
+      { href: '/insights', label: 'Letters & research' },
     ],
   },
   {
-    title: 'Developers',
+    title: 'Platform',
     links: [
-      { href: '/docs', label: 'API documentation' },
-      { href: '/api/dashboard', label: 'Dashboard API' },
-      { href: '/api/models', label: 'Models API' },
-      {
-        href: 'https://github.com/FinTechEntrepreneurldz/qsentia-investor-site',
-        label: 'GitHub repository',
-        external: true,
-      },
+      { href: '/platform', label: 'Platform overview' },
+      { href: '/marketplace', label: 'Model marketplace' },
+      { href: '/pricing', label: 'Plans' },
+      { href: '/demo', label: 'Interactive demo' },
+      { href: '/integrations', label: 'Integrations' },
+      { href: '/developers', label: 'Developer center' },
     ],
   },
   {
     title: 'Company',
     links: [
       { href: '/', label: 'About QSentia' },
+      { href: '/firm', label: 'Firm' },
       { href: '/problem-solution', label: 'Problem & solution' },
       { href: '/careers', label: 'Careers' },
       { href: '/compliance', label: 'Compliance centre' },

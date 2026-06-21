@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { computeStats, normalizeTo100, pctChange } from '@/lib/metrics';
 import Papa from 'papaparse';
+import { readPublishedModelConfigs } from '@/lib/modelOnboarding';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -429,15 +430,13 @@ async function fetchJsonFromRepo<T>(model: ModelConfig, path: string): Promise<T
 }
 
 async function fetchModelsRegistry(): Promise<ModelConfig[]> {
-  const text = await fetchTextFromRaw(
-    `${REGISTRY_OWNER}/${REGISTRY_REPO}`,
-    REGISTRY_BRANCH,
-    'models.yaml'
-  );
+  const [text, publishedModels] = await Promise.all([
+    fetchTextFromRaw(`${REGISTRY_OWNER}/${REGISTRY_REPO}`, REGISTRY_BRANCH, 'models.yaml'),
+    readPublishedModelConfigs(),
+  ]);
 
   const parsed = parseSimpleModelsYaml(text);
-  const fallback: ModelConfig[] = [];
-  const registry = parsed.length ? parsed : fallback;
+  const registry = [...parsed, ...publishedModels];
 
   return mergeRequiredModels(registry).filter(
     (m) => m.enabled !== false && !RETIRED_MODEL_IDS.has(m.id)
@@ -1272,7 +1271,7 @@ export async function GET(request: Request) {
           logsPath: model.logs_path,
           color: model.color,
           stats: { ...summaryStats },
-          latestValue: model.starting_capital ?? null,
+          latestValue: null,
           rowCount: null,
           dailyRowCount: null,
           inceptionDate: null,
@@ -1401,9 +1400,9 @@ export async function GET(request: Request) {
   );
   const values = dailyPortfolio.map((p) => p.value);
   const accountBaseline = startingCapitalForModel(selectedModelConfig);
-  const latestPortfolioValue = values.length ? values[values.length - 1] : accountBaseline;
-  const firstPortfolioValue = accountBaseline ?? (values.length ? values[0] : null);
-  const selectedPerformanceValues = performanceValues(values, accountBaseline);
+  const latestPortfolioValue = values.length ? values[values.length - 1] : null;
+  const firstPortfolioValue = values.length ? accountBaseline ?? values[0] : null;
+  const selectedPerformanceValues = values.length ? performanceValues(values, accountBaseline) : [];
   const normalizedValues = normalizeTo100(values);
   const returns = pctChange(values);
   const drawdowns = calculateDrawdown(values);
@@ -1467,7 +1466,7 @@ export async function GET(request: Request) {
     );
     const modelValues = daily.map((p) => p.value);
     const modelBaseline = startingCapitalForModel(model);
-    const modelPerformanceValues = performanceValues(modelValues, modelBaseline);
+    const modelPerformanceValues = modelValues.length ? performanceValues(modelValues, modelBaseline) : [];
     const curve = normalizeTo100(modelPerformanceValues);
 
     const modelInceptionDate = daily.length ? daily[0].timestamp : undefined;
@@ -1490,7 +1489,7 @@ export async function GET(request: Request) {
         value: curve[i],
       })),
       stats: computeStats(modelPerformanceValues),
-      latestValue: modelValues.length ? modelValues[modelValues.length - 1] : modelBaseline,
+      latestValue: modelValues.length ? modelValues[modelValues.length - 1] : null,
       startingCapital: modelBaseline,
       rowCount:
         rows.length +
@@ -1524,9 +1523,7 @@ export async function GET(request: Request) {
         portfolioValueTimestamp: dailyPortfolio.length ? dailyPortfolio[dailyPortfolio.length - 1].timestamp : null,
         portfolioValueSource: dailyPortfolio.length
           ? dailyPortfolio[dailyPortfolio.length - 1].raw?.source || 'broker_account_value'
-          : accountBaseline !== null
-            ? 'starting_capital_baseline'
-            : null,
+          : null,
         firstPortfolioValue,
         startingCapital: accountBaseline,
         portfolioPnl:
@@ -1540,9 +1537,11 @@ export async function GET(request: Request) {
       
         // Do NOT derive P&L from positions market_value.
         pnlSource:
-          accountBaseline !== null
-            ? 'broker_account_value_minus_starting_capital'
-            : 'portfolio_csv_net_liquidation',
+          latestPortfolioValue === null
+            ? null
+            : accountBaseline !== null
+              ? 'broker_account_value_minus_starting_capital'
+              : 'portfolio_csv_net_liquidation',
         isLivePaperActive: paperStatus.isLivePaperActive,
         paperStatus: latestPaperStatus,
         submittedOrderCount: paperStatus.submittedOrderCount,

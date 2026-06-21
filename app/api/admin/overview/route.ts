@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { unauthorizedAdminResponse } from '@/lib/adminAuth';
 import { buildAdminOverview } from '@/lib/adminOverview';
 
-export async function GET(request: Request) {
-  const authError = unauthorizedAdminResponse(request);
+export async function GET(request: NextRequest) {
+  const authError = await unauthorizedAdminResponse(request);
   if (authError) return authError;
 
   try {

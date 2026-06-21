@@ -1,4 +1,15 @@
-import { supabaseAdmin } from "../backend/lib/supabase";
+function hasSupabaseAdminConfig() {
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+}
+
+async function requireSupabaseAdmin() {
+  if (!hasSupabaseAdminConfig()) {
+    throw new Error("Supabase admin access is not configured");
+  }
+
+  const { supabaseAdmin } = await import("../backend/lib/supabase");
+  return supabaseAdmin;
+}
 
 export type LeadSource = "signup" | "contact" | "google" | "manual";
 
@@ -328,10 +339,10 @@ function sanitizeLead(
 
   return {
     id: existing?.id || (typeof raw.id === "string" ? raw.id : id("lead")),
-    name: requiredText(raw.name, existing?.name || "Unknown contact"),
+    name: requiredText(raw.name, existing?.name || ""),
     email: requiredText(
       raw.email,
-      existing?.email || "unknown@example.com",
+      existing?.email || "",
     ).toLowerCase(),
     organization:
       nullableText(raw.organization, 180) ?? existing?.organization ?? null,
@@ -350,6 +361,13 @@ function sanitizeLead(
 // ======================================================
 
 export async function upsertLead(input: unknown, leadId?: string) {
+  const raw = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
+  const name = nullableText(raw.name, 180);
+  const email = nullableText(raw.email, 240);
+  if (!name || !email || !email.includes("@")) {
+    throw new Error("Lead name and valid email are required");
+  }
+  const supabaseAdmin = await requireSupabaseAdmin();
   // validate input first
   const nextLead = sanitizeLead(input);
 
@@ -500,12 +518,12 @@ function sanitizeApplication(
 
     candidateName: requiredText(
       raw.candidateName,
-      existing?.candidateName || "Candidate",
+      existing?.candidateName || "",
     ),
 
     email: requiredText(
       raw.email,
-      existing?.email || "unknown@example.com",
+      existing?.email || "",
     ).toLowerCase(),
 
     stage: enumValue(
@@ -604,6 +622,7 @@ function sanitizeOffer(
 // ======================================================
 
 export async function upsertTicket(input: unknown, ticketId?: string) {
+  const supabaseAdmin = await requireSupabaseAdmin();
   const nextTicket = sanitizeTicket(input);
 
   const payload = {
@@ -637,6 +656,7 @@ export async function upsertTicket(input: unknown, ticketId?: string) {
 // ======================================================
 
 export async function upsertCareerRole(input: unknown, roleId?: string) {
+  const supabaseAdmin = await requireSupabaseAdmin();
   const nextRole = sanitizeCareerRole(input);
 
   const payload = {
@@ -673,6 +693,13 @@ export async function upsertApplication(
   input: unknown,
   applicationId?: string,
 ) {
+  const raw = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
+  const candidateName = nullableText(raw.candidateName, 180);
+  const email = nullableText(raw.email, 240);
+  if (!candidateName || !email || !email.includes("@")) {
+    throw new Error("Candidate name and valid email are required");
+  }
+  const supabaseAdmin = await requireSupabaseAdmin();
   const nextApplication = sanitizeApplication(input);
 
   const payload = {
@@ -705,6 +732,7 @@ export async function upsertApplication(
 // ======================================================
 
 export async function upsertOffer(input: unknown, offerId?: string) {
+  const supabaseAdmin = await requireSupabaseAdmin();
   const nextOffer = sanitizeOffer(input);
 
   const payload = {
@@ -774,6 +802,7 @@ export function offerIsUsable(offer: CommercialOffer, modelId?: string | null) {
 // ======================================================
 
 export async function redeemOfferCode(code: unknown, modelId?: string | null) {
+  const supabaseAdmin = await requireSupabaseAdmin();
   // sanitize incoming code
   const normalizedCode =
     nullableText(code, 64)
@@ -845,6 +874,7 @@ export async function redeemOfferCode(code: unknown, modelId?: string | null) {
 // ======================================================
 
 export async function recordModelView(input: unknown) {
+  const supabaseAdmin = await requireSupabaseAdmin();
   const raw =
     input && typeof input === "object"
       ? (input as Record<string, unknown>)
@@ -894,6 +924,20 @@ export async function recordModelView(input: unknown) {
 // ======================================================
 
 export async function readBackOfficeStore() {
+  if (!hasSupabaseAdminConfig()) {
+    return {
+      version: 1 as const,
+      updatedAt: null,
+      leads: [] as BackOfficeLead[],
+      tickets: [] as InternalTicket[],
+      careerRoles: [] as CareerRole[],
+      applications: [] as CareerApplication[],
+      offers: [] as CommercialOffer[],
+      modelActivity: {} as Record<string, ModelActivity>,
+    };
+  }
+
+  const supabaseAdmin = await requireSupabaseAdmin();
   const [
     leadsResult,
     ticketsResult,

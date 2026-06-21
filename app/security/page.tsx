@@ -48,6 +48,13 @@ const sections: readonly PolicySection[] = [
     ],
   },
   {
+    id: 'api-security',
+    title: 'API keys, broker authorization, and service boundaries',
+    paragraphs: [
+      'Issued API credentials are stored as one-way hashes with explicit customer, environment, scope, status, and quota records. Broker credentials must not be collected in general website forms; authorization belongs in a separate server-side onboarding flow with revocation and audit evidence.',
+    ],
+  },
+  {
     id: 'monitoring',
     title: 'Logging, monitoring, and vulnerability management',
     paragraphs: [
@@ -66,6 +73,13 @@ const sections: readonly PolicySection[] = [
     title: 'Reporting security concerns',
     paragraphs: [
       'Report suspected security issues privately to inquiries@qsentia.com with the subject "Security Report." Do not publicly disclose sensitive details or test production systems without written authorization. QSentia should acknowledge, triage, and coordinate remediation through a secure channel.',
+    ],
+  },
+  {
+    id: 'retention-roadmap',
+    title: 'Retention and assurance roadmap',
+    paragraphs: [
+      'Operational, billing, access, and execution records should have documented retention periods and deletion owners. QSentia is building an evidence-led security programme; SOC 2 or ISO certification must not be claimed unless a current independent report or certificate and its scope are published.',
     ],
   },
 ];
