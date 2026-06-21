@@ -68,6 +68,10 @@ const ACCOUNT_BASELINE_MODEL_IDS = new Set([
   BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
   'delta_neutral_crypto_funding',
 ]);
+const RESET_SCOPED_ACCOUNT_MODEL_IDS = new Set([
+  BR_PPO_CRYPTO_V15_MODEL_ID,
+  BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
+]);
 const DEFAULT_ACCOUNT_STARTING_CAPITAL = Number(
   process.env.QSENTIA_ACCOUNT_STARTING_CAPITAL ||
     process.env.NEXT_PUBLIC_QSENTIA_ACCOUNT_STARTING_CAPITAL ||
@@ -612,6 +616,142 @@ function performanceValues(values: number[], baseline: number | null) {
   return values[0] === baseline ? values : [baseline, ...values];
 }
 
+function isResetScopedAccountModel(model: ModelConfig) {
+  return RESET_SCOPED_ACCOUNT_MODEL_IDS.has(model.id);
+}
+
+function isCloseTo(value: number | null, target: number | null, tolerance = 0.01) {
+  return value !== null && target !== null && Math.abs(value - target) <= tolerance;
+}
+
+function csvRowTimestamp(row: CsvRow) {
+  return (
+    row.timestamp_utc ||
+    row.timestamp ||
+    row.updated_at_utc ||
+    row.computed_at ||
+    row.date ||
+    row.market_date ||
+    ''
+  );
+}
+
+function filterRowsAtOrAfter(rows: CsvRow[], resetTimestamp: string | null) {
+  if (!resetTimestamp) return rows;
+
+  const resetSortValue = timestampSortValue(resetTimestamp);
+  if (!resetSortValue) return rows;
+
+  return rows.filter((row) => {
+    const timestamp = csvRowTimestamp(row);
+    return timestamp ? timestampSortValue(timestamp) >= resetSortValue : false;
+  });
+}
+
+function hasResetIdleEvidence(row: CsvRow, baseline: number) {
+  const submitOrders = String(row.submit_orders || '').trim().toLowerCase();
+  if (submitOrders === 'false' || submitOrders === '0' || submitOrders === 'no') return true;
+
+  const submittedOrders =
+    num(row.n_submitted_orders) ??
+    num(row.n_orders_submitted) ??
+    num(row.submitted_order_count);
+  if (submittedOrders === 0) return true;
+
+  const nPositions = num(row.n_positions);
+  const longValue = num(row.long_value);
+  const shortValue = num(row.short_value);
+  const cash = num(row.cash);
+  if (nPositions === 0) return true;
+  if (
+    isCloseTo(longValue, 0) &&
+    isCloseTo(shortValue, 0) &&
+    isCloseTo(cash, baseline)
+  ) {
+    return true;
+  }
+
+  const action = String(row.action || row.source || '').toLowerCase();
+  return action.includes('initialized') || action.includes('account_reset');
+}
+
+function latestResetTimestamp(model: ModelConfig, points: PortfolioPoint[]) {
+  if (!isResetScopedAccountModel(model)) return null;
+
+  const baseline = startingCapitalForModel(model);
+  if (baseline === null) return null;
+
+  let latestReset: { timestamp: string; sortValue: number } | null = null;
+
+  for (const point of points) {
+    if (!isCloseTo(point.value, baseline)) continue;
+    if (!hasResetIdleEvidence(point.raw, baseline)) continue;
+
+    const sortValue = timestampSortValue(point.timestamp);
+    if (!sortValue) continue;
+
+    if (!latestReset || sortValue >= latestReset.sortValue) {
+      latestReset = {
+        timestamp: point.timestamp,
+        sortValue,
+      };
+    }
+  }
+
+  return latestReset?.timestamp || null;
+}
+
+function toResetScopedDailyPortfolio(model: ModelConfig, points: PortfolioPoint[]) {
+  const resetTimestamp = latestResetTimestamp(model, points);
+  const resetSortValue = resetTimestamp ? timestampSortValue(resetTimestamp) : 0;
+  const scopedPoints =
+    resetTimestamp && resetSortValue
+      ? points.filter((point) => timestampSortValue(point.timestamp) >= resetSortValue)
+      : points;
+
+  const daily = applyAccountValueOverrides(model, toDailyPortfolio(scopedPoints));
+  return { daily, resetTimestamp };
+}
+
+function orderLooksSubmitted(row: CsvRow) {
+  const submitted = String(row.submitted || '').trim().toLowerCase();
+  if (submitted === 'true' || submitted === '1' || submitted === 'yes') return true;
+
+  const status = String(row.status || row.order_status || '').trim().toLowerCase();
+  if (
+    status.includes('not_submitted') ||
+    status.includes('not submitted') ||
+    status.includes('dry_run') ||
+    status.includes('dry-run') ||
+    status.includes('cancel')
+  ) {
+    return false;
+  }
+
+  return ['submitted', 'accepted', 'filled', 'partially_filled', 'pending_new', 'new'].some(
+    (liveStatus) => status === liveStatus || status.includes(liveStatus)
+  );
+}
+
+function shouldSuppressResetScopedStats(
+  model: ModelConfig,
+  resetTimestamp: string | null,
+  values: number[],
+  positionsRows: CsvRow[] = [],
+  submittedOrdersRows: CsvRow[] = []
+) {
+  if (!resetTimestamp || !isResetScopedAccountModel(model)) return false;
+
+  const baseline = startingCapitalForModel(model);
+  if (baseline === null) return false;
+
+  const allValuesAtBaseline = values.length > 0 && values.every((value) => isCloseTo(value, baseline));
+  const submittedAfterReset = submittedOrderCount(filterRowsAtOrAfter(submittedOrdersRows, resetTimestamp));
+  const hasPositions = hasLivePositionRows(positionsRows);
+
+  return allValuesAtBaseline && submittedAfterReset === 0 && !hasPositions;
+}
+
 function latest<T>(arr: T[]): T | null {
   return arr.length ? arr[arr.length - 1] : null;
 }
@@ -739,6 +879,7 @@ function healthStatusObservation(healthStatus: AccountHealthStatus): PortfolioPo
     healthStatus.updated_at_utc ||
       healthStatus.timestamp_utc ||
       healthStatus.timestamp ||
+      healthStatus.computed_at ||
       healthStatus.date ||
       ''
   );
@@ -755,7 +896,7 @@ function healthStatusObservation(healthStatus: AccountHealthStatus): PortfolioPo
 }
 
 function submittedOrderCount(rows: CsvRow[]) {
-  return rows.filter((row) => String(row.submitted).toLowerCase() === 'true').length;
+  return rows.filter(orderLooksSubmitted).length;
 }
 
 function hasLivePositionRows(rows: CsvRow[]) {
@@ -1349,7 +1490,7 @@ export async function GET(request: Request) {
     benchmarkStartDateFromFirstModel(registry),
   ]);
 
-  const submittedOrdersRows = submittedOrdersPrimaryRows.length
+  const rawSubmittedOrdersRows = submittedOrdersPrimaryRows.length
     ? submittedOrdersPrimaryRows
     : submittedOrdersFallbackRows;
   const displayedPlannedOrdersRows = plannedOrdersRows.length ? plannedOrdersRows : plannedAllocationsRows;
@@ -1360,16 +1501,12 @@ export async function GET(request: Request) {
       : latestSignalRows;
   const displayedLatestDecision = latest(latestDecisionRows) || latestSignalDecision(latestSignalRows);
   const displayedSignalHistoryRows = signalHistoryRows.length ? signalHistoryRows : signalRows;
-  const paperStatus = inferPaperStatus(positionsRows, submittedOrdersRows);
   const healthPaperStatus =
     typeof healthStatus?.paper_status === 'string'
       ? healthStatus.paper_status
       : typeof healthStatus?.paperStatus === 'string'
         ? healthStatus.paperStatus
         : null;
-  const latestPaperStatus = paperStatus.isLivePaperActive
-    ? paperStatus.paperStatus
-    : healthPaperStatus || paperStatus.paperStatus;
   const latestRealismStatus =
     typeof executionRealism?.paper_replay_status === 'string'
       ? executionRealism.paper_replay_status
@@ -1377,6 +1514,7 @@ export async function GET(request: Request) {
   const latestRunTimestamp =
     healthStatus?.updated_at_utc ||
     healthStatus?.timestamp_utc ||
+    healthStatus?.computed_at ||
     displayedLatestDecision?.timestamp_utc ||
     latest(displayedDecisionRows)?.timestamp_utc ||
     latest(latestSignalRows)?.timestamp_utc ||
@@ -1394,10 +1532,13 @@ export async function GET(request: Request) {
     ]),
     ...healthStatusObservation(healthStatus),
   ];
-  const dailyPortfolio = applyAccountValueOverrides(
-    selectedModelConfig,
-    toDailyPortfolio(portfolio)
-  );
+  const { daily: dailyPortfolio, resetTimestamp: selectedResetTimestamp } =
+    toResetScopedDailyPortfolio(selectedModelConfig, portfolio);
+  const submittedOrdersRows = filterRowsAtOrAfter(rawSubmittedOrdersRows, selectedResetTimestamp);
+  const paperStatus = inferPaperStatus(positionsRows, submittedOrdersRows);
+  const latestPaperStatus = paperStatus.isLivePaperActive
+    ? paperStatus.paperStatus
+    : healthPaperStatus || paperStatus.paperStatus;
   const values = dailyPortfolio.map((p) => p.value);
   const accountBaseline = startingCapitalForModel(selectedModelConfig);
   const latestPortfolioValue = values.length ? values[values.length - 1] : null;
@@ -1406,7 +1547,16 @@ export async function GET(request: Request) {
   const normalizedValues = normalizeTo100(values);
   const returns = pctChange(values);
   const drawdowns = calculateDrawdown(values);
-  const stats = computeStats(selectedPerformanceValues);
+  const resetScopedStatsSuppressed = shouldSuppressResetScopedStats(
+    selectedModelConfig,
+    selectedResetTimestamp,
+    values,
+    positionsRows,
+    submittedOrdersRows
+  );
+  const stats = resetScopedStatsSuppressed
+    ? computeStats([])
+    : computeStats(selectedPerformanceValues);
 
   const equityCurve = dailyPortfolio.map((p, i) => ({
     timestamp: p.timestamp,
@@ -1451,23 +1601,25 @@ export async function GET(request: Request) {
     const displayedSignalHistoryRowsForModel = signalHistoryRowsForModel.length
       ? signalHistoryRowsForModel
       : signalRowsForModel;
-    const daily = applyAccountValueOverrides(
-      model,
-      toDailyPortfolio([
-        ...accountValueObservations([
-          rows,
-          latestAccountRows,
-          latestDecisionRowsForModel,
-          displayedDecisionsRowsForModel,
-          displayedSignalHistoryRowsForModel,
-        ]),
-        ...healthStatusObservation(modelHealthStatus),
-      ])
-    );
+    const modelPortfolio = [
+      ...accountValueObservations([
+        rows,
+        latestAccountRows,
+        latestDecisionRowsForModel,
+        displayedDecisionsRowsForModel,
+        displayedSignalHistoryRowsForModel,
+      ]),
+      ...healthStatusObservation(modelHealthStatus),
+    ];
+    const { daily, resetTimestamp: modelResetTimestamp } =
+      toResetScopedDailyPortfolio(model, modelPortfolio);
     const modelValues = daily.map((p) => p.value);
     const modelBaseline = startingCapitalForModel(model);
     const modelPerformanceValues = modelValues.length ? performanceValues(modelValues, modelBaseline) : [];
     const curve = normalizeTo100(modelPerformanceValues);
+    const modelStats = shouldSuppressResetScopedStats(model, modelResetTimestamp, modelValues)
+      ? computeStats([])
+      : computeStats(modelPerformanceValues);
 
     const modelInceptionDate = daily.length ? daily[0].timestamp : undefined;
     const modelBenchmarks = await fetchBenchmarks(modelInceptionDate);
@@ -1488,7 +1640,7 @@ export async function GET(request: Request) {
             : daily[i]?.timestamp,
         value: curve[i],
       })),
-      stats: computeStats(modelPerformanceValues),
+      stats: modelStats,
       latestValue: modelValues.length ? modelValues[modelValues.length - 1] : null,
       startingCapital: modelBaseline,
       rowCount:
@@ -1611,6 +1763,12 @@ export async function GET(request: Request) {
         paperStatus
       })),
       selectedModelConfig,
+      resetScope: {
+        selectedResetTimestamp,
+        resetScopedStatsSuppressed,
+        rawSubmittedOrdersRows: rawSubmittedOrdersRows.length,
+        submittedOrdersRows: submittedOrdersRows.length,
+      },
       rowCounts: {
         portfolioRows: portfolioRows.length,
         latestIbkrAccountRows: latestIbkrAccountRows.length,
