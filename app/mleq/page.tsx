@@ -286,7 +286,6 @@ export default function MleqPage() {
             <ApiLoadingPanel
               title="Loading MLEQ telemetry"
               body="Preparing model families, portfolio curves, benchmark context, and execution evidence."
-              tone="dark"
               items={[
                 "Model families",
                 "Equity telemetry",
