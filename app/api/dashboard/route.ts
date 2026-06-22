@@ -29,12 +29,16 @@ const GITHUB_READ_TOKEN_ENV_NAME = ACTIVE_GITHUB_READ_TOKEN?.name || null;
 const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
 const ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID = 'qsentia_eth_micro_futures_sentiment_alpha';
 const BTC_ETF_SENTIMENT_MODEL_ID = 'qsentia_btc_etf_sentiment_alpha';
+const MODEL_C_ETF_MODEL_ID = 'model_c_etf';
+const MODEL_C_PAPER_TRADING_MODEL_ID = 'model_c_paper_trading';
 const BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRYPTO_SENTIMENT_MLP_MODEL_ID;
 const ACTIVE_MODEL_IDS = new Set([
   CRYPTO_SENTIMENT_MLP_MODEL_ID,
   ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID,
   BTC_ETF_SENTIMENT_MODEL_ID,
+  MODEL_C_ETF_MODEL_ID,
+  MODEL_C_PAPER_TRADING_MODEL_ID,
 ]);
 const RETIRED_MODEL_IDS = new Set([
   BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID,
@@ -53,8 +57,16 @@ const RETIRED_MODEL_IDS = new Set([
   'brppo-v10-original-base',
   'base-model-br-ppo',
 ]);
-const ACCOUNT_BASELINE_MODEL_IDS = new Set<string>();
-const RESET_SCOPED_ACCOUNT_MODEL_IDS = new Set<string>();
+const ACCOUNT_BASELINE_MODEL_IDS = new Set<string>([
+  BTC_ETF_SENTIMENT_MODEL_ID,
+  MODEL_C_ETF_MODEL_ID,
+  MODEL_C_PAPER_TRADING_MODEL_ID,
+]);
+const RESET_SCOPED_ACCOUNT_MODEL_IDS = new Set<string>([
+  BTC_ETF_SENTIMENT_MODEL_ID,
+  MODEL_C_ETF_MODEL_ID,
+  MODEL_C_PAPER_TRADING_MODEL_ID,
+]);
 const DEFAULT_ACCOUNT_STARTING_CAPITAL = Number(
   process.env.QSENTIA_ACCOUNT_STARTING_CAPITAL ||
     process.env.NEXT_PUBLIC_QSENTIA_ACCOUNT_STARTING_CAPITAL ||
@@ -113,6 +125,30 @@ const REQUIRED_MODELS: ModelConfig[] = [
     branch: 'main',
     enabled: true,
     color: '#10b981',
+    starting_capital: 1000000,
+  },
+  {
+    id: MODEL_C_ETF_MODEL_ID,
+    name: 'Model C ETF Regime MoE - Alpaca',
+    description:
+      'Live Model C ETF regime allocator using MLP/MoE signals, model-driven rebalance gates, Alpaca paper execution, and a fresh $1,000,000 paper-account baseline.',
+    repo: 'FinTechEntrepreneurldz/model_c_etf',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#2563eb',
+    starting_capital: 1000000,
+  },
+  {
+    id: MODEL_C_PAPER_TRADING_MODEL_ID,
+    name: 'Model C Equity Long/Short - Alpaca',
+    description:
+      'Live Model C equity paper trader using an MLP-driven 130/30 sector-neutral basket, model-driven rebalance gates, Alpaca paper execution, and a fresh $1,000,000 paper-account baseline.',
+    repo: 'FinTechEntrepreneurldz/Model_C_Paper_Trading',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#7c3aed',
     starting_capital: 1000000,
   },
 ];
