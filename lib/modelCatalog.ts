@@ -92,7 +92,10 @@ const DASHBOARD_LAST_GOOD_CACHE_PATH = path.join(
   '.qsentia-cache',
   'dashboard-last-good.json'
 );
-const ACTIVE_MARKETPLACE_MODEL_IDS = new Set(['crypto_sentiment_mlp']);
+const ACTIVE_MARKETPLACE_MODEL_IDS = new Set([
+  'crypto_sentiment_mlp',
+  'qsentia_eth_micro_futures_sentiment_alpha',
+]);
 
 export type ModelDetails = MarketplaceModel & {
   longDescription: string;
