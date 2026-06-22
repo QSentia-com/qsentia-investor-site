@@ -98,6 +98,9 @@ const ACTIVE_MARKETPLACE_MODEL_IDS = new Set([
   'qsentia_btc_etf_sentiment_alpha',
   'model_c_etf',
   'model_c_paper_trading',
+  'base_model_br_ppo',
+  'br_ppo_crypto_v15',
+  'brppo_fixed_income_regime',
 ]);
 
 export type ModelDetails = MarketplaceModel & {

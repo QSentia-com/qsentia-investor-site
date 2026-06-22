@@ -31,6 +31,9 @@ const ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID = 'qsentia_eth_micro_futures_sentimen
 const BTC_ETF_SENTIMENT_MODEL_ID = 'qsentia_btc_etf_sentiment_alpha';
 const MODEL_C_ETF_MODEL_ID = 'model_c_etf';
 const MODEL_C_PAPER_TRADING_MODEL_ID = 'model_c_paper_trading';
+const BASE_MODEL_BR_PPO_MODEL_ID = 'base_model_br_ppo';
+const BR_PPO_CRYPTO_V15_MODEL_ID = 'br_ppo_crypto_v15';
+const BRPPO_FIXED_INCOME_REGIME_MODEL_ID = 'brppo_fixed_income_regime';
 const BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRYPTO_SENTIMENT_MLP_MODEL_ID;
 const ACTIVE_MODEL_IDS = new Set([
@@ -39,6 +42,9 @@ const ACTIVE_MODEL_IDS = new Set([
   BTC_ETF_SENTIMENT_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
+  BASE_MODEL_BR_PPO_MODEL_ID,
+  BR_PPO_CRYPTO_V15_MODEL_ID,
+  BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
 ]);
 const RETIRED_MODEL_IDS = new Set([
   BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID,
@@ -61,11 +67,17 @@ const ACCOUNT_BASELINE_MODEL_IDS = new Set<string>([
   BTC_ETF_SENTIMENT_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
+  BASE_MODEL_BR_PPO_MODEL_ID,
+  BR_PPO_CRYPTO_V15_MODEL_ID,
+  BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
 ]);
 const RESET_SCOPED_ACCOUNT_MODEL_IDS = new Set<string>([
   BTC_ETF_SENTIMENT_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
+  BASE_MODEL_BR_PPO_MODEL_ID,
+  BR_PPO_CRYPTO_V15_MODEL_ID,
+  BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
 ]);
 const DEFAULT_ACCOUNT_STARTING_CAPITAL = Number(
   process.env.QSENTIA_ACCOUNT_STARTING_CAPITAL ||
@@ -149,6 +161,42 @@ const REQUIRED_MODELS: ModelConfig[] = [
     branch: 'main',
     enabled: true,
     color: '#7c3aed',
+    starting_capital: 1000000,
+  },
+  {
+    id: BASE_MODEL_BR_PPO_MODEL_ID,
+    name: 'Base Model BR-PPO - Alpaca',
+    description:
+      'Live BR-PPO baseline allocator using the vetted Model A artifact, dedicated Alpaca paper credentials, canonical QSentia logs, and a fresh $1,000,000 paper-account baseline.',
+    repo: 'FinTechEntrepreneurldz/Base_Model_BR_PPO',
+    logs_path: 'logs/base_model_br_ppo',
+    branch: 'main',
+    enabled: true,
+    color: '#0891b2',
+    starting_capital: 1000000,
+  },
+  {
+    id: BR_PPO_CRYPTO_V15_MODEL_ID,
+    name: 'BR-PPO Crypto V15 - Alpaca',
+    description:
+      'Live BR-PPO crypto allocator using crypto, FreqAI, LLM, Ichimoku, and PPO ensemble components with Alpaca paper execution and a fresh $1,000,000 paper-account baseline.',
+    repo: 'FinTechEntrepreneurldz/br_ppo_crypto_v15',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#f97316',
+    starting_capital: 1000000,
+  },
+  {
+    id: BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
+    name: 'BR-PPO Fixed Income Regime - Alpaca',
+    description:
+      'Live fixed-income BR-PPO regime allocator with bond-only guardrails, Alpaca paper execution, and a fresh $1,000,000 paper-account baseline.',
+    repo: 'FinTechEntrepreneurldz/brppo_fixed_income_regime',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#64748b',
     starting_capital: 1000000,
   },
 ];
