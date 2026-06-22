@@ -27,21 +27,9 @@ const ACTIVE_GITHUB_READ_TOKEN = GITHUB_READ_TOKEN_CANDIDATES.map(([name, value]
 const GITHUB_READ_TOKEN = ACTIVE_GITHUB_READ_TOKEN?.value || '';
 const GITHUB_READ_TOKEN_ENV_NAME = ACTIVE_GITHUB_READ_TOKEN?.name || null;
 const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
-const BTC_FUTURES_LIVE_SENTIMENT_ALPHA_MODEL_ID =
-  'qsentia_btc_futures_live_sentiment_alpha';
-const BTC_FUTURES_SENTIMENT_ALPHA_V2_MODEL_ID = 'qsentia_btc_futures_sentiment_alpha_v2';
-const BTC_ETF_SENTIMENT_ALPHA_MODEL_ID = 'qsentia_btc_etf_sentiment_alpha';
-const ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID =
-  'qsentia_eth_micro_futures_sentiment_alpha';
-const CRYPTO_NARRATIVE_ALPHA_ALLOCATOR_MODEL_ID =
-  'qsentia_crypto_narrative_alpha_allocator';
-const MODEL_C_PAPER_TRADING_MODEL_ID = 'model_c_paper_trading';
-const MODEL_C_ETF_MODEL_ID = 'model_c_mlp_regime_moe';
-const BASE_MODEL_BR_PPO_MODEL_ID = 'base_model_br_ppo';
-const BR_PPO_CRYPTO_V15_MODEL_ID = 'br_ppo_crypto_v15';
-const BRPPO_FIXED_INCOME_REGIME_MODEL_ID = 'brppo_fixed_income_regime';
 const BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRYPTO_SENTIMENT_MLP_MODEL_ID;
+const ACTIVE_MODEL_IDS = new Set([CRYPTO_SENTIMENT_MLP_MODEL_ID]);
 const RETIRED_MODEL_IDS = new Set([
   BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID,
   'qsentia_btc_spot_sentiment_alpha',
@@ -59,19 +47,8 @@ const RETIRED_MODEL_IDS = new Set([
   'brppo-v10-original-base',
   'base-model-br-ppo',
 ]);
-const ACCOUNT_BASELINE_MODEL_IDS = new Set([
-  BTC_ETF_SENTIMENT_ALPHA_MODEL_ID,
-  MODEL_C_PAPER_TRADING_MODEL_ID,
-  MODEL_C_ETF_MODEL_ID,
-  BASE_MODEL_BR_PPO_MODEL_ID,
-  BR_PPO_CRYPTO_V15_MODEL_ID,
-  BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
-  'delta_neutral_crypto_funding',
-]);
-const RESET_SCOPED_ACCOUNT_MODEL_IDS = new Set([
-  BR_PPO_CRYPTO_V15_MODEL_ID,
-  BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
-]);
+const ACCOUNT_BASELINE_MODEL_IDS = new Set<string>();
+const RESET_SCOPED_ACCOUNT_MODEL_IDS = new Set<string>();
 const DEFAULT_ACCOUNT_STARTING_CAPITAL = Number(
   process.env.QSENTIA_ACCOUNT_STARTING_CAPITAL ||
     process.env.NEXT_PUBLIC_QSENTIA_ACCOUNT_STARTING_CAPITAL ||
@@ -102,133 +79,12 @@ const REQUIRED_MODELS: ModelConfig[] = [
     id: CRYPTO_SENTIMENT_MLP_MODEL_ID,
     name: 'Crypto Sentiment MLP/PPO - IBKR',
     description:
-      'Live BTC sentiment ensemble using CryptoBERT-scored news, MLP/PPO stackers, and IBKR CME Micro Bitcoin futures paper execution. Current portfolio value is sourced from IBKR NetLiquidation.',
+      'Live BTC sentiment ensemble using CryptoBERT-scored news, MLP/PPO stackers, intraday risk-governor controls, and IBKR CME Micro Bitcoin futures paper execution. Current portfolio value is sourced from IBKR NetLiquidation.',
     repo: 'FinTechEntrepreneurldz/crypto_sentiment_MLP',
     logs_path: 'logs',
     branch: 'main',
     enabled: true,
     color: '#f59e0b',
-  },
-  {
-    id: BTC_FUTURES_LIVE_SENTIMENT_ALPHA_MODEL_ID,
-    name: 'QSentia BTC Futures Live Sentiment Alpha - IBKR',
-    description:
-      'Live-capital BTC sentiment ensemble using the same CryptoBERT, MLP, PPO, and live news stack as the working BTC futures model, routed through IBKR CME Micro Bitcoin futures with live account gates, account lock, and rollover controls.',
-    repo: 'FinTechEntrepreneurldz/qsentia-btc-futures-live-sentiment-alpha',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#0ea5e9',
-    starting_capital: 11500,
-  },
-  {
-    id: BTC_ETF_SENTIMENT_ALPHA_MODEL_ID,
-    name: 'QSentia BTC ETF Sentiment Alpha - Alpaca',
-    description:
-      'BTC sentiment ensemble using the same CryptoBERT, MLP, PPO, and live news stack as the futures model, routed through Alpaca-listed BITU/SBIT ETF exposure. Current portfolio value is sourced from Alpaca portfolio_value/net_liquidation logs.',
-    repo: 'FinTechEntrepreneurldz/qsentia-btc-etf-sentiment-alpha',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#14b8a6',
-    starting_capital: 1000000,
-  },
-  {
-    id: BTC_FUTURES_SENTIMENT_ALPHA_V2_MODEL_ID,
-    name: 'QSentia BTC Futures Sentiment Alpha V2 - IBKR',
-    description:
-      'BTC futures sentiment alpha V2 using the working CryptoBERT, MLP, PPO, and live news ensemble with upgraded production gates and IBKR CME Micro Bitcoin futures paper execution. Current portfolio value is sourced from IBKR NetLiquidation.',
-    repo: 'FinTechEntrepreneurldz/qsentia-btc-futures-sentiment-alpha-v2',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#ef4444',
-    starting_capital: 1004248,
-  },
-  {
-    id: ETH_MICRO_FUTURES_SENTIMENT_ALPHA_MODEL_ID,
-    name: 'QSentia ETH Micro Futures Sentiment Alpha - IBKR',
-    description:
-      'Live ETH sentiment ensemble using CryptoBERT-scored ETH news, MLP/PPO stackers, and IBKR CME Micro Ether futures paper execution. Current portfolio value is sourced from IBKR NetLiquidation.',
-    repo: 'FinTechEntrepreneurldz/qsentia-eth-micro-futures-sentiment-alpha',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#8b5cf6',
-    starting_capital: 994099,
-    placeholder_account_value: 1000000,
-  },
-  {
-    id: CRYPTO_NARRATIVE_ALPHA_ALLOCATOR_MODEL_ID,
-    name: 'QSentia Crypto Narrative Alpha Allocator - IBKR',
-    description:
-      'Multi-asset crypto narrative allocator combining BTC, ETH, and SOL sentiment sleeves into confidence- and volatility-scaled IBKR CME micro futures exposure with trained-sleeve verification, live text gates, rollover controls, and dashboard logs.',
-    repo: 'FinTechEntrepreneurldz/qsentia-crypto-narrative-alpha-allocator',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#22c55e',
-    starting_capital: 1000000,
-  },
-  {
-    id: MODEL_C_PAPER_TRADING_MODEL_ID,
-    name: 'Model C Reborn 130/30 - Alpaca',
-    description:
-      'Fresh-start Model C equity allocator using MLP-driven stock selection, Ichimoku/chart/trailing features, automatic model-gated target drift execution, and Alpaca paper trading from a new $1M account baseline.',
-    repo: 'FinTechEntrepreneurldz/Model_C_Paper_Trading',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#2563eb',
-    starting_capital: 1000000,
-  },
-  {
-    id: MODEL_C_ETF_MODEL_ID,
-    name: 'Model C ETF Regime MoE - Alpaca',
-    description:
-      'ETF regime mixture-of-experts allocator using model-gated automatic rebalancing, Alpaca paper execution, and daily 7AM New York scheduling from a clean $1M starting account.',
-    repo: 'FinTechEntrepreneurldz/model_c_etf',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#4f46e5',
-    starting_capital: 1000000,
-  },
-  {
-    id: BASE_MODEL_BR_PPO_MODEL_ID,
-    name: 'Base Model BR PPO - Alpaca',
-    description:
-      'Production paper-trading BR-PPO baseline allocator prepared for a fresh Alpaca account, $1M starting equity, daily 7AM New York scheduled execution, and broker-sourced portfolio telemetry.',
-    repo: 'FinTechEntrepreneurldz/Base_Model_BR_PPO',
-    logs_path: 'logs/base_model_br_ppo',
-    branch: 'main',
-    enabled: true,
-    color: '#0891b2',
-    starting_capital: 1000000,
-  },
-  {
-    id: BR_PPO_CRYPTO_V15_MODEL_ID,
-    name: 'BR PPO Crypto V15 - Alpaca',
-    description:
-      'Crypto-focused BR-PPO v15 allocator prepared for Alpaca paper execution from a clean $1M account baseline, with dashboard tracking for scheduled 7AM New York model runs and account-level telemetry.',
-    repo: 'FinTechEntrepreneurldz/br_ppo_crypto_v15',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#db2777',
-    starting_capital: 1000000,
-  },
-  {
-    id: BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
-    name: 'BRPPO Fixed Income Regime - Alpaca',
-    description:
-      'Fixed-income regime BR-PPO allocator prepared for Alpaca paper trading from a new $1M account, daily 7AM New York execution, and hedge-fund-grade broker account tracking.',
-    repo: 'FinTechEntrepreneurldz/brppo_fixed_income_regime',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#7c2d12',
-    starting_capital: 1000000,
   },
 ];
 type CsvRow = Record<string, string>;
@@ -443,7 +299,7 @@ async function fetchModelsRegistry(): Promise<ModelConfig[]> {
   const registry = [...parsed, ...publishedModels];
 
   return mergeRequiredModels(registry).filter(
-    (m) => m.enabled !== false && !RETIRED_MODEL_IDS.has(m.id)
+    (m) => ACTIVE_MODEL_IDS.has(m.id) && m.enabled !== false && !RETIRED_MODEL_IDS.has(m.id)
   );
 }
 

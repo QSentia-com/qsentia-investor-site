@@ -92,6 +92,7 @@ const DASHBOARD_LAST_GOOD_CACHE_PATH = path.join(
   '.qsentia-cache',
   'dashboard-last-good.json'
 );
+const ACTIVE_MARKETPLACE_MODEL_IDS = new Set(['crypto_sentiment_mlp']);
 
 export type ModelDetails = MarketplaceModel & {
   longDescription: string;
@@ -266,9 +267,9 @@ export async function getLiveMarketplaceModels(
   }
 
   const settings = await readAdminModelSettings();
-  const models = dashboard.modelComparison.map((entry) =>
-    applyAdminSetting(mapModel(entry), settings.models[entry.id])
-  );
+  const models = dashboard.modelComparison
+    .filter((entry) => ACTIVE_MARKETPLACE_MODEL_IDS.has(entry.id))
+    .map((entry) => applyAdminSetting(mapModel(entry), settings.models[entry.id]));
 
   const visibleModels = options.includeHidden
     ? models
