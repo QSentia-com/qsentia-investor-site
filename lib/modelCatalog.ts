@@ -101,6 +101,8 @@ const ACTIVE_MARKETPLACE_MODEL_IDS = new Set([
   'base_model_br_ppo',
   'br_ppo_crypto_v15',
   'brppo_fixed_income_regime',
+  'qsentia_cme_crypto_cash_carry_alpha',
+  'qsentia_cme_crypto_futures_basis_reversion_alpha',
 ]);
 
 export type ModelDetails = MarketplaceModel & {

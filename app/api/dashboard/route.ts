@@ -35,6 +35,7 @@ const BASE_MODEL_BR_PPO_MODEL_ID = 'base_model_br_ppo';
 const BR_PPO_CRYPTO_V15_MODEL_ID = 'br_ppo_crypto_v15';
 const BRPPO_FIXED_INCOME_REGIME_MODEL_ID = 'brppo_fixed_income_regime';
 const CME_CRYPTO_CASH_CARRY_MODEL_ID = 'qsentia_cme_crypto_cash_carry_alpha';
+const CME_CRYPTO_FUTURES_BASIS_REVERSION_MODEL_ID = 'qsentia_cme_crypto_futures_basis_reversion_alpha';
 const BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID = 'qsentia_btc_eth_perp_basis_alpha';
 const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRYPTO_SENTIMENT_MLP_MODEL_ID;
 const ACTIVE_MODEL_IDS = new Set([
@@ -47,6 +48,7 @@ const ACTIVE_MODEL_IDS = new Set([
   BR_PPO_CRYPTO_V15_MODEL_ID,
   BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
   CME_CRYPTO_CASH_CARRY_MODEL_ID,
+  CME_CRYPTO_FUTURES_BASIS_REVERSION_MODEL_ID,
 ]);
 const RETIRED_MODEL_IDS = new Set([
   BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID,
@@ -73,6 +75,7 @@ const ACCOUNT_BASELINE_MODEL_IDS = new Set<string>([
   BR_PPO_CRYPTO_V15_MODEL_ID,
   BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
   CME_CRYPTO_CASH_CARRY_MODEL_ID,
+  CME_CRYPTO_FUTURES_BASIS_REVERSION_MODEL_ID,
 ]);
 const RESET_SCOPED_ACCOUNT_MODEL_IDS = new Set<string>([
   BTC_ETF_SENTIMENT_MODEL_ID,
@@ -82,6 +85,7 @@ const RESET_SCOPED_ACCOUNT_MODEL_IDS = new Set<string>([
   BR_PPO_CRYPTO_V15_MODEL_ID,
   BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
   CME_CRYPTO_CASH_CARRY_MODEL_ID,
+  CME_CRYPTO_FUTURES_BASIS_REVERSION_MODEL_ID,
 ]);
 const DEFAULT_ACCOUNT_STARTING_CAPITAL = Number(
   process.env.QSENTIA_ACCOUNT_STARTING_CAPITAL ||
@@ -214,6 +218,18 @@ const REQUIRED_MODELS: ModelConfig[] = [
     enabled: true,
     color: '#14b8a6',
     starting_capital: 997408,
+  },
+  {
+    id: CME_CRYPTO_FUTURES_BASIS_REVERSION_MODEL_ID,
+    name: 'CME Crypto Futures Basis Reversion Alpha - IBKR',
+    description:
+      'Live CME crypto futures-only basis-reversion strategy using BTC/ETH spot-vs-futures basis signals, expiry-aware MBT/MET front-contract selection, rollover protection, IBKR paper execution, and a fresh $1,017,386 paper-account baseline.',
+    repo: 'FinTechEntrepreneurldz/qsentia-cme-crypto-futures-basis-reversion-alpha',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#0f766e',
+    starting_capital: 1017386,
   },
 ];
 type CsvRow = Record<string, string>;
