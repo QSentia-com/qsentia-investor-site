@@ -207,13 +207,13 @@ const REQUIRED_MODELS: ModelConfig[] = [
     id: CME_CRYPTO_CASH_CARRY_MODEL_ID,
     name: 'CME Crypto Cash Carry Alpha - IBKR',
     description:
-      'Live CME crypto basis/carry strategy using BTC/ETH cash proxies against CME Micro Bitcoin and Micro Ether futures, expiry-aware front-contract selection, IBKR paper execution, and a fresh $1,000,000 paper-account baseline.',
+      'Live CME crypto basis/carry strategy using BTC/ETH cash proxies against CME Micro Bitcoin and Micro Ether futures, expiry-aware front-contract selection, IBKR paper execution, and a fresh $997,408 paper-account baseline.',
     repo: 'FinTechEntrepreneurldz/qsentia-cme-crypto-cash-carry-alpha',
     logs_path: 'logs',
     branch: 'main',
     enabled: true,
     color: '#14b8a6',
-    starting_capital: 1000000,
+    starting_capital: 997408,
   },
 ];
 type CsvRow = Record<string, string>;
