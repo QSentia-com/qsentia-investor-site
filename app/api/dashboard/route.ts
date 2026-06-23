@@ -28,6 +28,7 @@ const GITHUB_READ_TOKEN = ACTIVE_GITHUB_READ_TOKEN?.value || '';
 const GITHUB_READ_TOKEN_ENV_NAME = ACTIVE_GITHUB_READ_TOKEN?.name || null;
 const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
 const ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID = 'qsentia_eth_micro_futures_sentiment_alpha';
+const ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID = 'qsentia_eth_leveraged_etf_sentiment_alpha';
 const BTC_ETF_SENTIMENT_MODEL_ID = 'qsentia_btc_etf_sentiment_alpha';
 const MODEL_C_ETF_MODEL_ID = 'model_c_etf';
 const MODEL_C_PAPER_TRADING_MODEL_ID = 'model_c_paper_trading';
@@ -41,6 +42,7 @@ const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRY
 const ACTIVE_MODEL_IDS = new Set([
   CRYPTO_SENTIMENT_MLP_MODEL_ID,
   ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID,
+  ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   BTC_ETF_SENTIMENT_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
@@ -68,6 +70,7 @@ const RETIRED_MODEL_IDS = new Set([
   'base-model-br-ppo',
 ]);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set<string>([
+  ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   BTC_ETF_SENTIMENT_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
@@ -78,6 +81,7 @@ const ACCOUNT_BASELINE_MODEL_IDS = new Set<string>([
   CME_CRYPTO_FUTURES_BASIS_REVERSION_MODEL_ID,
 ]);
 const RESET_SCOPED_ACCOUNT_MODEL_IDS = new Set<string>([
+  ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   BTC_ETF_SENTIMENT_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
@@ -134,6 +138,18 @@ const REQUIRED_MODELS: ModelConfig[] = [
     branch: 'main',
     enabled: true,
     color: '#627eea',
+  },
+  {
+    id: ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
+    name: 'ETH Leveraged ETF Sentiment Alpha - Alpaca',
+    description:
+      'Live ETH leveraged ETF sentiment strategy using the ETH micro futures CryptoBERT/MLP/PPO artifact stack, ETHU/ETHD Alpaca paper execution, live ETH shock deweighting, target-vol sizing, and a fresh $1,000,000 paper-account baseline.',
+    repo: 'FinTechEntrepreneurldz/qsentia-eth-leveraged-etf-sentiment-alpha',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#8b5cf6',
+    starting_capital: 1000000,
   },
   {
     id: BTC_ETF_SENTIMENT_MODEL_ID,
