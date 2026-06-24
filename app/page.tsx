@@ -141,7 +141,9 @@ const navItems = [
       { href: '/performance', label: 'Performance center', description: 'Returns, benchmarks, and rolling risk.' },
       { href: '/risk-management', label: 'Risk management', description: 'Controls, limits, and execution evidence.' },
       { href: '/data-room', label: 'Investor data room', description: 'Qualification and controlled materials.' },
-      { href: '/firm', label: 'Firm & methodology', description: 'Research philosophy and investment process.' },
+      { href: '/firm', label: 'Firm', description: 'Research philosophy and operating model.' },
+      { href: '/team', label: 'Team', description: 'Leadership, software, and quantitative research.' },
+      { href: '/methodology', label: 'Methodology', description: 'Investment process from inputs to monitoring.' },
     ],
   },
   {

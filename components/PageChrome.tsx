@@ -42,7 +42,13 @@ const navItems = [
         href: "/firm",
         label: "Firm",
         description:
-          "Research philosophy, operating model, and verified team profiles.",
+          "Research philosophy and institutional operating model.",
+      },
+      {
+        href: "/team",
+        label: "Team",
+        description:
+          "Leadership, software development, and quantitative research.",
       },
       {
         href: "/insights",

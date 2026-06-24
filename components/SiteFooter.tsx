@@ -75,6 +75,7 @@ const footerColumns: Array<{ title: string; links: FooterLink[] }> = [
     links: [
       { href: "/", label: "About QSentia" },
       { href: "/firm", label: "Firm" },
+      { href: "/team", label: "Team" },
       { href: "/problem-solution", label: "Problem & solution" },
       { href: "/careers", label: "Careers" },
       { href: "/compliance", label: "Compliance centre" },
