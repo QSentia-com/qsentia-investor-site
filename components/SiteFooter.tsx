@@ -87,6 +87,7 @@ const footerColumns: Array<{ title: string; links: FooterLink[] }> = [
     title: "Disclosures",
     links: [
       { href: "/disclaimer", label: "Risk disclaimer" },
+      { href: "/security", label: "Security" },
       { href: "/privacy-policy", label: "Privacy policy" },
       { href: "/cookie-policy", label: "Cookie policy" },
       { href: "/data-protection", label: "Data protection & DPDP" },
@@ -100,6 +101,7 @@ const footerColumns: Array<{ title: string; links: FooterLink[] }> = [
 
 const legalLinks = [
   { href: "/privacy-policy", label: "Privacy" },
+  { href: "/security", label: "Security" },
   { href: "/terms-and-conditions", label: "Terms" },
   { href: "/disclaimer", label: "Disclaimer" },
   { href: "/compliance", label: "Compliance" },
