@@ -30,6 +30,7 @@ const CRYPTO_SENTIMENT_MLP_MODEL_ID = 'crypto_sentiment_mlp';
 const ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID = 'qsentia_eth_micro_futures_sentiment_alpha';
 const ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID = 'qsentia_eth_leveraged_etf_sentiment_alpha';
 const BTC_ETF_SENTIMENT_MODEL_ID = 'qsentia_btc_etf_sentiment_alpha';
+const BTC_LEVERAGED_ETF_SENTIMENT_MODEL_ID = 'qsentia_btc_leveraged_etf_sentiment_alpha';
 const MODEL_C_ETF_MODEL_ID = 'model_c_etf';
 const MODEL_C_PAPER_TRADING_MODEL_ID = 'model_c_paper_trading';
 const BASE_MODEL_BR_PPO_MODEL_ID = 'base_model_br_ppo';
@@ -44,6 +45,7 @@ const ACTIVE_MODEL_IDS = new Set([
   ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID,
   ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   BTC_ETF_SENTIMENT_MODEL_ID,
+  BTC_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
   BASE_MODEL_BR_PPO_MODEL_ID,
@@ -72,6 +74,7 @@ const RETIRED_MODEL_IDS = new Set([
 const ACCOUNT_BASELINE_MODEL_IDS = new Set<string>([
   ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   BTC_ETF_SENTIMENT_MODEL_ID,
+  BTC_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
   BASE_MODEL_BR_PPO_MODEL_ID,
@@ -83,6 +86,7 @@ const ACCOUNT_BASELINE_MODEL_IDS = new Set<string>([
 const RESET_SCOPED_ACCOUNT_MODEL_IDS = new Set<string>([
   ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   BTC_ETF_SENTIMENT_MODEL_ID,
+  BTC_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
   BASE_MODEL_BR_PPO_MODEL_ID,
@@ -161,6 +165,18 @@ const REQUIRED_MODELS: ModelConfig[] = [
     branch: 'main',
     enabled: true,
     color: '#10b981',
+    starting_capital: 1000000,
+  },
+  {
+    id: BTC_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
+    name: 'BTC Leveraged ETF Sentiment Alpha - Alpaca',
+    description:
+      'Live BTC leveraged ETF sentiment strategy using the BTC sentiment CryptoBERT/MLP/PPO artifact stack, BITU/SBIT Alpaca paper execution, extended-hours limit orders, shock-override risk controls, and a fresh $1,000,000 paper-account baseline.',
+    repo: 'FinTechEntrepreneurldz/qsentia-btc-leveraged-etf-sentiment-alpha',
+    logs_path: 'logs',
+    branch: 'main',
+    enabled: true,
+    color: '#f7931a',
     starting_capital: 1000000,
   },
   {
