@@ -265,7 +265,10 @@ export default function DashboardPage() {
     {
       label: 'Portfolio return',
       value: displayPct(latest.portfolioReturn ?? stats.totalReturn, true),
-      detail: 'From published portfolio observations',
+      detail:
+        latest.portfolioValueSource === 'configured starting net liquidity'
+          ? 'Baseline until first portfolio observation'
+          : 'From published portfolio observations',
       icon: LineChartIcon,
     },
     {

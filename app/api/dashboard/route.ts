@@ -1577,9 +1577,21 @@ export async function GET(request: Request) {
     : healthPaperStatus || paperStatus.paperStatus;
   const values = dailyPortfolio.map((p) => p.value);
   const accountBaseline = startingCapitalForModel(selectedModelConfig);
-  const latestPortfolioValue = values.length ? values[values.length - 1] : null;
-  const firstPortfolioValue = values.length ? accountBaseline ?? values[0] : null;
-  const selectedPerformanceValues = values.length ? performanceValues(values, accountBaseline) : [];
+  const latestPortfolioValue = values.length ? values[values.length - 1] : accountBaseline;
+  const latestPortfolioValueTimestamp = dailyPortfolio.length
+    ? dailyPortfolio[dailyPortfolio.length - 1].timestamp
+    : null;
+  const latestPortfolioValueSource = dailyPortfolio.length
+    ? dailyPortfolio[dailyPortfolio.length - 1].raw?.source || 'broker_account_value'
+    : accountBaseline !== null
+      ? 'configured starting net liquidity'
+      : null;
+  const firstPortfolioValue = accountBaseline ?? (values.length ? values[0] : null);
+  const selectedPerformanceValues = values.length
+    ? performanceValues(values, accountBaseline)
+    : accountBaseline !== null
+      ? [accountBaseline]
+      : [];
   const normalizedValues = normalizeTo100(values);
   const returns = pctChange(values);
   const drawdowns = calculateDrawdown(values);
@@ -1651,7 +1663,12 @@ export async function GET(request: Request) {
       toResetScopedDailyPortfolio(model, modelPortfolio);
     const modelValues = daily.map((p) => p.value);
     const modelBaseline = startingCapitalForModel(model);
-    const modelPerformanceValues = modelValues.length ? performanceValues(modelValues, modelBaseline) : [];
+    const modelLatestValue = modelValues.length ? modelValues[modelValues.length - 1] : modelBaseline;
+    const modelPerformanceValues = modelValues.length
+      ? performanceValues(modelValues, modelBaseline)
+      : modelBaseline !== null
+        ? [modelBaseline]
+        : [];
     const curve = normalizeTo100(modelPerformanceValues);
     const modelStats = shouldSuppressResetScopedStats(model, modelResetTimestamp, modelValues)
       ? computeStats([])
@@ -1669,7 +1686,9 @@ export async function GET(request: Request) {
       color: model.color,
       points: modelPerformanceValues.map((value, i) => ({
         timestamp:
-          modelBaseline !== null && modelValues[0] !== modelBaseline
+          modelValues.length === 0
+            ? ''
+            : modelBaseline !== null && modelValues[0] !== modelBaseline
             ? i === 0
               ? previousDateKey(modelInceptionDate)
               : daily[i - 1]?.timestamp
@@ -1677,7 +1696,7 @@ export async function GET(request: Request) {
         value: curve[i],
       })),
       stats: modelStats,
-      latestValue: modelValues.length ? modelValues[modelValues.length - 1] : null,
+      latestValue: modelLatestValue,
       startingCapital: modelBaseline,
       rowCount:
         rows.length +
@@ -1708,10 +1727,8 @@ export async function GET(request: Request) {
         // SOURCE OF TRUTH: latest broker account observation from portfolio logs or health status.
         // For new account-backed models, fall back to configured starting capital until first log lands.
         portfolioValue: latestPortfolioValue,
-        portfolioValueTimestamp: dailyPortfolio.length ? dailyPortfolio[dailyPortfolio.length - 1].timestamp : null,
-        portfolioValueSource: dailyPortfolio.length
-          ? dailyPortfolio[dailyPortfolio.length - 1].raw?.source || 'broker_account_value'
-          : null,
+        portfolioValueTimestamp: latestPortfolioValueTimestamp,
+        portfolioValueSource: latestPortfolioValueSource,
         firstPortfolioValue,
         startingCapital: accountBaseline,
         portfolioPnl:
