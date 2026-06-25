@@ -30,10 +30,11 @@ import {
   UploadCloud,
 } from 'lucide-react';
 import AuthSessionMenu from '@/components/AuthSessionMenu';
+import AdminAccessWorkspace from '@/components/admin/AdminAccessWorkspace';
 import ApiCommerceWorkspace from '@/components/admin/ApiCommerceWorkspace';
 import ModelOnboardingWorkspace from '@/components/admin/ModelOnboardingWorkspace';
 
-type SectionId = 'overview' | 'onboarding' | 'models' | 'customers' | 'apiAccess' | 'billing' | 'offers' | 'leads' | 'careers' | 'tickets';
+type SectionId = 'overview' | 'access' | 'onboarding' | 'models' | 'customers' | 'apiAccess' | 'billing' | 'offers' | 'leads' | 'careers' | 'tickets';
 type AccessStatus = 'draft' | 'active' | 'private' | 'waitlist' | 'retired';
 type BillingInterval = 'monthly' | 'annual' | 'one_time' | 'custom';
 type Visibility = 'public' | 'hidden';
@@ -198,6 +199,7 @@ const EMPTY_SETTING: AdminSetting = {
 
 const sections: Array<{ id: SectionId; label: string; detail: string; icon: ReactNode }> = [
   { id: 'overview', label: 'Overview', detail: 'Commercial and operating health', icon: <Gauge className="h-4 w-4" /> },
+  { id: 'access', label: 'Access control', detail: 'Admins, invites, and role grants', icon: <LockKeyhole className="h-4 w-4" /> },
   { id: 'onboarding', label: 'Model onboarding', detail: 'Research submission, review, and publication', icon: <UploadCloud className="h-4 w-4" /> },
   { id: 'models', label: 'Models & pricing', detail: 'Catalog, access, and licensing', icon: <CircleDollarSign className="h-4 w-4" /> },
   { id: 'customers', label: 'Customers', detail: 'Accounts, plans, and renewals', icon: <Building2 className="h-4 w-4" /> },
@@ -688,6 +690,8 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
                 <ApiCommerceWorkspace view="summary" models={data.models.map(({ id, name }) => ({ id, name }))} />
               </>
             )}
+
+            {activeSection === 'access' && <AdminAccessWorkspace />}
 
             {data && activeSection === 'models' && (
             <ModelsSection

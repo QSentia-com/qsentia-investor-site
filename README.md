@@ -113,6 +113,7 @@ Example:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SITE_URL=https://qsentia.com
 QSENTIA_ADMIN_EMAILS=admin@example.com
 
 ```
@@ -129,6 +130,20 @@ Grant access with either of these server-controlled methods:
 - Add one or more comma-separated email addresses to `QSENTIA_ADMIN_EMAILS` in the deployment environment.
 
 Do not place an admin role in user-editable profile metadata. The `/admin` page and `/api/admin/*` routes both enforce the server-side role check.
+
+### Supabase admin access
+
+Admin access can be managed from `/admin` after the Supabase admin access table has been created. Super admins can grant other users `super_admin`, `admin`, or `operations_admin`. The app uses Supabase Auth admin invites, so invited users receive Supabase's configured invite email and land back on `/admin` after accepting.
+
+The invite includes metadata fields `qsentia_admin_role` and `invited_by`. These can be referenced in the Supabase Auth invite email template if the email should mention the granted role.
+
+In Supabase Auth settings, add this redirect URL:
+
+```txt
+https://qsentia.com/auth/callback
+```
+
+Use the deployed domain in `NEXT_PUBLIC_SITE_URL` so invite emails point to the correct site.
 
 ---
 

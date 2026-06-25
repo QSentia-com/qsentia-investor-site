@@ -1,7 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { isAdminUser } from "@/lib/adminAuth";
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -57,23 +56,10 @@ export async function proxy(request: NextRequest) {
     );
   }
 
-  if (adminApi && !isAdminUser(user)) {
-    return NextResponse.json(
-      { error: "Admin role required" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
-  }
-
   if (protectedPage && !user) {
     const signin = new URL("/signin", request.url);
     signin.searchParams.set("next", pathname);
     return NextResponse.redirect(signin);
-  }
-
-  if (adminPage && !isAdminUser(user)) {
-    const dashboard = new URL("/dashboard", request.url);
-    dashboard.searchParams.set("error", "admin_access_required");
-    return NextResponse.redirect(dashboard);
   }
 
   // redirect signed in users away from signin page

@@ -1,30 +1,19 @@
 import { createServerClient } from '@supabase/ssr';
 import type { User } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
-
-const ADMIN_ROLES = new Set(['admin', 'super_admin', 'operations_admin']);
-
-function configuredAdminEmails() {
-  return new Set(
-    (process.env.QSENTIA_ADMIN_EMAILS || '')
-      .split(',')
-      .map((email) => email.trim().toLowerCase())
-      .filter(Boolean)
-  );
-}
+import { configuredAdminEmails, resolveAdminRole, roleFromUserMetadata } from '@/lib/adminAccess';
 
 export function isAdminUser(user: User | null | undefined) {
   if (!user) return false;
-  const role = typeof user.app_metadata?.role === 'string' ? user.app_metadata.role.toLowerCase() : '';
   const email = user.email?.toLowerCase() || '';
-  return ADMIN_ROLES.has(role) || configuredAdminEmails().has(email);
+  return Boolean(roleFromUserMetadata(user)) || configuredAdminEmails().has(email);
 }
 
 export function adminRoleLabel(user: User | null | undefined) {
   if (!user) return null;
-  const role = typeof user.app_metadata?.role === 'string' ? user.app_metadata.role : '';
-  if (ADMIN_ROLES.has(role.toLowerCase())) return role;
-  return configuredAdminEmails().has(user.email?.toLowerCase() || '') ? 'admin' : null;
+  const role = roleFromUserMetadata(user);
+  if (role) return role;
+  return configuredAdminEmails().has(user.email?.toLowerCase() || '') ? 'super_admin' : null;
 }
 
 export async function getRequestUser(request: NextRequest) {
@@ -58,7 +47,7 @@ export async function unauthorizedAdminResponse(request: NextRequest) {
     );
   }
 
-  if (!isAdminUser(user)) {
+  if (!(await resolveAdminRole(user))) {
     return NextResponse.json(
       { error: 'Admin role required' },
       { status: 403, headers: { 'Cache-Control': 'no-store' } }
