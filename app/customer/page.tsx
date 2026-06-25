@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@supabase/ssr';
 import CustomerDashboard from '@/components/CustomerDashboard';
-import { PageShell, TechnicalBackdrop } from '@/components/PageChrome';
+import { PageShell } from '@/components/PageChrome';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,10 +13,10 @@ export const metadata: Metadata = {
 };
 
 async function currentCustomer() {
+  const cookieStore = await cookies();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !supabaseAnonKey) return null;
-  const cookieStore = await cookies();
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
@@ -42,12 +42,7 @@ export default async function CustomerPage() {
 
   return (
     <PageShell active="/customer">
-      <section className="relative overflow-hidden border-b border-[#e2e7fb] bg-[#f8faff]">
-        <TechnicalBackdrop />
-        <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
-          <CustomerDashboard user={customer} />
-        </div>
-      </section>
+      <CustomerDashboard user={customer} />
     </PageShell>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { LogOut, UserCircle2 } from 'lucide-react';
+import { LayoutDashboard, LogOut, UserCircle2 } from 'lucide-react';
 import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
 
 type SessionPayload = {
@@ -20,7 +20,6 @@ function providerLabel(provider?: string | null) {
   if (!provider) return 'Email';
   if (provider === 'github') return 'GitHub';
   if (provider === 'google') return 'Google';
-  if (provider === 'temporary') return 'Temporary access';
   return provider.charAt(0).toUpperCase() + provider.slice(1);
 }
 
@@ -94,7 +93,18 @@ export default function AuthSessionMenu({ theme = 'light' }: { theme?: 'light' |
     const provider = session.user.provider || 'email';
 
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          href="/customer"
+          className={`inline-flex h-10 items-center gap-2 rounded-md border px-3 text-sm font-semibold transition ${
+            dark
+              ? 'border-[#24304d] bg-[#10172b] text-[#d7dfed] hover:border-[#b7c5ff] hover:text-white'
+              : 'border-[#cbd5ff] bg-white text-[#172554] hover:border-[#3d52da] hover:bg-[#f8faff]'
+          }`}
+        >
+          <LayoutDashboard className="h-4 w-4" />
+          <span>Settings</span>
+        </Link>
         <Link
           href="/dashboard"
           className={`inline-flex max-w-[260px] items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition ${
@@ -120,6 +130,7 @@ export default function AuthSessionMenu({ theme = 'light' }: { theme?: 'light' |
         </Link>
         <button
           type="button"
+          suppressHydrationWarning
           onClick={signOut}
           className={`inline-flex h-10 w-10 items-center justify-center rounded-md border transition ${
             dark

@@ -1,8 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import useSWR from 'swr';
 import {
+  ArrowRight,
   BarChart3,
   Database,
   LineChart as LineChartIcon,
@@ -297,26 +299,35 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="min-w-0 rounded-[10px] border border-[#e2e7fb] bg-white p-4 shadow-sm">
-              <label className="text-xs font-bold uppercase tracking-wide text-[#647269]" htmlFor="model-select">
-                Selected model
-              </label>
-              <select
-                id="model-select"
-                value={selectedId}
-                onChange={(event) => setSelectedModel(event.target.value)}
-                className="mt-2 w-full min-w-[280px] rounded-md border border-[#cbd5ff] bg-white px-3 py-2 text-sm font-semibold text-[#06130c] outline-none focus:border-[#3d52da]"
+            <div className="flex min-w-0 flex-col gap-3">
+              <Link
+                href="/customer"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#172554] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#2437b5]"
               >
-                {registry.length ? (
-                  registry.map((model) => (
-                    <option key={model.id} value={model.id}>
-                      {model.name || model.id}
-                    </option>
-                  ))
-                ) : (
-                  <option value={selectedId}>{selectedName}</option>
-                )}
-              </select>
+                Open settings
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <div className="rounded-[10px] border border-[#e2e7fb] bg-white p-4 shadow-sm">
+                <label className="text-xs font-bold uppercase tracking-wide text-[#647269]" htmlFor="model-select">
+                  Selected model
+                </label>
+                <select
+                  id="model-select"
+                  value={selectedId}
+                  onChange={(event) => setSelectedModel(event.target.value)}
+                  className="mt-2 w-full min-w-[280px] rounded-md border border-[#cbd5ff] bg-white px-3 py-2 text-sm font-semibold text-[#06130c] outline-none focus:border-[#3d52da]"
+                >
+                  {registry.length ? (
+                    registry.map((model) => (
+                      <option key={model.id} value={model.id}>
+                        {model.name || model.id}
+                      </option>
+                    ))
+                  ) : (
+                    <option value={selectedId}>{selectedName}</option>
+                  )}
+                </select>
+              </div>
             </div>
           </div>
         </div>

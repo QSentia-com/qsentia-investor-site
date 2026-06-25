@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import PageLoadBuffer from "@/components/PageLoadBuffer";
 import PublicChrome from "@/components/PublicChrome";
 
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full bg-white font-sans antialiased flex flex-col" suppressHydrationWarning>
+        <PageLoadBuffer />
         {children}
         <PublicChrome />
       </body>

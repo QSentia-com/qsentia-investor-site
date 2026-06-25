@@ -49,6 +49,7 @@ type DashboardPayload = {
   }>;
   benchmarks?: Array<{ name?: string; ticker?: string; rowCount?: number | null }>;
   debug?: {
+    summaryOnly?: boolean;
     rowCounts?: Record<string, number>;
   };
 };
@@ -188,6 +189,24 @@ function sessionSnapshot() {
 
 function serverSessionSnapshot() {
   return '';
+}
+
+async function fetchJsonWithTimeout<T>(url: string, timeoutMs: number): Promise<T | null> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 }
 
 function formatModelList(models: ModelResponse['models']) {
@@ -397,26 +416,14 @@ export default function AlexAssistant() {
     let cancelled = false;
 
     async function loadContext() {
-      try {
-        const [dashboardResponse, modelsResponse] = await Promise.all([
-          fetch('/api/dashboard', { cache: 'no-store' }),
-          fetch('/api/models', { cache: 'no-store' }),
-        ]);
+      const [dashboardJson, modelsJson] = await Promise.all([
+        fetchJsonWithTimeout<DashboardPayload>('/api/dashboard?summary=1', 2800),
+        fetchJsonWithTimeout<ModelResponse>('/api/models', 2800),
+      ]);
 
-        const [dashboardJson, modelsJson] = await Promise.all([
-          dashboardResponse.ok ? dashboardResponse.json() : null,
-          modelsResponse.ok ? modelsResponse.json() : null,
-        ]);
-
-        if (!cancelled) {
-          setDashboard(dashboardJson);
-          setModels(modelsJson);
-        }
-      } catch {
-        if (!cancelled) {
-          setDashboard(null);
-          setModels(null);
-        }
+      if (!cancelled) {
+        setDashboard(dashboardJson);
+        setModels(modelsJson);
       }
     }
 
@@ -427,6 +434,19 @@ export default function AlexAssistant() {
       window.clearInterval(id);
     };
   }, []);
+
+  useEffect(() => {
+    if (!open || !dashboard?.debug?.summaryOnly) return;
+    let cancelled = false;
+
+    fetchJsonWithTimeout<DashboardPayload>('/api/dashboard', 6500).then((payload) => {
+      if (!cancelled && payload) setDashboard(payload);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dashboard?.debug?.summaryOnly, open]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: 'end' });
@@ -494,6 +514,7 @@ export default function AlexAssistant() {
               </div>
               <button
                 type="button"
+                suppressHydrationWarning
                 onClick={() => setOpen(false)}
                 className="rounded-md p-1 text-[#b8c2e8] hover:bg-white/10 hover:text-white"
                 aria-label="Close Alex assistant"
@@ -553,6 +574,7 @@ export default function AlexAssistant() {
                 <button
                   key={prompt}
                   type="button"
+                  suppressHydrationWarning
                   onClick={() => submitQuestion(prompt)}
                   className="shrink-0 rounded-full border border-[#e2e7fb] bg-[#f8faff] px-2.5 py-1 text-[11px] font-semibold text-[#46554b] hover:border-[#3d52da] hover:text-[#3d52da]"
                 >
@@ -562,6 +584,7 @@ export default function AlexAssistant() {
             </div>
             <form className="flex gap-2" onSubmit={handleSubmit}>
               <input
+                suppressHydrationWarning
                 value={question}
                 onChange={(event) => setQuestion(event.target.value)}
                 placeholder="Ask Alex about QSentia..."
@@ -569,6 +592,7 @@ export default function AlexAssistant() {
               />
               <button
                 type="submit"
+                suppressHydrationWarning
                 className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#172554] text-white hover:bg-[#2437b5]"
                 aria-label="Send message to Alex"
               >
@@ -581,6 +605,7 @@ export default function AlexAssistant() {
 
       <button
         type="button"
+        suppressHydrationWarning
         onClick={() => setOpen((current) => !current)}
         className="ml-auto flex h-11 items-center gap-2.5 rounded-full bg-[#172554] px-4 text-xs font-bold text-white shadow-[0_12px_32px_rgba(23,37,84,0.24)] hover:bg-[#2437b5]"
         aria-expanded={open}

@@ -2,7 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isAdminUser } from "@/lib/adminAuth";
-import { DEV_ADMIN_COOKIE, validDevAdminSession } from "@/lib/devAdminAuth";
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -11,11 +10,10 @@ export async function proxy(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const adminPage = pathname.startsWith("/admin");
   const adminApi = pathname.startsWith("/api/admin");
-  const protectedPage = adminPage || pathname.startsWith("/dashboard") || pathname.startsWith("/customer");
-  const protectedApi = adminApi || pathname.startsWith("/api/customer");
-  const hasDevAdminSession = validDevAdminSession(request.cookies.get(DEV_ADMIN_COOKIE)?.value);
-
-  if ((adminPage || adminApi) && hasDevAdminSession) return response;
+  const customerPage = pathname.startsWith("/dashboard") || pathname.startsWith("/customer");
+  const customerApi = pathname.startsWith("/api/customer");
+  const protectedPage = adminPage || customerPage;
+  const protectedApi = adminApi || customerApi;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     if (protectedApi) {

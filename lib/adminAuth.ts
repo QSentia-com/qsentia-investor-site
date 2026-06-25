@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import type { User } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
-import { DEV_ADMIN_COOKIE, validDevAdminSession } from '@/lib/devAdminAuth';
 
 const ADMIN_ROLES = new Set(['admin', 'super_admin', 'operations_admin']);
 
@@ -50,8 +49,6 @@ export async function getRequestUser(request: NextRequest) {
 }
 
 export async function unauthorizedAdminResponse(request: NextRequest) {
-  if (validDevAdminSession(request.cookies.get(DEV_ADMIN_COOKIE)?.value)) return null;
-
   const user = await getRequestUser(request);
 
   if (!user) {
