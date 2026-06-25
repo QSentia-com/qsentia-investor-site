@@ -95,14 +95,11 @@ const DASHBOARD_LAST_GOOD_CACHE_PATH = path.join(
 const ACTIVE_MARKETPLACE_MODEL_IDS = new Set([
   'crypto_sentiment_mlp',
   'qsentia_eth_micro_futures_sentiment_alpha',
-  'qsentia_btc_etf_sentiment_alpha',
   'model_c_etf',
   'model_c_paper_trading',
   'base_model_br_ppo',
   'br_ppo_crypto_v15',
   'brppo_fixed_income_regime',
-  'qsentia_cme_crypto_cash_carry_alpha',
-  'qsentia_cme_crypto_futures_basis_reversion_alpha',
 ]);
 
 export type ModelDetails = MarketplaceModel & {

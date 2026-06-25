@@ -43,18 +43,18 @@ const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRY
 const ACTIVE_MODEL_IDS = new Set([
   CRYPTO_SENTIMENT_MLP_MODEL_ID,
   ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID,
-  ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
-  BTC_ETF_SENTIMENT_MODEL_ID,
   BTC_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
   BASE_MODEL_BR_PPO_MODEL_ID,
   BR_PPO_CRYPTO_V15_MODEL_ID,
   BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
-  CME_CRYPTO_CASH_CARRY_MODEL_ID,
-  CME_CRYPTO_FUTURES_BASIS_REVERSION_MODEL_ID,
 ]);
 const RETIRED_MODEL_IDS = new Set([
+  ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
+  BTC_ETF_SENTIMENT_MODEL_ID,
+  CME_CRYPTO_CASH_CARRY_MODEL_ID,
+  CME_CRYPTO_FUTURES_BASIS_REVERSION_MODEL_ID,
   BTC_ETH_PERP_BASIS_ALIAS_MODEL_ID,
   'qsentia_btc_spot_sentiment_alpha',
   'qsentia_brppo_macro_rotation_alpaca',
@@ -73,29 +73,21 @@ const RETIRED_MODEL_IDS = new Set([
 ]);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set<string>([
   ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID,
-  ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
-  BTC_ETF_SENTIMENT_MODEL_ID,
   BTC_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
   BASE_MODEL_BR_PPO_MODEL_ID,
   BR_PPO_CRYPTO_V15_MODEL_ID,
   BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
-  CME_CRYPTO_CASH_CARRY_MODEL_ID,
-  CME_CRYPTO_FUTURES_BASIS_REVERSION_MODEL_ID,
 ]);
 const RESET_SCOPED_ACCOUNT_MODEL_IDS = new Set<string>([
   ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID,
-  ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
-  BTC_ETF_SENTIMENT_MODEL_ID,
   BTC_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
   BASE_MODEL_BR_PPO_MODEL_ID,
   BR_PPO_CRYPTO_V15_MODEL_ID,
   BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
-  CME_CRYPTO_CASH_CARRY_MODEL_ID,
-  CME_CRYPTO_FUTURES_BASIS_REVERSION_MODEL_ID,
 ]);
 const DEFAULT_ACCOUNT_STARTING_CAPITAL = Number(
   process.env.QSENTIA_ACCOUNT_STARTING_CAPITAL ||
@@ -145,30 +137,6 @@ const REQUIRED_MODELS: ModelConfig[] = [
     enabled: true,
     color: '#627eea',
     starting_capital: 1017539,
-  },
-  {
-    id: ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
-    name: 'ETH Leveraged ETF Sentiment Alpha - Alpaca',
-    description:
-      'Live ETH leveraged ETF sentiment strategy using the ETH micro futures CryptoBERT/MLP/PPO artifact stack, ETHU/ETHD Alpaca paper execution, live ETH shock deweighting, target-vol sizing, and a fresh $1,000,000 paper-account baseline.',
-    repo: 'FinTechEntrepreneurldz/qsentia-eth-leveraged-etf-sentiment-alpha',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#8b5cf6',
-    starting_capital: 1000000,
-  },
-  {
-    id: BTC_ETF_SENTIMENT_MODEL_ID,
-    name: 'BTC ETF Sentiment Alpha - Alpaca',
-    description:
-      'Live BTC ETF sentiment strategy using the BTC sentiment MLP/PPO artifact stack, BITU/SBIT execution, shock-override risk controls, and Alpaca paper trading. Current portfolio value is sourced from Alpaca account equity.',
-    repo: 'FinTechEntrepreneurldz/qsentia-btc-etf-sentiment-alpha',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#10b981',
-    starting_capital: 1000000,
   },
   {
     id: BTC_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
@@ -241,30 +209,6 @@ const REQUIRED_MODELS: ModelConfig[] = [
     enabled: true,
     color: '#64748b',
     starting_capital: 1000000,
-  },
-  {
-    id: CME_CRYPTO_CASH_CARRY_MODEL_ID,
-    name: 'CME Crypto Cash Carry Alpha - IBKR',
-    description:
-      'Live CME crypto basis/carry strategy using BTC/ETH cash proxies against CME Micro Bitcoin and Micro Ether futures, expiry-aware front-contract selection, IBKR paper execution, and a fresh $997,408 paper-account baseline.',
-    repo: 'FinTechEntrepreneurldz/qsentia-cme-crypto-cash-carry-alpha',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#14b8a6',
-    starting_capital: 997408,
-  },
-  {
-    id: CME_CRYPTO_FUTURES_BASIS_REVERSION_MODEL_ID,
-    name: 'CME Crypto Futures Basis Reversion Alpha - IBKR',
-    description:
-      'Live CME crypto futures-only basis-reversion strategy using BTC/ETH spot-vs-futures basis signals, expiry-aware MBT/MET front-contract selection, rollover protection, IBKR paper execution, and a fresh $1,017,386 paper-account baseline.',
-    repo: 'FinTechEntrepreneurldz/qsentia-cme-crypto-futures-basis-reversion-alpha',
-    logs_path: 'logs',
-    branch: 'main',
-    enabled: true,
-    color: '#0f766e',
-    starting_capital: 1017386,
   },
 ];
 type CsvRow = Record<string, string>;
