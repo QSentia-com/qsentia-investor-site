@@ -72,6 +72,7 @@ const RETIRED_MODEL_IDS = new Set([
   'base-model-br-ppo',
 ]);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set<string>([
+  ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID,
   ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   BTC_ETF_SENTIMENT_MODEL_ID,
   BTC_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
@@ -84,6 +85,7 @@ const ACCOUNT_BASELINE_MODEL_IDS = new Set<string>([
   CME_CRYPTO_FUTURES_BASIS_REVERSION_MODEL_ID,
 ]);
 const RESET_SCOPED_ACCOUNT_MODEL_IDS = new Set<string>([
+  ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID,
   ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   BTC_ETF_SENTIMENT_MODEL_ID,
   BTC_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
@@ -136,12 +138,13 @@ const REQUIRED_MODELS: ModelConfig[] = [
     id: ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID,
     name: 'ETH Micro Futures Sentiment Alpha - IBKR',
     description:
-      'Live ETH micro futures sentiment ensemble using CryptoBERT-scored market text, MLP/PPO signal blending, TBL research diagnostics, and IBKR CME Micro Ether futures paper execution. Current portfolio value is sourced from IBKR NetLiquidation.',
+      'Live ETH micro futures sentiment ensemble using CryptoBERT-scored market text, MLP/PPO signal blending, TBL research diagnostics, IBKR CME Micro Ether futures paper execution, and a fresh $1,017,539 paper-account baseline.',
     repo: 'FinTechEntrepreneurldz/qsentia-eth-micro-futures-sentiment-alpha',
     logs_path: 'logs',
     branch: 'main',
     enabled: true,
     color: '#627eea',
+    starting_capital: 1017539,
   },
   {
     id: ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
