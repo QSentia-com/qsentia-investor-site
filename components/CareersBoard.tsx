@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import useSWR from 'swr';
-import { ArrowRight, BriefcaseBusiness, CheckCircle2, MapPin } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, CheckCircle2, FileText, Link2, MapPin, UploadCloud } from 'lucide-react';
 import { ApiLoadingPanel, EmptyState, SectionCard } from '@/components/PageChrome';
 
 type CareerRole = {
@@ -31,11 +31,14 @@ export default function CareersBoard() {
   const selectedRole = roles.find((role) => role.id === selectedRoleId) || roles[0] || null;
   const [candidateName, setCandidateName] = useState('');
   const [email, setEmail] = useState('');
+  const [linkedInUrl, setLinkedInUrl] = useState('');
+  const [profileConsent, setProfileConsent] = useState(false);
+  const [cvFile, setCvFile] = useState<File | null>(null);
   const [source, setSource] = useState('');
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   async function submitApplication() {
-    if (!selectedRole || !candidateName.trim() || !email.trim()) {
+    if (!selectedRole || !candidateName.trim() || !email.trim() || !linkedInUrl.trim() || !profileConsent) {
       setStatus('error');
       return;
     }
@@ -43,21 +46,27 @@ export default function CareersBoard() {
     setStatus('saving');
 
     try {
+      const formData = new FormData();
+      formData.set('roleId', selectedRole.id);
+      formData.set('candidateName', candidateName);
+      formData.set('email', email);
+      formData.set('linkedInUrl', linkedInUrl);
+      formData.set('profileConsent', String(profileConsent));
+      formData.set('source', source || 'careers-page');
+      if (cvFile) formData.set('cv', cvFile);
+
       const response = await fetch('/api/careers/apply', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          roleId: selectedRole.id,
-          candidateName,
-          email,
-          source,
-        }),
+        body: formData,
       });
 
       if (!response.ok) throw new Error('Application failed');
 
       setCandidateName('');
       setEmail('');
+      setLinkedInUrl('');
+      setProfileConsent(false);
+      setCvFile(null);
       setSource('');
       setStatus('saved');
     } catch {
@@ -160,9 +169,49 @@ export default function CareersBoard() {
               type="text"
               value={source}
               onChange={(event) => setSource(event.target.value)}
-              placeholder="LinkedIn, portfolio, referral, or source"
+              placeholder="Referral, portfolio, or source"
               className="rounded-md border border-[#cbd5ff] bg-white px-4 py-3 text-sm text-[#06130c] outline-none focus:border-[#3d52da]"
             />
+          </label>
+          <label className="grid gap-2">
+            <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[#647269]">
+              <Link2 className="h-3.5 w-3.5" />
+              LinkedIn profile
+            </span>
+            <input
+              type="url"
+              value={linkedInUrl}
+              onChange={(event) => setLinkedInUrl(event.target.value)}
+              placeholder="https://www.linkedin.com/in/..."
+              className="rounded-md border border-[#cbd5ff] bg-white px-4 py-3 text-sm text-[#06130c] outline-none focus:border-[#3d52da]"
+            />
+          </label>
+          <label className="grid gap-2">
+            <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[#647269]">
+              <UploadCloud className="h-3.5 w-3.5" />
+              CV / resume
+            </span>
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              onChange={(event) => setCvFile(event.target.files?.[0] || null)}
+              className="rounded-md border border-[#cbd5ff] bg-white px-4 py-3 text-sm text-[#06130c] file:mr-3 file:rounded-md file:border-0 file:bg-[#eef2ff] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#3d52da] focus:border-[#3d52da]"
+            />
+            {cvFile ? (
+              <span className="flex items-center gap-2 text-xs font-semibold text-[#5a685f]">
+                <FileText className="h-3.5 w-3.5" />
+                {cvFile.name}
+              </span>
+            ) : null}
+          </label>
+          <label className="flex items-start gap-3 rounded-md border border-[#dfe5f2] bg-[#f8faff] p-3 text-xs leading-5 text-[#46554b]">
+            <input
+              type="checkbox"
+              checked={profileConsent}
+              onChange={(event) => setProfileConsent(event.target.checked)}
+              className="mt-1 h-4 w-4 accent-[#3d52da]"
+            />
+            I authorize QSentia to review the LinkedIn profile and CV I provide for recruitment evaluation.
           </label>
           <button
             type="button"
@@ -181,7 +230,7 @@ export default function CareersBoard() {
           )}
           {status === 'error' && (
             <div className="rounded-md border border-[#fecdd3] bg-[#fff1f2] p-3 text-sm font-semibold text-[#be123c]">
-              Please select a role and provide your name and email.
+              Please select a role, provide your name, email, LinkedIn profile, and consent.
             </div>
           )}
         </div>

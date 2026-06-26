@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { unauthorizedAdminResponse } from '@/lib/adminAuth';
 import {
+  deleteCareerRole,
   upsertApplication,
   upsertCareerRole,
   upsertLead,
@@ -93,6 +94,31 @@ export async function PATCH(request: NextRequest) {
     console.error('Error updating back-office record:', error);
     return NextResponse.json(
       { error: 'Failed to update back-office record' },
+      { status: 500, headers: { 'Cache-Control': 'no-store' } }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const authError = await unauthorizedAdminResponse(request);
+  if (authError) return authError;
+
+  try {
+    const body = (await request.json()) as BackOfficePayload;
+
+    if (body.type !== 'careerRole' || typeof body.id !== 'string') {
+      return NextResponse.json(
+        { error: 'Career role id is required' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    await deleteCareerRole(body.id);
+    return NextResponse.json({ ok: true }, { headers: { 'Cache-Control': 'no-store' } });
+  } catch (error) {
+    console.error('Error deleting back-office record:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete back-office record' },
       { status: 500, headers: { 'Cache-Control': 'no-store' } }
     );
   }

@@ -19,6 +19,7 @@ import {
   Inbox,
   KeyRound,
   LineChart,
+  Link2,
   LockKeyhole,
   MessageSquarePlus,
   RefreshCw,
@@ -26,6 +27,7 @@ import {
   Search,
   Settings2,
   SlidersHorizontal,
+  Trash2,
   UsersRound,
   UploadCloud,
 } from 'lucide-react';
@@ -43,6 +45,7 @@ type LeadSource = 'signup' | 'contact' | 'google' | 'manual';
 type TicketPriority = 'low' | 'normal' | 'high' | 'urgent';
 type TicketStatus = 'open' | 'in_progress' | 'waiting' | 'resolved';
 type CareerStatus = 'draft' | 'open' | 'paused' | 'closed';
+type ApplicationStage = 'received' | 'screening' | 'interview' | 'offer' | 'accepted' | 'rejected' | 'hired';
 type OfferStatus = 'draft' | 'active' | 'paused' | 'expired';
 type DiscountType = 'percent' | 'amount' | 'trial_extension' | 'custom';
 
@@ -129,7 +132,12 @@ type Application = {
   roleId: string | null;
   candidateName: string;
   email: string;
-  stage: string;
+  linkedInUrl: string | null;
+  profileConsent: boolean;
+  cvFileName: string | null;
+  cvStoragePath: string | null;
+  cvUrl: string | null;
+  stage: ApplicationStage;
   source: string | null;
   createdAt: string;
   updatedAt: string;
@@ -230,6 +238,7 @@ const leadStages: LeadStage[] = ['new', 'qualified', 'demo', 'proposal', 'won', 
 const ticketStatuses: TicketStatus[] = ['open', 'in_progress', 'waiting', 'resolved'];
 const ticketPriorities: TicketPriority[] = ['low', 'normal', 'high', 'urgent'];
 const careerStatuses: CareerStatus[] = ['draft', 'open', 'paused', 'closed'];
+const applicationStages: ApplicationStage[] = ['received', 'screening', 'interview', 'offer', 'accepted', 'rejected'];
 const offerStatuses: OfferStatus[] = ['draft', 'active', 'paused', 'expired'];
 const discountTypes: DiscountType[] = ['percent', 'amount', 'trial_extension', 'custom'];
 const currencyOptions = ['USD', 'INR', 'EUR', 'GBP', 'SGD', 'AED'];
@@ -479,6 +488,23 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
       throw new Error(body.error || 'Back-office update failed');
+    }
+
+    await mutate();
+  }
+
+  async function deleteBackOfficeRecord(type: 'careerRole', id: string) {
+    const response = await fetch('/api/admin/back-office', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ type, id }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || 'Back-office delete failed');
     }
 
     await mutate();
@@ -767,6 +793,36 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
               applications={data.applications}
               onCreate={createCareerRole}
               onForm={setRoleForm}
+              onRemoveRole={(role) =>
+                deleteBackOfficeRecord('careerRole', role.id)
+                  .then(() => setMessage({ tone: 'success', text: 'Career role removed.' }))
+                  .catch((deleteError) =>
+                    setMessage({
+                      tone: 'error',
+                      text: deleteError instanceof Error ? deleteError.message : 'Unable to remove career role.',
+                    })
+                  )
+              }
+              onUpdateApplication={(application, stage) =>
+                writeBackOfficeRecord('application', { ...application, stage }, application.id)
+                  .then(() => setMessage({ tone: 'success', text: 'Candidate status updated.' }))
+                  .catch((updateError) =>
+                    setMessage({
+                      tone: 'error',
+                      text: updateError instanceof Error ? updateError.message : 'Unable to update candidate.',
+                    })
+                  )
+              }
+              onUpdateRole={(role, status) =>
+                writeBackOfficeRecord('careerRole', { ...role, status }, role.id)
+                  .then(() => setMessage({ tone: 'success', text: 'Career role updated.' }))
+                  .catch((updateError) =>
+                    setMessage({
+                      tone: 'error',
+                      text: updateError instanceof Error ? updateError.message : 'Unable to update career role.',
+                    })
+                  )
+              }
               roleForm={roleForm}
               roles={data.careerRoles}
               saving={saving}
@@ -1460,6 +1516,9 @@ function CareersSection({
   applications,
   onCreate,
   onForm,
+  onRemoveRole,
+  onUpdateApplication,
+  onUpdateRole,
   roleForm,
   roles,
   saving,
@@ -1467,12 +1526,28 @@ function CareersSection({
   applications: Application[];
   onCreate: () => void;
   onForm: (value: { title: string; department: string; location: string; status: CareerStatus; hiringManager: string }) => void;
+  onRemoveRole: (role: CareerRole) => void;
+  onUpdateApplication: (application: Application, stage: ApplicationStage) => void;
+  onUpdateRole: (role: CareerRole, status: CareerStatus) => void;
   roleForm: { title: string; department: string; location: string; status: CareerStatus; hiringManager: string };
   roles: CareerRole[];
   saving: boolean;
 }) {
+  const roleById = new Map(roles.map((role) => [role.id, role]));
+  const applicationCounts = applicationStages.map((stage) => ({
+    stage,
+    count: applications.filter((application) => application.stage === stage).length,
+  }));
+
   return (
-    <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
+    <div className="grid gap-6">
+      <div className="grid gap-3 md:grid-cols-6">
+        {applicationCounts.map((row) => (
+          <MiniStat key={row.stage} label={labelFromToken(row.stage)} value={row.count} />
+        ))}
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
       <WorkspacePanel title="Career role setup" icon={<BriefcaseBusiness className="h-4 w-4" />}>
         <div className="grid gap-4">
           <Field label="Role title">
@@ -1507,7 +1582,7 @@ function CareersSection({
           <LockedField label="Hiring owner" value={roleForm.hiringManager} />
           <button type="button" onClick={onCreate} disabled={saving} className="admin-primary-button justify-center">
             <Save className="h-4 w-4" />
-            Add role
+            Post role
           </button>
         </div>
       </WorkspacePanel>
@@ -1523,7 +1598,25 @@ function CareersSection({
                       <div className="font-semibold text-[#0f172a]">{role.title}</div>
                       <div className="mt-1 text-sm text-[#647269]">{role.department} - {role.location}</div>
                     </div>
-                    <Chip tone={role.status}>{labelFromToken(role.status)}</Chip>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select
+                        value={role.status}
+                        onChange={(event) => onUpdateRole(role, event.target.value as CareerStatus)}
+                        className="admin-compact-select"
+                      >
+                        {careerStatuses.map((status) => (
+                          <option key={status} value={status}>{labelFromToken(status)}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveRole(role)}
+                        className="admin-danger-button h-9 px-3 text-xs"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Remove
+                      </button>
+                    </div>
                   </div>
                   <div className="mt-3 text-xs text-[#647269]">Hiring manager: {compactText(role.hiringManager)}</div>
                 </div>
@@ -1539,9 +1632,60 @@ function CareersSection({
             <div className="grid gap-3">
               {applications.map((application) => (
                 <div key={application.id} className="rounded-md border border-[#dfe5f2] bg-[#f8fafc] p-4">
-                  <div className="font-semibold text-[#0f172a]">{application.candidateName}</div>
-                  <div className="mt-1 text-sm text-[#647269]">{application.email}</div>
-                  <div className="mt-3"><Chip tone={application.stage}>{labelFromToken(application.stage)}</Chip></div>
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-[#0f172a]">{application.candidateName}</div>
+                      <div className="mt-1 text-sm text-[#647269]">{application.email}</div>
+                      <div className="mt-2 text-xs text-[#647269]">
+                        Role: {application.roleId ? roleById.get(application.roleId)?.title || application.roleId : 'General application'}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {application.linkedInUrl ? (
+                          <a
+                            href={application.linkedInUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 rounded-md border border-[#cbd5ff] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#3046c8] hover:bg-[#eef2ff]"
+                          >
+                            <Link2 className="h-3.5 w-3.5" />
+                            LinkedIn
+                          </a>
+                        ) : null}
+                        {application.cvUrl ? (
+                          <a
+                            href={application.cvUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 rounded-md border border-[#cbd5ff] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#3046c8] hover:bg-[#eef2ff]"
+                          >
+                            <ArrowUpRight className="h-3.5 w-3.5" />
+                            {application.cvFileName || 'CV'}
+                          </a>
+                        ) : (
+                          <span className="inline-flex rounded-md border border-[#dfe5f2] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#647269]">
+                            No CV uploaded
+                          </span>
+                        )}
+                        {application.profileConsent ? (
+                          <span className="inline-flex rounded-md border border-[#bbf7d0] bg-[#f0fdf4] px-2.5 py-1.5 text-xs font-semibold text-[#047857]">
+                            Profile review consent
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="grid gap-2 sm:min-w-[180px]">
+                      <select
+                        value={application.stage}
+                        onChange={(event) => onUpdateApplication(application, event.target.value as ApplicationStage)}
+                        className="admin-compact-select h-10"
+                      >
+                        {applicationStages.map((stage) => (
+                          <option key={stage} value={stage}>{labelFromToken(stage)}</option>
+                        ))}
+                      </select>
+                      <Chip tone={application.stage}>{labelFromToken(application.stage)}</Chip>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1549,6 +1693,7 @@ function CareersSection({
             <EmptyPanel title="No applications captured" body="Candidate records will appear here when a careers intake is connected." />
           )}
         </WorkspacePanel>
+      </div>
       </div>
     </div>
   );

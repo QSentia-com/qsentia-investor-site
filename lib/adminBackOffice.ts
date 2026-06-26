@@ -32,6 +32,7 @@ export type ApplicationStage =
   | "screening"
   | "interview"
   | "offer"
+  | "accepted"
   | "rejected"
   | "hired";
 
@@ -82,6 +83,11 @@ export type CareerApplication = {
   roleId: string | null;
   candidateName: string;
   email: string;
+  linkedInUrl: string | null;
+  profileConsent: boolean;
+  cvFileName: string | null;
+  cvStoragePath: string | null;
+  cvUrl: string | null;
   stage: ApplicationStage;
   source: string | null;
   createdAt: string;
@@ -181,6 +187,7 @@ const APPLICATION_STAGES = new Set<ApplicationStage>([
   "screening",
   "interview",
   "offer",
+  "accepted",
   "rejected",
   "hired",
 ]);
@@ -309,6 +316,19 @@ function futureIsoDate(value: unknown): string | null {
   const date = new Date(text);
 
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function optionalUrl(value: unknown, maxLength = 500): string | null {
+  const text = nullableText(value, maxLength);
+  if (!text) return null;
+
+  try {
+    const url = new URL(text);
+    if (!["http:", "https:"].includes(url.protocol)) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
 
 // numeric sanitizer
@@ -526,6 +546,26 @@ function sanitizeApplication(
       existing?.email || "",
     ).toLowerCase(),
 
+    linkedInUrl:
+      optionalUrl(raw.linkedInUrl, 500) ??
+      optionalUrl(raw.linkedinUrl, 500) ??
+      existing?.linkedInUrl ??
+      null,
+
+    profileConsent:
+      typeof raw.profileConsent === "boolean"
+        ? raw.profileConsent
+        : existing?.profileConsent ?? false,
+
+    cvFileName:
+      nullableText(raw.cvFileName, 260) ?? existing?.cvFileName ?? null,
+
+    cvStoragePath:
+      nullableText(raw.cvStoragePath, 600) ?? existing?.cvStoragePath ?? null,
+
+    cvUrl:
+      nullableText(raw.cvUrl, 1000) ?? existing?.cvUrl ?? null,
+
     stage: enumValue(
       raw.stage,
       APPLICATION_STAGES,
@@ -707,6 +747,10 @@ export async function upsertApplication(
     role_id: nextApplication.roleId,
     candidate_name: nextApplication.candidateName,
     email: nextApplication.email,
+    linkedin_url: nextApplication.linkedInUrl,
+    profile_consent: nextApplication.profileConsent,
+    cv_file_name: nextApplication.cvFileName,
+    cv_storage_path: nextApplication.cvStoragePath,
     stage: nextApplication.stage,
     source: nextApplication.source,
     created_at: nextApplication.createdAt,
@@ -725,6 +769,43 @@ export async function upsertApplication(
   }
 
   return data;
+}
+
+export async function uploadCandidateCv(input: {
+  file: File;
+  roleId: string;
+  email: string;
+}) {
+  const supabaseAdmin = await requireSupabaseAdmin();
+  const fileName = input.file.name.trim();
+  const extension = fileName.includes(".") ? fileName.split(".").pop()?.toLowerCase() : "pdf";
+  const safeExtension = extension && /^[a-z0-9]{2,8}$/.test(extension) ? extension : "pdf";
+  const normalizedEmail = input.email.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const path = `${input.roleId}/${Date.now()}-${normalizedEmail || "candidate"}.${safeExtension}`;
+  const buffer = Buffer.from(await input.file.arrayBuffer());
+
+  const { error } = await supabaseAdmin.storage
+    .from("candidate-cvs")
+    .upload(path, buffer, {
+      contentType: input.file.type || "application/octet-stream",
+      upsert: false,
+    });
+
+  if (error) throw error;
+
+  return {
+    cvFileName: fileName,
+    cvStoragePath: path,
+  };
+}
+
+export async function deleteCareerRole(roleId: string) {
+  const role = nullableText(roleId, 160);
+  if (!role) throw new Error("Career role id is required");
+
+  const supabaseAdmin = await requireSupabaseAdmin();
+  const { error } = await supabaseAdmin.from("career_roles").delete().eq("id", role);
+  if (error) throw error;
 }
 
 // ======================================================
@@ -919,6 +1000,104 @@ export async function recordModelView(input: unknown) {
   return data;
 }
 
+function mapLead(row: Record<string, unknown>): BackOfficeLead {
+  return {
+    id: String(row.id),
+    name: String(row.name || ""),
+    email: String(row.email || ""),
+    organization: typeof row.organization === "string" ? row.organization : null,
+    source: row.source as LeadSource,
+    interest: typeof row.interest === "string" ? row.interest : null,
+    modelId: typeof row.model_id === "string" ? row.model_id : null,
+    stage: row.stage as LeadStage,
+    notes: typeof row.notes === "string" ? row.notes : null,
+    createdAt: String(row.created_at || ""),
+    updatedAt: String(row.updated_at || ""),
+  };
+}
+
+function mapTicket(row: Record<string, unknown>): InternalTicket {
+  return {
+    id: String(row.id),
+    title: String(row.title || ""),
+    description: String(row.description || ""),
+    category: String(row.category || "Operations"),
+    priority: row.priority as TicketPriority,
+    status: row.status as TicketStatus,
+    owner: typeof row.owner === "string" ? row.owner : null,
+    createdAt: String(row.created_at || ""),
+    updatedAt: String(row.updated_at || ""),
+  };
+}
+
+function mapCareerRole(row: Record<string, unknown>): CareerRole {
+  return {
+    id: String(row.id),
+    title: String(row.title || ""),
+    department: String(row.department || ""),
+    location: String(row.location || ""),
+    status: row.status as CareerStatus,
+    hiringManager: typeof row.hiring_manager === "string" ? row.hiring_manager : null,
+    notes: typeof row.notes === "string" ? row.notes : null,
+    createdAt: String(row.created_at || ""),
+    updatedAt: String(row.updated_at || ""),
+  };
+}
+
+function mapApplication(row: Record<string, unknown>, cvUrl: string | null): CareerApplication {
+  return {
+    id: String(row.id),
+    roleId: typeof row.role_id === "string" ? row.role_id : null,
+    candidateName: String(row.candidate_name || ""),
+    email: String(row.email || ""),
+    linkedInUrl: typeof row.linkedin_url === "string" ? row.linkedin_url : null,
+    profileConsent: Boolean(row.profile_consent),
+    cvFileName: typeof row.cv_file_name === "string" ? row.cv_file_name : null,
+    cvStoragePath: typeof row.cv_storage_path === "string" ? row.cv_storage_path : null,
+    cvUrl,
+    stage: row.stage as ApplicationStage,
+    source: typeof row.source === "string" ? row.source : null,
+    createdAt: String(row.created_at || ""),
+    updatedAt: String(row.updated_at || ""),
+  };
+}
+
+function mapOffer(row: Record<string, unknown>): CommercialOffer {
+  return {
+    id: String(row.id),
+    code: String(row.code || ""),
+    title: String(row.title || ""),
+    modelId: typeof row.model_id === "string" ? row.model_id : null,
+    status: row.status as OfferStatus,
+    trialDays: Number(row.trial_days || 0),
+    discountType: row.discount_type as DiscountType,
+    discountValue: Number(row.discount_value || 0),
+    maxRedemptions: row.max_redemptions === null || row.max_redemptions === undefined ? null : Number(row.max_redemptions),
+    redemptions: Number(row.redemptions || 0),
+    expiresAt: typeof row.expires_at === "string" ? row.expires_at : null,
+    notes: typeof row.notes === "string" ? row.notes : null,
+    createdAt: String(row.created_at || ""),
+    updatedAt: String(row.updated_at || ""),
+  };
+}
+
+async function signedCvUrl(path: unknown) {
+  const cvPath = nullableText(path, 600);
+  if (!cvPath) return null;
+
+  try {
+    const supabaseAdmin = await requireSupabaseAdmin();
+    const { data, error } = await supabaseAdmin.storage
+      .from("candidate-cvs")
+      .createSignedUrl(cvPath, 60 * 60);
+
+    if (error) return null;
+    return data.signedUrl;
+  } catch {
+    return null;
+  }
+}
+
 // ======================================================
 // READ BACK OFFICE STORE (temporary until we have a real caching layer in place)
 // ======================================================
@@ -953,14 +1132,19 @@ export async function readBackOfficeStore() {
     supabaseAdmin.from("offers").select("*"),
     supabaseAdmin.from("model_activity").select("*"),
   ]);
+  const applicationRows = (applicationsResult.data || []) as Array<Record<string, unknown>>;
+  const applications = await Promise.all(
+    applicationRows.map(async (row) => mapApplication(row, await signedCvUrl(row.cv_storage_path)))
+  );
+
   return {
     version: 1,
     updatedAt: new Date().toISOString(),
-    leads: leadsResult.data || [],
-    tickets: ticketsResult.data || [],
-    careerRoles: rolesResult.data || [],
-    applications: applicationsResult.data || [],
-    offers: offersResult.data || [],
+    leads: ((leadsResult.data || []) as Array<Record<string, unknown>>).map(mapLead),
+    tickets: ((ticketsResult.data || []) as Array<Record<string, unknown>>).map(mapTicket),
+    careerRoles: ((rolesResult.data || []) as Array<Record<string, unknown>>).map(mapCareerRole),
+    applications,
+    offers: ((offersResult.data || []) as Array<Record<string, unknown>>).map(mapOffer),
     modelActivity: Object.fromEntries(
       ((modelActivityResult.data || []) as ModelActivityRow[]).map((entry) => [
         entry.model_id,
