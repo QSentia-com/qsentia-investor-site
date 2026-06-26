@@ -95,6 +95,7 @@ const DASHBOARD_LAST_GOOD_CACHE_PATH = path.join(
 const ACTIVE_MARKETPLACE_MODEL_IDS = new Set([
   'crypto_sentiment_mlp',
   'qsentia_eth_micro_futures_sentiment_alpha',
+  'qsentia_eth_leveraged_etf_sentiment_alpha',
   'model_c_etf',
   'model_c_paper_trading',
   'base_model_br_ppo',

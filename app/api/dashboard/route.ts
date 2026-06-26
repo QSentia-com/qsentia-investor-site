@@ -43,6 +43,7 @@ const DEFAULT_MODEL_ID = process.env.NEXT_PUBLIC_QSENTIA_DEFAULT_MODEL_ID || CRY
 const ACTIVE_MODEL_IDS = new Set([
   CRYPTO_SENTIMENT_MLP_MODEL_ID,
   ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID,
+  ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   BTC_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
@@ -51,7 +52,6 @@ const ACTIVE_MODEL_IDS = new Set([
   BRPPO_FIXED_INCOME_REGIME_MODEL_ID,
 ]);
 const RETIRED_MODEL_IDS = new Set([
-  ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   BTC_ETF_SENTIMENT_MODEL_ID,
   CME_CRYPTO_CASH_CARRY_MODEL_ID,
   CME_CRYPTO_FUTURES_BASIS_REVERSION_MODEL_ID,
@@ -73,6 +73,7 @@ const RETIRED_MODEL_IDS = new Set([
 ]);
 const ACCOUNT_BASELINE_MODEL_IDS = new Set<string>([
   ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID,
+  ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   BTC_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
@@ -82,6 +83,7 @@ const ACCOUNT_BASELINE_MODEL_IDS = new Set<string>([
 ]);
 const RESET_SCOPED_ACCOUNT_MODEL_IDS = new Set<string>([
   ETH_MICRO_FUTURES_SENTIMENT_MODEL_ID,
+  ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   BTC_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
   MODEL_C_ETF_MODEL_ID,
   MODEL_C_PAPER_TRADING_MODEL_ID,
@@ -138,6 +140,18 @@ const REQUIRED_MODELS: ModelConfig[] = [
     color: '#627eea',
     starting_capital: 1017539,
   },
+  {
+  id: ETH_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
+  name: 'ETH Leveraged ETF Sentiment Alpha - Alpaca',
+  description:
+    'Live ETH leveraged ETF sentiment strategy using the ETH sentiment CryptoBERT/MLP/PPO artifact stack, ETHT/ETHD Alpaca paper execution, extended-hours limit orders, shock-override risk controls, and Alpaca paper-account telemetry.',
+  repo: 'FinTechEntrepreneurldz/qsentia-eth-leveraged-etf-sentiment-alpha',
+  logs_path: 'logs',
+  branch: 'main',
+  enabled: true,
+  color: '#10b981',
+  starting_capital: 1000000,
+},
   {
     id: BTC_LEVERAGED_ETF_SENTIMENT_MODEL_ID,
     name: 'BTC Leveraged ETF Sentiment Alpha - Alpaca',
