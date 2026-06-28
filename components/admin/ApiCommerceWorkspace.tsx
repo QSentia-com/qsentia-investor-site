@@ -232,7 +232,7 @@ export default function ApiCommerceWorkspace({
     setCopied(true);
   }
 
-  if (isLoading) {
+  if (isLoading && !data) {
     return (
       <Panel title="Loading API commerce" icon={<RefreshCw className="h-4 w-4 animate-spin" />}>
         <div className="grid gap-3 md:grid-cols-3">

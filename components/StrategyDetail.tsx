@@ -14,7 +14,7 @@ const text = (value: unknown) => value === null || value === undefined || value 
 
 export default function StrategyDetail({ slug }: { slug: string }) {
   const { data, error, isLoading } = useSWR<Detail>(`/api/models/${slug}`, fetcher, { refreshInterval: 60000 });
-  if (isLoading) return <ApiLoadingPanel title="Loading strategy evidence" />;
+  if (isLoading && !data) return <ApiLoadingPanel title="Loading strategy evidence" />;
   if (error || !data?.model) return <EmptyState title="Strategy unavailable" body="The published model card could not be loaded from the live registry." />;
   const model = data.model;
   const decision = model.latest?.decision || {};

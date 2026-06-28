@@ -155,7 +155,7 @@ export default function ModelOnboardingWorkspace() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading && !data) {
     return <Panel title="Loading model pipeline" icon={<RefreshCw className="h-4 w-4 animate-spin" />}><div className="h-32 animate-pulse rounded-md bg-[#f1f4f9]" /></Panel>;
   }
 

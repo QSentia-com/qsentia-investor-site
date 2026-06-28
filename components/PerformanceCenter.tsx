@@ -17,7 +17,7 @@ export default function PerformanceCenter() {
   const [basis, setBasis] = useState<'net' | 'gross'>('net');
   const { data, error, isLoading } = useSWR<Payload>('/api/dashboard', fetcher, { refreshInterval: 60000 });
   const analysis = useMemo(() => calculate(data), [data]);
-  if (isLoading) return <ApiLoadingPanel title="Loading performance evidence" items={['Equity observations', 'Benchmark series', 'Return statistics']} />;
+  if (isLoading && !data) return <ApiLoadingPanel title="Loading performance evidence" items={['Equity observations', 'Benchmark series', 'Return statistics']} />;
   if (error || !data) return <EmptyState title="Performance data unavailable" body="The dashboard API did not return a usable payload." />;
   if (!analysis.points.length) return <EmptyState title="No performance observations" body="Performance will appear after portfolio observations are published by the source model." />;
 

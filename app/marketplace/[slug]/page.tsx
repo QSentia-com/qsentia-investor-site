@@ -94,6 +94,7 @@ export default function ModelDetailPage({ params }: ModelDetailPageProps) {
   const { data, error, isLoading } = useSWR<DetailResponse>(`/api/models/${slug}`, fetcher);
   const [demoLoading, setDemoLoading] = useState(false);
   const [demoResult, setDemoResult] = useState<DemoResult | null>(null);
+  const initialLoading = isLoading && !data;
 
   const model = data?.model;
   const commercialConfigured = Boolean(model?.commercialUpdatedAt);
@@ -128,7 +129,7 @@ export default function ModelDetailPage({ params }: ModelDetailPageProps) {
     }
   };
 
-  if (isLoading) {
+  if (initialLoading) {
     return (
       <PageShell active="/marketplace">
         <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">

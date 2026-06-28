@@ -9,7 +9,7 @@ type Controls={brokerProvider:'none'|'IBKR'|'Alpaca';executionMode:'disabled'|'p
 const fetcher=async(url:string)=>{const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('Unavailable');return r.json()};
 const select='w-full rounded-md border border-[#cfd7eb] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#3d52da]';
 export default function CustomerControlCenter(){const {data,mutate,isLoading}=useSWR<{controls:Controls|null;reason?:string}>('/api/customer/controls',fetcher);
-  if(isLoading)return <SectionCard className="p-6"><div className="text-sm text-[#647269]">Loading deployment controls...</div></SectionCard>;
+  if(isLoading&&!data)return <SectionCard className="p-6"><div className="text-sm text-[#647269]">Loading deployment controls...</div></SectionCard>;
   if(!data?.controls)return <EmptyState title="Control center not provisioned" body={data?.reason||'A commercial customer record is required before deployment controls can be saved.'}/>;
   return <ControlForm key={data.controls.updatedAt} initial={data.controls} onSaved={()=>mutate()}/>;
 }

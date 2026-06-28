@@ -6,7 +6,7 @@ import TeamDirectory from "@/components/TeamDirectory";
 export const metadata: Metadata = {
   title: "Team | QSentia",
   description:
-    "QSentia leadership, software development, and quantitative research team directory.",
+    "The QSentia team building investor telemetry, model research workflows, and API infrastructure.",
 };
 
 export default function TeamPage() {
@@ -14,8 +14,8 @@ export default function TeamPage() {
     <PageShell active="/team">
       <PageIntro
         eyebrow="Team"
-        title="The people building QSentia"
-        body="QSentia's public team directory lists approved roles for leadership, software development, and quantitative research. Photos and biographies will be added after publication review."
+        title="Meet the QSentia team"
+        body="Meet the people building QSentia's investor telemetry, model research workflows, customer dashboards, and API infrastructure for systematic investment operations."
       />
       <TeamDirectory />
     </PageShell>

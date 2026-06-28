@@ -76,6 +76,7 @@ export default function MarketplacePage() {
   const { data, error, isLoading } = useSWR<ModelsResponse>('/api/models', fetcher);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const initialLoading = isLoading && !data;
 
   const models = useMemo(() => data?.models || [], [data?.models]);
   const categories = useMemo(() => ['all', ...Array.from(new Set(models.map((model) => model.category))).sort()], [models]);
@@ -143,7 +144,7 @@ export default function MarketplacePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-        {isLoading && (
+        {initialLoading && (
           <ApiLoadingPanel
             title="Loading model marketplace"
             body="Preparing registered strategies, source metrics, categories, and model access details."
@@ -158,14 +159,14 @@ export default function MarketplacePage() {
           />
         )}
 
-        {!isLoading && !error && filteredModels.length === 0 && (
+        {!initialLoading && !error && filteredModels.length === 0 && (
           <EmptyState
             title="No matching models"
             body="Try a broader search or choose a different category."
           />
         )}
 
-        {!isLoading && !error && filteredModels.length > 0 && (
+        {!initialLoading && !error && filteredModels.length > 0 && (
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {filteredModels.map((model) => (
               <Link key={model.id} href={`/marketplace/${model.slug}`} className="group">

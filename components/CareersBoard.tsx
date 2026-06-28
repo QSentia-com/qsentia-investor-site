@@ -74,7 +74,7 @@ export default function CareersBoard() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading && !data) {
     return (
       <ApiLoadingPanel
         title="Loading open roles"

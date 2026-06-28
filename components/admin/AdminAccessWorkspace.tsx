@@ -138,7 +138,7 @@ export default function AdminAccessWorkspace() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading && !data) {
     return (
       <AccessPanel title="Loading access control" icon={<RefreshCw className="h-4 w-4 animate-spin" />}>
         <div className="grid gap-3 md:grid-cols-3">

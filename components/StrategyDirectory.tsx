@@ -21,7 +21,7 @@ function metric(value: string) { return value === 'Pending' ? 'Not reported' : v
 
 export default function StrategyDirectory() {
   const { data, error, isLoading } = useSWR<{ models?: Model[] }>('/api/models', fetcher, { refreshInterval: 60000 });
-  if (isLoading) return <ApiLoadingPanel title="Loading strategy registry" items={['Model cards', 'Performance fields', 'Operating status']} />;
+  if (isLoading && !data) return <ApiLoadingPanel title="Loading strategy registry" items={['Model cards', 'Performance fields', 'Operating status']} />;
   if (error) return <EmptyState title="Strategy registry unavailable" body="The live models endpoint could not be reached. No replacement figures are shown." />;
   const models = data?.models || [];
   if (!models.length) return <EmptyState title="No published strategies" body="Approved models will appear here after publication through the model registry." />;

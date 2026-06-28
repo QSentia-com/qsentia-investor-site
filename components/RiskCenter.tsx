@@ -10,7 +10,7 @@ const report = (value: unknown, suffix='') => value === null || value === undefi
 
 export default function RiskCenter() {
   const { data,error,isLoading } = useSWR<Payload>('/api/dashboard',fetcher,{refreshInterval:60000});
-  if(isLoading) return <ApiLoadingPanel title="Loading risk controls" items={['Signal gates','Position state','Execution evidence']}/>;
+  if(isLoading && !data) return <ApiLoadingPanel title="Loading risk controls" items={['Signal gates','Position state','Execution evidence']}/>;
   if(error || !data) return <EmptyState title="Risk data unavailable" body="The live dashboard source could not be reached."/>;
   const d=data.latest?.decision || {};
   const controls = [
