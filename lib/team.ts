@@ -204,7 +204,7 @@ export const teamMembers: TeamMember[] = [
     ],
     focus:
       "Platform implementation, product support, and engineering delivery.",
-    imageSrc: "/team/Ashutosh_pathak.png",
+    imageSrc: "/team/Ashutosh_pathak1.png",
     imageAlt: "Ashutosh Pathak",
     imagePosition: "center 24%",
   },
