@@ -28,7 +28,7 @@ export const teamMembers: TeamMember[] = [
     biography: [
       "Lucas Zarzeczny is the CEO of QSentia. He leads the company's strategy across investor relations, product direction, research prioritization, and institutional partnerships.",
       "Lucas is pursuing a Doctorate of Engineering in Machine Learning and Artificial Intelligence at The George Washington University. His academic foundation also includes a Master's in Applied Data Science from Syracuse University and dual Bachelor's degrees in Energy, Business, Finance, and Economics from Penn State.",
-      "His professional background spans leadership and strategic AI and data science initiatives across Salesforce, BNY, JPMorgan Chase, Amazon, and T-Mobile.",
+      "His professional background spans leadership and strategic AI and data science initiatives across financial services, cloud infrastructure, consumer technology, and telecommunications organizations.",
       "At QSentia, Lucas focuses on building an investment infrastructure company that can serve investor diligence workflows and platform customers who need reliable model access, operational controls, and API-ready research systems.",
     ],
     qualifications:
