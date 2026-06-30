@@ -24,14 +24,17 @@ export const teamMembers: TeamMember[] = [
     role: "CEO",
     initials: "LZ",
     summary:
-      "Lucas leads QSentia's company strategy across investor relations, product direction, research prioritization, and institutional partnerships.",
+      "Lucas leads QSentia's company strategy across investor relations, product direction, AI research priorities, and institutional partnerships.",
     biography: [
       "Lucas Zarzeczny is the CEO of QSentia. He leads the company's strategy across investor relations, product direction, research prioritization, and institutional partnerships.",
-      "Lucas oversees the firm's operating direction and keeps the team aligned around source-backed model telemetry, disciplined risk controls, and a clear commercial path for systematic investment infrastructure.",
-      "His work focuses on building a company that can serve both investor diligence workflows and platform customers who need reliable model access, operational controls, and API-ready investment infrastructure.",
+      "Lucas is pursuing a Doctorate of Engineering in Machine Learning and Artificial Intelligence at The George Washington University. His academic foundation also includes a Master's in Applied Data Science from Syracuse University and dual Bachelor's degrees in Energy, Business, Finance, and Economics from Penn State.",
+      "His professional background spans leadership and strategic AI and data science initiatives across Salesforce, BNY, JPMorgan Chase, Amazon, and T-Mobile.",
+      "At QSentia, Lucas focuses on building an investment infrastructure company that can serve investor diligence workflows and platform customers who need reliable model access, operational controls, and API-ready research systems.",
     ],
+    qualifications:
+      "Doctorate of Engineering in Machine Learning and Artificial Intelligence, The George Washington University. M.S. Applied Data Science, Syracuse University. Dual Bachelor's degrees in Energy, Business, Finance, and Economics, Penn State.",
     focus:
-      "Firm strategy, investor relations, product direction, model commercialization, and operating governance.",
+      "Firm strategy, investor relations, AI and data science strategy, product direction, model commercialization, and operating governance.",
     imageSrc: "/team/lucas-zarzeczny-v2.png",
     imageAlt: "Lucas Zarzeczny",
     imagePosition: "center 20%",
@@ -80,21 +83,6 @@ export const teamMembers: TeamMember[] = [
     imagePosition: "center 42%",
   },
   {
-    slug: "samhitha-mantena",
-    fullName: "Samhitha Mantena",
-    designation: "Quantitative Research",
-    role: "Quantitative Research",
-    initials: "SM",
-    summary:
-      "Samhitha supports model evaluation, signal review, research documentation, and evidence workflows for QSentia's research process.",
-    biography: [
-      "Samhitha Mantena supports QSentia's quantitative research work across model evaluation, signal review, and research documentation.",
-      "Her work helps translate analytical outputs into reviewable evidence for model and strategy workflows, keeping research artifacts clear for investor-facing and platform-facing review.",
-    ],
-    focus:
-      "Model research support, research documentation, and quantitative workflow review.",
-  },
-  {
     slug: "janet-chen",
     fullName: "Janet Chen",
     designation: "Quantitative Research",
@@ -110,22 +98,41 @@ export const teamMembers: TeamMember[] = [
       "Analytical review, research coordination, and model evidence workflows.",
   },
   {
-    slug: "debashish-mishra",
-    fullName: "Debashish Mishra",
+    slug: "debasish-mishra",
+    fullName: "Debasish Mishra",
     designation: "Software Development",
     role: "Software Development",
     initials: "DM",
     summary:
-      "Debashish contributes to application implementation, platform workflow support, and product delivery across QSentia surfaces.",
+      "Debasish works across full-stack development, systems programming, and cybersecurity-oriented platform implementation.",
     biography: [
-      "Debashish Mishra contributes to QSentia's software development work across application implementation, platform workflow support, and product delivery.",
-      "His work supports internal and customer-facing surfaces, helping the product team turn business requirements into reliable application workflows.",
+      "Debasish Mishra is a full-stack developer and cybersecurity enthusiast with a Mathematics background and ongoing study in Data Science and Applications at IIT Madras.",
+      "His expertise spans full-stack web development, systems programming, and network security, with hands-on experience across offensive and defensive security tooling.",
+      "At QSentia, Debasish contributes to software development work across application implementation, platform workflow support, and product delivery for internal and customer-facing surfaces.",
+    ],
+    qualifications:
+      "Bachelor's in Mathematics (Hons), Utkal University. Bachelor's in Data Science and Applications, IIT Madras (qualifier phase).",
+    focus:
+      "Full-stack web development, systems programming, network security, cybersecurity tooling, and platform implementation.",
+    emailAddress: "devmytho@gmail.com",
+    imageSrc: "/team/debashish-mishra-v2.png",
+    imageAlt: "Debasish Mishra",
+    imagePosition: "center 24%",
+  },
+  {
+    slug: "nidhish-gautam",
+    fullName: "Nidhish Gautam",
+    designation: "Software Development",
+    role: "Software Development",
+    initials: "NG",
+    summary:
+      "Nidhish supports product implementation, system interfaces, and customer workflow readiness for QSentia.",
+    biography: [
+      "Nidhish Gautam contributes to QSentia's software development function across product implementation, system interfaces, and customer workflow readiness.",
+      "His work supports the software layer needed for model access, operational dashboards, and platform delivery.",
     ],
     focus:
-      "Application development, platform workflows, and product implementation.",
-    imageSrc: "/team/debashish-mishra-v2.png",
-    imageAlt: "Debashish Mishra",
-    imagePosition: "center 24%",
+      "Product implementation, system interfaces, and software workflow delivery.",
   },
   {
     slug: "shlok-chauhan",
@@ -146,34 +153,26 @@ export const teamMembers: TeamMember[] = [
     imagePosition: "center 30%",
   },
   {
-    slug: "nidhish-gautam",
-    fullName: "Nidhish Gautam",
-    designation: "Software Development",
-    role: "Software Development",
-    initials: "NG",
-    summary:
-      "Nidhish supports product implementation, system interfaces, and customer workflow readiness for QSentia.",
-    biography: [
-      "Nidhish Gautam contributes to QSentia's software development function across product implementation, system interfaces, and customer workflow readiness.",
-      "His work supports the software layer needed for model access, operational dashboards, and platform delivery.",
-    ],
-    focus:
-      "Product implementation, system interfaces, and software workflow delivery.",
-  },
-  {
     slug: "priyansh-kumar",
     fullName: "Priyansh Kumar",
     designation: "Software Development",
     role: "Software Development",
     initials: "PK",
     summary:
-      "Priyansh contributes to application delivery, interface implementation, and platform support.",
+      "Priyansh focuses on frontend architecture, cross-platform application development, performance optimization, and product-focused software delivery.",
     biography: [
-      "Priyansh Kumar contributes to QSentia's software development work across application delivery, interface implementation, and platform support.",
-      "His work helps improve the product surfaces that customers and internal operators use to manage model access, workflows, and account operations.",
+      "Priyansh Kumar is a software developer with strong interests in cross-platform application development, algorithmic problem-solving, and business strategy.",
+      "He focuses on frontend architecture and continuous performance optimization for mobile and web platforms, helping improve the product surfaces that customers and internal operators use to manage model access, workflows, and account operations.",
+      "Priyansh has a strong technical foundation in competitive programming and product development. He has built and deployed complete cross-platform applications for iOS and Android, and he actively participates in regional engineering competitions, hackathons, problem-solving contests, and analysis competitions.",
     ],
+    qualifications:
+      "Bachelor of Technology, National Institute of Technology Jalandhar. Major: Information Technology.",
     focus:
-      "Application delivery, interface implementation, and platform support.",
+      "Software engineering, Flutter, frontend development, C++, NodeJS, Python, competitive programming, application architecture, and business strategy analysis.",
+    emailAddress: "pkd09052006@gmail.com",
+    imageSrc: "/team/priyansh-kumar.png",
+    imageAlt: "Priyansh Kumar",
+    imagePosition: "center 24%",
   },
   {
     slug: "deepanshu-yadav",

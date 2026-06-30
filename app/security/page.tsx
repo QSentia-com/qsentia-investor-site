@@ -87,16 +87,16 @@ const authControls: ControlRow[] = [
 
 const dataControls: ControlRow[] = [
   {
-    control: "Data residency",
+    control: "Data residency and vendor location inventory",
     detail:
-      "QSentia's Supabase project is hosted in the AWS ap-south-1 (Mumbai) region. All user and platform data resides within India.",
-    status: "implemented",
+      "QSentia documents where production systems, authentication, hosting, support, and analytics providers process customer data. Customer commitments should match the selected Supabase, Vercel, and vendor regions.",
+    status: "in-progress",
   },
   {
-    control: "DPDP Act (India) baseline",
+    control: "GDPR and US privacy baseline",
     detail:
-      "Data handling practices are aligned with India's Digital Personal Data Protection Act 2023. See the DPDP readiness page for detail.",
-    status: "implemented",
+      "Data handling practices are mapped to GDPR principles, US privacy/security expectations, state privacy rights, vendor processing controls, and documented customer notices.",
+    status: "in-progress",
   },
   {
     control: "Data retention policy",
@@ -148,8 +148,8 @@ const operationalControls: ControlRow[] = [
   {
     control: "Incident response policy",
     detail:
-      "A documented incident response process is in place. Affected users are notified within 72 hours of a confirmed breach, consistent with DPDP obligations.",
-    status: "implemented",
+      "A documented incident response process is in place. Notification duties are assessed against GDPR, US state breach-notification rules, customer contracts, and applicable sector obligations.",
+    status: "in-progress",
   },
   {
     control: "Audit log exports",

@@ -1,27 +1,23 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import useSWR from 'swr';
 import type { ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   Activity,
   AlertCircle,
   ArrowRight,
   BarChart3,
   CheckCircle2,
-  ChevronDown,
   Clock3,
   Code2,
   Database,
   ExternalLink,
   LineChart,
-  Menu,
   ShieldCheck,
-  X,
 } from 'lucide-react';
-import { TechnicalBackdrop } from '@/components/PageChrome';
+import { SiteHeader, TechnicalBackdrop } from '@/components/PageChrome';
 import { fmtDollar, fmtNum, fmtPct } from '@/lib/metrics';
 
 type PerfStats = {
@@ -132,50 +128,6 @@ const fetcher = async (url: string) => {
   return response.json();
 };
 
-const navItems = [
-  {
-    href: '/strategies',
-    label: 'Investors',
-    children: [
-      { href: '/strategies', label: 'Investment strategies', description: 'Published strategy objectives and evidence.' },
-      { href: '/performance', label: 'Performance center', description: 'Returns, benchmarks, and rolling risk.' },
-      { href: '/risk-management', label: 'Risk management', description: 'Controls, limits, and execution evidence.' },
-      { href: '/data-room', label: 'Investor data room', description: 'Qualification and controlled materials.' },
-      { href: '/firm', label: 'Firm', description: 'Research philosophy and operating model.' },
-      { href: '/team', label: 'Team', description: 'Leadership, software, and quantitative research.' },
-      { href: '/methodology', label: 'Methodology', description: 'Investment process from inputs to monitoring.' },
-    ],
-  },
-  {
-    href: '/platform',
-    label: 'Platform',
-    children: [
-      { href: '/platform', label: 'Platform overview', description: 'Telemetry, validation, and audit trails.' },
-      { href: '/marketplace', label: 'Model marketplace', description: 'Published models and commercial access.' },
-      { href: '/pricing', label: 'Plans', description: 'Packages for research through enterprise.' },
-      { href: '/demo', label: 'Interactive demo', description: 'Clearly labeled synthetic sandbox.' },
-      { href: '/integrations', label: 'Integrations', description: 'Current and planned connectivity.' },
-      { href: '/developers', label: 'Developer center', description: 'API contracts, keys, and OpenAPI.' },
-    ],
-  },
-  {
-    href: '/research', label: 'Research',
-    children: [
-      {
-        href: '/research',
-        label: 'Research terminal',
-        description: 'Live fund tickers, filters, and normalized curves.',
-      },
-      {
-        href: '/mleq',
-        label: 'MLEQ engine',
-        description: 'Machine Learning Equity Quant system overview.',
-      },
-    ],
-  },
-  { href: '/contact', label: 'Contact' },
-];
-
 function cleanText(value: unknown) {
   return String(value ?? '')
     .replace(/[\u2013\u2014]/g, '-')
@@ -267,7 +219,6 @@ function statusClass(tone: 'good' | 'warn' | 'neutral' | 'muted' | 'bad') {
 }
 
 export default function HomePage() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const { data, error, isLoading } = useSWR<DashboardPayload>('/api/dashboard', fetcher, {
     refreshInterval: 60000,
   });
@@ -359,129 +310,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-white text-[#0a0f0c]">
-      <header className="sticky top-0 z-50 border-b border-[#e2e7fb] bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-3" aria-label="Qsentia home">
-            <Image
-              src="/logo/qsentia-primary.png"
-              alt="Qsentia"
-              width={138}
-              height={34}
-              priority
-              className="h-7 w-auto"
-            />
-          </Link>
-
-          <nav className="hidden items-center gap-1 md:flex" aria-label="Primary navigation">
-            {navItems.map((item) => {
-              if (item.children) {
-                return (
-                  <div key={item.href} className="group relative">
-                    <Link
-                      href={item.href}
-                      className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-semibold text-[#26352c] transition hover:bg-[#eef2ff]"
-                      aria-haspopup="menu"
-                    >
-                      {item.label}
-                      <ChevronDown className="h-3.5 w-3.5" />
-                    </Link>
-                    <div className="pointer-events-none absolute left-0 top-full z-50 w-[310px] translate-y-2 pt-2 opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
-                      <div className="rounded-[10px] border border-[#e2e7fb] bg-white p-2 shadow-[0_18px_50px_rgba(15,31,22,0.14)]" role="menu">
-                        {item.children.map((child) => (
-                          <Link
-                            key={child.href}
-                            href={child.href}
-                            className="block rounded-md px-3 py-3 transition hover:bg-[#f8faff]"
-                            role="menuitem"
-                          >
-                            <span className="block text-sm font-semibold text-[#06130c]">{child.label}</span>
-                            <span className="mt-1 block text-xs leading-5 text-[#647269]">{child.description}</span>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="rounded-md px-3 py-2 text-sm font-semibold text-[#26352c] transition hover:bg-[#eef2ff]"
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="hidden items-center gap-2 md:flex">
-            <Link
-              href="/signin"
-              className="rounded-md px-3 py-2 text-sm font-semibold text-[#26352c] transition hover:bg-[#eef2ff]"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 rounded-md bg-[#172554] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2437b5]"
-            >
-              Dashboard
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <button
-            type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#e2e7fb] text-[#26352c] md:hidden"
-            onClick={() => setMenuOpen((open) => !open)}
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={menuOpen}
-          >
-            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
-
-        {menuOpen && (
-          <div className="border-t border-[#e2e7fb] bg-white px-4 py-3 md:hidden">
-            <nav className="grid gap-1" aria-label="Mobile navigation">
-              {navItems.map((item) => (
-                <div key={item.href}>
-                  <Link
-                    href={item.href}
-                    className="block rounded-md px-3 py-2 text-sm font-semibold text-[#26352c] hover:bg-[#eef2ff]"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                  {item.children && (
-                    <div className="ml-3 grid gap-1 border-l border-[#e2e7fb] pl-3">
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          className="rounded-md px-3 py-2 text-sm font-semibold text-[#46554b] hover:bg-[#eef2ff]"
-                          onClick={() => setMenuOpen(false)}
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-              <Link
-                href="/signin"
-                className="rounded-md px-3 py-2 text-sm font-semibold text-[#26352c] hover:bg-[#eef2ff]"
-                onClick={() => setMenuOpen(false)}
-              >
-                Sign in
-              </Link>
-            </nav>
-          </div>
-        )}
-      </header>
+      <SiteHeader />
 
       <section className="relative overflow-hidden border-b border-[#e2e7fb] bg-[#f8faff]">
         <TechnicalBackdrop />
