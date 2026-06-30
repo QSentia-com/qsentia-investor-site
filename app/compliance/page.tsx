@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   Cookie,
   FileCheck2,
-  LockKeyhole,
   Scale,
   ShieldCheck,
 } from "lucide-react";
@@ -32,8 +31,8 @@ const policies = [
   },
   {
     href: "/data-protection",
-    title: "Data Protection & DPDP",
-    body: "Privacy governance, requests, consent, processors, breaches, and readiness.",
+    title: "GDPR & US Privacy",
+    body: "Privacy governance, rights requests, consent, processors, breaches, and readiness.",
     icon: FileCheck2,
   },
   {
@@ -57,9 +56,9 @@ const programme = [
     "Necessary-by-default consent manager with optional categories off until chosen.",
   ],
   [
-    "DPDP readiness",
+    "GDPR and US privacy readiness",
     "Baseline established",
-    "Notice, rights, grievance, retention, processor, child-data, and breach controls documented.",
+    "Notice, rights request, retention, processor, sensitive-data, and breach controls documented.",
   ],
   [
     "ISO control mapping",

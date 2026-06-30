@@ -55,9 +55,12 @@ export default function TeamDirectory() {
 
 function TeamProfileCard({ member }: { member: TeamMember }) {
   const style = roleStyles[member.role];
+  const cardPlacement = member.slug === "ashutosh" ? "xl:col-start-2" : "";
 
   return (
-    <article className="flex h-full min-h-[460px] flex-col overflow-hidden rounded-[12px] border border-[#e2e7fb] bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[#b8c5ff] hover:shadow-[0_18px_48px_rgba(23,37,84,0.12)]">
+    <article
+      className={`flex h-full min-h-[460px] flex-col overflow-hidden rounded-[12px] border border-[#e2e7fb] bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[#b8c5ff] hover:shadow-[0_18px_48px_rgba(23,37,84,0.12)] ${cardPlacement}`}
+    >
       <div className="relative flex h-64 items-center justify-center overflow-hidden bg-[#f8faff]">
         {member.imageSrc ? (
           <Image

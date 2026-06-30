@@ -111,6 +111,7 @@ const navItems = [
       },
     ],
   },
+  { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ];
 
@@ -132,7 +133,7 @@ export function SiteHeader({
           : "border-[#e2e7fb] bg-white/95"
       }`}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link
           href="/"
           className="flex items-center gap-3"
@@ -148,16 +149,15 @@ export function SiteHeader({
           />
         </Link>
 
-        <nav
-          className="hidden items-center gap-1 md:flex"
-          aria-label="Primary navigation"
-        >
+        <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
           {navItems.map((item) => {
             const isActive =
               active === item.href ||
               item.children?.some((child) => child.href === active);
 
             if (item.children) {
+              const isWideMenu = item.children.length > 4;
+
               return (
                 <div key={item.href} className="group relative">
                   <Link
@@ -176,7 +176,11 @@ export function SiteHeader({
                     {item.label}
                     <ChevronDown className="h-3.5 w-3.5" />
                   </Link>
-                  <div className="pointer-events-none absolute left-0 top-full z-50 w-[330px] translate-y-2 pt-2 opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
+                  <div
+                    className={`pointer-events-none absolute left-0 top-full z-50 translate-y-2 pt-2 opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 ${
+                      isWideMenu ? "w-[560px]" : "w-[340px]"
+                    }`}
+                  >
                     <div
                       className={`rounded-[10px] border p-2 shadow-[0_18px_50px_rgba(15,31,22,0.14)] ${
                         dark
@@ -185,33 +189,35 @@ export function SiteHeader({
                       }`}
                       role="menu"
                     >
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          className={`block rounded-md px-3 py-3 transition ${
-                            active === child.href
-                              ? dark
-                                ? "bg-[#10172b]"
-                                : "bg-[#eef2ff]"
-                              : dark
-                                ? "hover:bg-[#10172b]"
-                                : "hover:bg-[#f8faff]"
-                          }`}
-                          role="menuitem"
-                        >
-                          <span
-                            className={`block text-sm font-semibold ${dark ? "text-white" : "text-[#06130c]"}`}
+                      <div className={`grid ${isWideMenu ? "grid-cols-2 gap-1" : "gap-1"}`}>
+                        {item.children.map((child) => (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            className={`block rounded-md px-3 py-3 transition ${
+                              active === child.href
+                                ? dark
+                                  ? "bg-[#10172b]"
+                                  : "bg-[#eef2ff]"
+                                : dark
+                                  ? "hover:bg-[#10172b]"
+                                  : "hover:bg-[#f8faff]"
+                            }`}
+                            role="menuitem"
                           >
-                            {child.label}
-                          </span>
-                          <span
-                            className={`mt-1 block text-xs leading-5 ${dark ? "text-[#8d98b5]" : "text-[#647269]"}`}
-                          >
-                            {child.description}
-                          </span>
-                        </Link>
-                      ))}
+                            <span
+                              className={`block text-sm font-semibold ${dark ? "text-white" : "text-[#06130c]"}`}
+                            >
+                              {child.label}
+                            </span>
+                            <span
+                              className={`mt-1 block text-xs leading-5 ${dark ? "text-[#8d98b5]" : "text-[#647269]"}`}
+                            >
+                              {child.description}
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -238,7 +244,7 @@ export function SiteHeader({
           })}
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 lg:flex">
           <AuthSessionMenu theme={theme} />
         </div>
         <button
@@ -246,14 +252,14 @@ export function SiteHeader({
           aria-label={menuOpen ? "Close navigation" : "Open navigation"}
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((value) => !value)}
-          className={`flex h-10 w-10 items-center justify-center rounded-md border md:hidden ${dark ? "border-[#24304d] text-white" : "border-[#dbe3ff] text-[#172554]"}`}
+          className={`flex h-10 w-10 items-center justify-center rounded-md border lg:hidden ${dark ? "border-[#24304d] text-white" : "border-[#dbe3ff] text-[#172554]"}`}
         >
           {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
       {menuOpen ? (
         <nav
-          className={`border-t px-4 py-4 md:hidden ${dark ? "border-[#18233f] bg-[#050714]" : "border-[#e2e7fb] bg-white"}`}
+          className={`border-t px-4 py-4 lg:hidden ${dark ? "border-[#18233f] bg-[#050714]" : "border-[#e2e7fb] bg-white"}`}
           aria-label="Mobile navigation"
         >
           <div className="mx-auto grid max-w-7xl gap-1">
@@ -284,7 +290,7 @@ export function SiteHeader({
                 ) : null}
               </div>
             ))}
-            <div className="mt-3 border-t pt-3">
+            <div className={`mt-3 border-t pt-3 ${dark ? "border-[#24304d]" : "border-[#e2e7fb]"}`}>
               <AuthSessionMenu theme={theme} />
             </div>
           </div>

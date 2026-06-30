@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
 
-const OWNER = process.env.NEXT_PUBLIC_QSENTIA_REPO_OWNER || 'FinTechEntrepreneurldz';
+const OWNER = process.env.NEXT_PUBLIC_QSENTIA_REPO_OWNER || 'QSentia-com';
 const REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'qsentia-investor-site';
 const BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
 

@@ -10,7 +10,7 @@ The project currently contains:
 - Admin and analytics systems
 - Authentication flows
 - Internal API routes
-- Telemetry and model-related services
+- Telemetry and model-related services / 
 
 This repository is under active restructuring to improve:
 

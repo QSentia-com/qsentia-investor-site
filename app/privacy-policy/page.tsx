@@ -72,17 +72,17 @@ const sections: readonly PolicySection[] = [
   },
   {
     id: 'rights',
-    title: 'Your choices and data-principal rights',
+    title: 'Your choices and privacy rights',
     paragraphs: [
-      'Subject to applicable law and verification, individuals may request information about processing, access to a summary of their personal data, correction or completion of inaccurate data, erasure where retention is no longer required, withdrawal of consent, and grievance redressal. Applicable law may also provide a right to nominate another person to exercise rights in specified circumstances.',
+      'Subject to applicable law and verification, individuals may request information about processing, access to personal data, correction of inaccurate data, deletion where retention is no longer required, portability, restriction or objection where available, withdrawal of consent, and opt-out choices required by applicable US state privacy laws.',
       'Withdrawing consent does not affect processing already completed before withdrawal and may prevent QSentia from providing features that depend on that data. Requests may be submitted through the official contact channel and will be handled after proportionate identity verification.',
     ],
   },
   {
     id: 'children',
-    title: 'Children and persons requiring lawful guardian consent',
+    title: 'Children and sensitive personal data',
     paragraphs: [
-      'QSentia is intended for adults and professional users. The platform is not directed to children. QSentia does not knowingly seek verifiable-consent data from children or persons whose lawful guardian consent is required. If such data is identified, QSentia will take reasonable steps to restrict processing and delete it unless a lawful basis requires otherwise.',
+      'QSentia is intended for adults and professional users. The platform is not directed to children. QSentia does not knowingly collect children’s personal data through its authenticated products. If such data is identified, QSentia will take reasonable steps to restrict processing and delete it unless a lawful basis requires otherwise.',
     ],
   },
   {
@@ -102,10 +102,10 @@ const sections: readonly PolicySection[] = [
   },
   {
     id: 'contact',
-    title: 'Grievances, complaints, and contact',
+    title: 'Privacy requests, complaints, and contact',
     paragraphs: [
-      'Submit privacy requests or grievances to inquiries@qsentia.com with the subject "Privacy or DPDP Request," or use the contact form. Include enough information to identify the relevant account and request, but do not send passwords, private keys, full payment-card numbers, or broker credentials.',
-      "If a grievance is not resolved through QSentia's process, an individual may have the right to approach the competent data-protection authority or other regulator under applicable law.",
+      'Submit privacy requests or complaints to inquiries@qsentia.com with the subject "Privacy Request," or use the contact form. Include enough information to identify the relevant account and request, but do not send passwords, private keys, full payment-card numbers, or broker credentials.',
+      "If a complaint is not resolved through QSentia's process, an individual may have the right to approach a competent data-protection authority, state attorney general, privacy regulator, or other regulator under applicable law.",
     ],
   },
   {
@@ -124,12 +124,13 @@ export default function PrivacyPolicyPage() {
       eyebrow="Data protection notice"
       summary="How QSentia handles personal data across accounts, customer workspaces, billing, support, recruitment, APIs, and security operations."
       effectiveDate="19 June 2026"
-      version="2.0"
+      version="2.1"
       sections={sections}
-      notice="This policy is designed as an operational privacy baseline, including principles reflected in India's Digital Personal Data Protection framework. It should be reviewed by qualified counsel against QSentia's final corporate structure, data flows, vendors, and launch jurisdictions."
+      notice="This policy is designed as an operational privacy baseline, including principles reflected in GDPR, US state privacy laws, FTC privacy and security guidance, and applicable customer contracts. It should be reviewed by qualified counsel against QSentia's final corporate structure, data flows, vendors, and launch jurisdictions."
       references={[
-        { label: 'Digital Personal Data Protection Act, 2023 - India Code', href: 'https://www.indiacode.nic.in/handle/123456789/19695?view_type=browse' },
-        { label: 'Ministry of Electronics and Information Technology - data protection framework', href: 'https://www.meity.gov.in/data-protection-framework' },
+        { label: 'European Commission - legal framework of EU data protection', href: 'https://commission.europa.eu/law/law-topic/data-protection/legal-framework-eu-data-protection_en' },
+        { label: 'Federal Trade Commission - privacy and security business guidance', href: 'https://www.ftc.gov/business-guidance/privacy-security' },
+        { label: 'California Attorney General - CCPA', href: 'https://oag.ca.gov/privacy/ccpa' },
       ]}
     />
   );

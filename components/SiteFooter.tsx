@@ -23,7 +23,7 @@ type IconLink = FooterLink & {
 
 const socialLinks: IconLink[] = [
   {
-    href: "https://github.com/FinTechEntrepreneurldz/qsentia-investor-site",
+    href: "https://github.com/QSentia-com/qsentia-investor-site",
     label: "GitHub",
     icon: GitHubMark,
     external: true,
@@ -78,6 +78,7 @@ const footerColumns: Array<{ title: string; links: FooterLink[] }> = [
       { href: "/team", label: "Team" },
       { href: "/problem-solution", label: "Problem & solution" },
       { href: "/careers", label: "Careers" },
+      { href: "/faq", label: "FAQ" },
       { href: "/compliance", label: "Compliance centre" },
       { href: "/contact", label: "Contact us" },
       { href: "/signin", label: "Sign in" },
@@ -91,7 +92,7 @@ const footerColumns: Array<{ title: string; links: FooterLink[] }> = [
       { href: "/security", label: "Security" },
       { href: "/privacy-policy", label: "Privacy policy" },
       { href: "/cookie-policy", label: "Cookie policy" },
-      { href: "/data-protection", label: "Data protection & DPDP" },
+      { href: "/data-protection", label: "GDPR & US privacy" },
       { href: "/acceptable-use-policy", label: "Acceptable use" },
       { href: "/terms-and-conditions", label: "Terms & conditions" },
       { href: "/refund-cancellation-policy", label: "Billing & cancellation" },

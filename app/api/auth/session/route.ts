@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { resolveAdminRole } from '@/lib/adminAccess';
 
 function authConfig() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -45,6 +46,7 @@ export async function GET(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const adminRole = user ? await resolveAdminRole(user) : null;
 
   const response = NextResponse.json(
     {
@@ -58,6 +60,7 @@ export async function GET(request: NextRequest) {
             avatarUrl:
               typeof user.user_metadata?.avatar_url === 'string' ? user.user_metadata.avatar_url : null,
             provider: providerFor(user),
+            adminRole,
             lastSignInAt: user.last_sign_in_at,
           }
         : null,
