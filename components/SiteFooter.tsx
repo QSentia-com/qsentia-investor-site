@@ -42,9 +42,9 @@ const socialLinks: IconLink[] = [
 ];
 
 const resourceLinks: IconLink[] = [
-  { href: "/docs", label: "Docs", icon: BookOpen },
-  { href: "/api/dashboard", label: "Dashboard API", icon: Database },
-  { href: "/dashboard", label: "Live dashboard", icon: BarChart3 },
+  { href: "/developers", label: "Developer center", icon: BookOpen },
+  { href: "/research", label: "Research terminal", icon: BarChart3 },
+  { href: "/data-room", label: "Investor data room", icon: Database },
 ];
 
 const footerColumns: Array<{ title: string; links: FooterLink[] }> = [
@@ -111,10 +111,36 @@ const legalLinks = [
 
 export default function SiteFooter() {
   return (
-    <footer className="relative z-10 border-t border-[#dfe5f2] bg-[#f7f8fb] text-[#080b18]">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-14">
-        <div className="grid gap-10 border-b border-[#dfe5f2] pb-10 lg:grid-cols-[1.05fr_1.95fr] lg:gap-14">
+    <footer className="relative z-10 border-t border-[#dfe5f2] bg-white text-[#080b18]">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:py-12">
+        <div className="mb-10 grid gap-4 rounded-[10px] border border-[#dfe5f2] bg-[#f8faff] p-5 sm:grid-cols-[1fr_auto] sm:items-center">
           <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-[#3046c8]">
+              Institutional access
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-normal text-[#06130c]">
+              Review strategy evidence, risk controls, and operating readiness.
+            </h2>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Link
+              href="/data-room"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#172554] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#2437b5]"
+            >
+              Investor materials
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/contact"
+              className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#cbd5ff] bg-white px-4 py-2 text-sm font-bold text-[#172554] transition hover:border-[#3046c8]"
+            >
+              Contact
+            </Link>
+          </div>
+        </div>
+
+        <div className="grid gap-10 border-b border-[#dfe5f2] pb-10 lg:grid-cols-[0.95fr_2.05fr] lg:gap-16">
+          <div className="max-w-xl">
             <Link
               href="/"
               className="inline-flex items-center"
@@ -128,10 +154,10 @@ export default function SiteFooter() {
                 className="h-8 w-auto"
               />
             </Link>
-            <p className="mt-5 max-w-md text-sm leading-6 text-[#4d5870]">
-              Live model telemetry, research workflows, and API surfaces for
-              systematic investment diligence, benchmark review, and execution
-              monitoring.
+            <p className="mt-5 text-sm leading-6 text-[#4d5870]">
+              Source-backed model telemetry, investor diligence workflows, and
+              API surfaces for systematic strategy review, benchmark context,
+              risk controls, and execution monitoring.
             </p>
 
             <div className="mt-6 flex flex-wrap items-center gap-2">
@@ -140,7 +166,7 @@ export default function SiteFooter() {
               ))}
             </div>
 
-            <div className="mt-7 grid gap-2 sm:max-w-lg sm:grid-cols-3">
+            <div className="mt-7 grid gap-2">
               {resourceLinks.map((link) => (
                 <ResourceLink key={link.label} link={link} />
               ))}
@@ -165,9 +191,9 @@ export default function SiteFooter() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-5 pt-7 lg:flex-row lg:items-center lg:justify-between">
+        <div className="grid gap-5 pt-7 lg:grid-cols-[1fr_auto] lg:items-center">
           <div className="flex max-w-3xl gap-3 text-sm leading-6 text-[#4d5870]">
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#cfd7eb] bg-white text-[#2b36ff]">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#cfd7eb] bg-[#f8faff] text-[#3046c8]">
               <ShieldCheck className="h-4 w-4" />
             </span>
             <p>
@@ -177,8 +203,8 @@ export default function SiteFooter() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-[#4d5870]">
-            <span>Copyright 2026 QSentia</span>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-[#4d5870] lg:justify-end">
+            <span className="text-[#06130c]">Copyright 2026 QSentia</span>
             {legalLinks.map((link) => (
               <Link
                 key={link.href}
@@ -202,7 +228,7 @@ function IconButton({ link }: { link: IconLink }) {
   return (
     <FooterLinkShell
       link={link}
-      className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#d6dded] bg-white text-[#111827] shadow-sm transition hover:border-[#2b36ff] hover:text-[#2b36ff]"
+      className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#d6dded] bg-white text-[#111827] transition hover:border-[#3046c8] hover:bg-[#f8faff] hover:text-[#3046c8]"
       ariaLabel={link.label}
     >
       <Icon className="h-4 w-4" />
@@ -216,13 +242,13 @@ function ResourceLink({ link }: { link: IconLink }) {
   return (
     <FooterLinkShell
       link={link}
-      className="group inline-flex min-h-12 items-center justify-between gap-3 rounded-md border border-[#d6dded] bg-white px-3 py-2 text-sm font-semibold text-[#111827] shadow-sm transition hover:border-[#2b36ff] hover:text-[#2b36ff]"
+      className="group inline-flex min-h-11 items-center justify-between gap-3 rounded-md border border-[#d6dded] bg-white px-3.5 py-2 text-sm font-semibold text-[#111827] transition hover:border-[#3046c8] hover:bg-[#f8faff] hover:text-[#3046c8]"
     >
       <span className="inline-flex min-w-0 items-center gap-2">
-        <Icon className="h-4 w-4 shrink-0 text-[#2b36ff]" />
-        <span className="truncate">{link.label}</span>
+        <Icon className="h-4 w-4 shrink-0 text-[#3046c8]" />
+        <span>{link.label}</span>
       </span>
-      <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-[#8a94aa] transition group-hover:text-[#2b36ff]" />
+      <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-[#8a94aa] transition group-hover:text-[#3046c8]" />
     </FooterLinkShell>
   );
 }
@@ -231,7 +257,7 @@ function FooterAnchor({ link }: { link: FooterLink }) {
   return (
     <FooterLinkShell
       link={link}
-      className="inline-flex items-center gap-1.5 text-sm leading-6 text-[#4d5870] transition-colors hover:text-[#2b36ff]"
+      className="inline-flex items-center gap-1.5 text-sm leading-6 text-[#4d5870] transition-colors hover:text-[#3046c8]"
     >
       {link.label}
       {link.external && <ArrowUpRight className="h-3.5 w-3.5" />}
