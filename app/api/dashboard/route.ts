@@ -8,7 +8,7 @@ import { readPublishedModelConfigs } from '@/lib/modelOnboarding';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const REGISTRY_OWNER = process.env.NEXT_PUBLIC_QSENTIA_REPO_OWNER || 'FinTechEntrepreneurldz';
+const REGISTRY_OWNER = process.env.NEXT_PUBLIC_QSENTIA_REPO_OWNER || 'QSentia-com';
 const REGISTRY_REPO = process.env.NEXT_PUBLIC_QSENTIA_REPO_NAME || 'qsentia-investor-site';
 const REGISTRY_BRANCH = process.env.NEXT_PUBLIC_QSENTIA_BRANCH || 'main';
 const GITHUB_READ_TOKEN_CANDIDATES = [
@@ -122,7 +122,7 @@ const REQUIRED_MODELS: ModelConfig[] = [
     name: 'Crypto Sentiment MLP/PPO - IBKR',
     description:
       'Live BTC sentiment ensemble using CryptoBERT-scored news, MLP/PPO stackers, intraday risk-governor controls, and IBKR CME Micro Bitcoin futures paper execution. Current portfolio value is sourced from IBKR NetLiquidation.',
-    repo: 'FinTechEntrepreneurldz/crypto_sentiment_MLP',
+    repo: 'QSentia-com/crypto_sentiment_MLP',
     logs_path: 'logs',
     branch: 'main',
     enabled: true,
@@ -133,7 +133,7 @@ const REQUIRED_MODELS: ModelConfig[] = [
     name: 'ETH Micro Futures Sentiment Alpha - IBKR',
     description:
       'Live ETH micro futures sentiment ensemble using CryptoBERT-scored market text, MLP/PPO signal blending, TBL research diagnostics, IBKR CME Micro Ether futures paper execution, and a fresh $1,017,539 paper-account baseline.',
-    repo: 'FinTechEntrepreneurldz/qsentia-eth-micro-futures-sentiment-alpha',
+    repo: 'QSentia-com/qsentia-eth-micro-futures-sentiment-alpha',
     logs_path: 'logs',
     branch: 'main',
     enabled: true,
@@ -145,7 +145,7 @@ const REQUIRED_MODELS: ModelConfig[] = [
   name: 'ETH Leveraged ETF Sentiment Alpha - Alpaca',
   description:
     'Live ETH leveraged ETF sentiment strategy using the ETH sentiment CryptoBERT/MLP/PPO artifact stack, ETHT/ETHD Alpaca paper execution, extended-hours limit orders, shock-override risk controls, and Alpaca paper-account telemetry.',
-  repo: 'FinTechEntrepreneurldz/qsentia-eth-leveraged-etf-sentiment-alpha',
+  repo: 'QSentia-com/qsentia-eth-leveraged-etf-sentiment-alpha',
   logs_path: 'logs',
   branch: 'main',
   enabled: true,
@@ -157,7 +157,7 @@ const REQUIRED_MODELS: ModelConfig[] = [
     name: 'BTC Leveraged ETF Sentiment Alpha - Alpaca',
     description:
       'Live BTC leveraged ETF sentiment strategy using the BTC sentiment CryptoBERT/MLP/PPO artifact stack, BITU/SBIT Alpaca paper execution, extended-hours limit orders, shock-override risk controls, and a fresh $1,000,000 paper-account baseline.',
-    repo: 'FinTechEntrepreneurldz/qsentia-btc-leveraged-etf-sentiment-alpha',
+    repo: 'QSentia-com/qsentia-btc-leveraged-etf-sentiment-alpha',
     logs_path: 'logs',
     branch: 'main',
     enabled: true,
@@ -169,7 +169,7 @@ const REQUIRED_MODELS: ModelConfig[] = [
     name: 'Model C ETF Regime MoE - Alpaca',
     description:
       'Live Model C ETF regime allocator using MLP/MoE signals, model-driven rebalance gates, Alpaca paper execution, and a fresh $1,000,000 paper-account baseline.',
-    repo: 'FinTechEntrepreneurldz/model_c_etf',
+    repo: 'QSentia-com/model_c_etf',
     logs_path: 'logs',
     branch: 'main',
     enabled: true,
@@ -181,7 +181,7 @@ const REQUIRED_MODELS: ModelConfig[] = [
     name: 'Model C Equity Long/Short - Alpaca',
     description:
       'Live Model C equity paper trader using an MLP-driven 130/30 sector-neutral basket, model-driven rebalance gates, Alpaca paper execution, and a fresh $1,000,000 paper-account baseline.',
-    repo: 'FinTechEntrepreneurldz/Model_C_Paper_Trading',
+    repo: 'QSentia-com/Model_C_Paper_Trading',
     logs_path: 'logs',
     branch: 'main',
     enabled: true,
@@ -193,7 +193,7 @@ const REQUIRED_MODELS: ModelConfig[] = [
     name: 'Base Model BR-PPO - Alpaca',
     description:
       'Live BR-PPO baseline allocator using the vetted Model A artifact, dedicated Alpaca paper credentials, canonical QSentia logs, and a fresh $1,000,000 paper-account baseline.',
-    repo: 'FinTechEntrepreneurldz/Base_Model_BR_PPO',
+    repo: 'QSentia-com/Base_Model_BR_PPO',
     logs_path: 'logs/base_model_br_ppo',
     branch: 'main',
     enabled: true,
@@ -205,7 +205,7 @@ const REQUIRED_MODELS: ModelConfig[] = [
     name: 'BR-PPO Crypto V15 - Alpaca',
     description:
       'Live BR-PPO crypto allocator using crypto, FreqAI, LLM, Ichimoku, and PPO ensemble components with Alpaca paper execution and a fresh $1,000,000 paper-account baseline.',
-    repo: 'FinTechEntrepreneurldz/br_ppo_crypto_v15',
+    repo: 'QSentia-com/br_ppo_crypto_v15',
     logs_path: 'logs',
     branch: 'main',
     enabled: true,
@@ -217,7 +217,7 @@ const REQUIRED_MODELS: ModelConfig[] = [
     name: 'BR-PPO Fixed Income Regime - Alpaca',
     description:
       'Live fixed-income BR-PPO regime allocator with bond-only guardrails, Alpaca paper execution, and a fresh $1,000,000 paper-account baseline.',
-    repo: 'FinTechEntrepreneurldz/brppo_fixed_income_regime',
+    repo: 'QSentia-com/brppo_fixed_income_regime',
     logs_path: 'logs',
     branch: 'main',
     enabled: true,

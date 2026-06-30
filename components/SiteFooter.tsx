@@ -23,7 +23,7 @@ type IconLink = FooterLink & {
 
 const socialLinks: IconLink[] = [
   {
-    href: "https://github.com/FinTechEntrepreneurldz/qsentia-investor-site",
+    href: "https://github.com/QSentia-com/qsentia-investor-site",
     label: "GitHub",
     icon: GitHubMark,
     external: true,

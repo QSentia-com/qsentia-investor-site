@@ -286,7 +286,7 @@ def add_title_page(doc):
 
     rows = [
         ("Project", "QSentia Investor Intelligence Platform"),
-        ("Repository", "FinTechEntrepreneurldz/qsentia-investor-site"),
+        ("Repository", "QSentia-com/qsentia-investor-site"),
         ("Framework", "Next.js 16.2.4, React 19.2.4, TypeScript 5, Tailwind CSS 4"),
         ("Prepared", "June 4, 2026"),
         ("Status", "Implementation report based on current local workspace and live localhost API responses"),
