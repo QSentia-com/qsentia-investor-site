@@ -320,17 +320,7 @@ function calculate(data: Payload | undefined, strategy: StrategyOption | null) {
     benchmark: benchmarkMap.get(point.timestamp) ?? null,
   }));
 
-  const groups = new Map<string, { first: number; last: number }>();
-  points.forEach((point) => {
-    const key = point.timestamp.slice(0, 7);
-    const row = groups.get(key);
-    groups.set(key, row ? { first: row.first, last: point.portfolio } : { first: point.portfolio, last: point.portfolio });
-  });
-
-  const months = Array.from(groups).map(([month, row]) => ({
-    month,
-    value: row.first ? row.last / row.first - 1 : null,
-  }));
+  const months = monthlyReturnsFromPoints(points);
   const monthValues = months.map((month) => month.value).filter((value): value is number => typeof value === 'number');
   const returns = points.map((point, index) => {
     if (finiteNumber(point.return)) return point.return;
@@ -400,6 +390,42 @@ function statsFromPoints(
     sharpe,
     maxDrawdown,
   };
+}
+
+function monthlyReturnsFromPoints(points: Array<{ timestamp: string; portfolio: number }>) {
+  const rows: Array<{ month: string; value: number | null }> = [];
+  let currentMonth = '';
+  let monthStartValue: number | null = null;
+  let monthLastValue: number | null = null;
+  let previousValue: number | null = null;
+
+  for (const point of points) {
+    const month = point.timestamp.slice(0, 7);
+
+    if (month !== currentMonth) {
+      if (currentMonth && monthStartValue !== null && monthLastValue !== null) {
+        rows.push({
+          month: currentMonth,
+          value: monthStartValue ? monthLastValue / monthStartValue - 1 : null,
+        });
+      }
+
+      currentMonth = month;
+      monthStartValue = previousValue ?? point.portfolio;
+    }
+
+    monthLastValue = point.portfolio;
+    previousValue = point.portfolio;
+  }
+
+  if (currentMonth && monthStartValue !== null && monthLastValue !== null) {
+    rows.push({
+      month: currentMonth,
+      value: monthStartValue ? monthLastValue / monthStartValue - 1 : null,
+    });
+  }
+
+  return rows;
 }
 
 function sharpeFromReturns(returns: number[]) {
