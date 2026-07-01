@@ -516,15 +516,15 @@ body {
 
 .admin-input {
   width: 100%;
-  border-radius: 6px;
-  border: 1px solid #cfd7e6;
+  border-radius: 10px;
+  border: 1px solid #d8e1f2;
   background: #ffffff;
   padding: 0.75rem 0.875rem;
   color: #0f172a;
   font-size: 0.875rem;
   line-height: 1.25rem;
   outline: none;
-  transition: border-color 160ms ease, background 160ms ease;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
 }
 
 .admin-input:focus {
@@ -548,10 +548,10 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 0.875rem;
   font-weight: 700;
-  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, opacity 160ms ease;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, opacity 160ms ease, box-shadow 160ms ease;
 }
 
 .admin-primary-button {
@@ -563,10 +563,11 @@ body {
 
 .admin-primary-button:hover {
   background: #2437b5;
+  box-shadow: 0 10px 24px rgba(23, 37, 84, 0.18);
 }
 
 .admin-secondary-button {
-  border: 1px solid #cfd7e6;
+  border: 1px solid #d8e1f2;
   background: #ffffff;
   color: #172554;
   padding: 0.625rem 0.875rem;
@@ -606,7 +607,7 @@ body {
   width: 2.5rem;
   height: 2.5rem;
   justify-content: center;
-  border: 1px solid #cfd7e6;
+  border: 1px solid #d8e1f2;
   background: #ffffff;
   color: #172554;
 }
@@ -620,8 +621,8 @@ body {
 
 .admin-compact-select {
   min-width: 8.5rem;
-  border-radius: 6px;
-  border: 1px solid #cfd7e6;
+  border-radius: 999px;
+  border: 1px solid #d8e1f2;
   background: #ffffff;
   padding: 0.5rem 0.625rem;
   color: #172554;

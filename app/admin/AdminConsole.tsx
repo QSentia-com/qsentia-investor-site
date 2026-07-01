@@ -626,49 +626,66 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
   }
 
   return (
-    <main className="admin-portal min-h-screen bg-[#f4f6fa] text-[#0f172a]">
-      <div className="mx-auto min-h-screen max-w-[1720px] md:grid md:grid-cols-[236px_minmax(0,1fr)] xl:grid-cols-[248px_minmax(0,1fr)]">
-        <aside className="flex flex-col border-b border-[#1d2942] bg-[#0b1220] p-4 text-white md:sticky md:top-0 md:min-h-screen md:self-start md:border-b-0 md:border-r">
-          <div className="flex items-center gap-3 border-b border-white/10 pb-5">
-            <Link href="/" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white" aria-label="QSentia home">
-              <Image src="/logo/qsentia-primary.png" alt="QSentia" width={27} height={27} className="h-7 w-7 object-contain" />
-            </Link>
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-white">QSentia</div>
-              <div className="mt-0.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#8ea0ff]">Administration</div>
+    <main className="admin-portal min-h-screen bg-[#f5f7fb] text-[#0f172a]">
+      <div className="mx-auto min-h-screen max-w-[1760px] md:grid md:grid-cols-[304px_minmax(0,1fr)]">
+        <aside className="flex flex-col border-b border-[#dfe6f3] bg-white/95 p-4 text-[#0f172a] shadow-[1px_0_0_rgba(15,23,42,0.04)] backdrop-blur md:sticky md:top-0 md:max-h-screen md:min-h-screen md:self-start md:overflow-y-auto md:border-b-0 md:border-r">
+          <div className="rounded-[16px] border border-[#dfe6f3] bg-[#f8faff] p-4">
+            <div className="flex items-center gap-3">
+              <Link href="/" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] border border-[#cbd5ff] bg-white" aria-label="QSentia home">
+                <Image src="/logo/qsentia-primary.png" alt="QSentia" width={27} height={27} className="h-7 w-7 object-contain" />
+              </Link>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-[#0f172a]">QSentia</div>
+                <div className="mt-0.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#3d52da]">Administration</div>
+              </div>
             </div>
+            <p className="mt-4 text-sm leading-6 text-[#5a685f]">
+              Back-office controls for model commerce, customer access, careers,
+              CRM, billing, and internal operations.
+            </p>
           </div>
 
-          <div className="mt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#73809d]">Workspace</div>
-          <nav className="mt-3 grid grid-cols-2 gap-1 sm:grid-cols-3 md:grid-cols-1" aria-label="Admin sections">
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                type="button"
-                onClick={() => {
-                  setActiveSection(section.id);
-                  setMessage(null);
-                }}
-                className={`flex min-h-10 w-full items-center gap-3 rounded-md px-2.5 py-2 text-left transition ${
-                  activeSection === section.id
-                    ? 'bg-white/10 text-white'
-                    : 'text-[#bac4d8] hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${activeSection === section.id ? 'bg-[#3d52da] text-white' : 'bg-[#131e32] text-[#9dacff]'}`}>
-                  {section.icon}
-                </span>
-                <span className="min-w-0 truncate text-[13px] font-semibold">{section.label}</span>
-              </button>
-            ))}
+          <div className="mt-6 px-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#647269]">Workspace</div>
+          <nav className="mt-2 grid grid-cols-1 gap-1" aria-label="Admin sections">
+            {sections.map((section) => {
+              const active = activeSection === section.id;
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveSection(section.id);
+                    setMessage(null);
+                  }}
+                  className={`group flex min-h-12 w-full items-start gap-3 rounded-[10px] border px-3 py-3 text-left transition ${
+                    active
+                      ? 'border-[#cbd5ff] bg-[#eef2ff] text-[#172554] shadow-sm'
+                      : 'border-transparent text-[#334155] hover:border-[#dfe6f3] hover:bg-[#f8faff]'
+                  }`}
+                >
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${active ? 'bg-white text-[#3d52da]' : 'bg-[#f1f5ff] text-[#64748b] group-hover:text-[#3d52da]'}`}>
+                    {section.icon}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">{section.label}</span>
+                    <span className={`mt-0.5 block truncate text-xs ${active ? 'text-[#46554b]' : 'text-[#647269]'}`}>{section.detail}</span>
+                  </span>
+                </button>
+              );
+            })}
           </nav>
 
-          <div className="mt-5 grid gap-1 border-t border-white/10 pt-4 md:mt-auto">
-            <div className="flex items-center gap-2 px-2 py-2 text-xs font-semibold text-[#cbd5e1]">
-                <LockKeyhole className="h-4 w-4 text-[#9dacff]" />
-                Admin role verified
+          <div className="mt-6 grid gap-2 border-t border-[#e2e7fb] pt-4 md:mt-auto">
+            <div className="rounded-[12px] border border-[#dfe6f3] bg-[#f8faff] p-3">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#172554]">
+                <LockKeyhole className="h-4 w-4 text-[#3d52da]" />
+                Role-secured workspace
+              </div>
+              <p className="mt-2 text-xs leading-5 text-[#647269]">
+                Access follows the signed-in account and server-side admin grants.
+              </p>
             </div>
-            <Link href="/" className="inline-flex items-center justify-between rounded-md px-2 py-2 text-xs font-semibold text-[#dbe4ff] hover:bg-white/5">
+            <Link href="/" className="inline-flex items-center justify-between rounded-[10px] border border-[#dfe6f3] bg-white px-3 py-3 text-sm font-semibold text-[#172554] transition hover:border-[#3d52da] hover:bg-[#f8faff]">
               Public site
               <ArrowUpRight className="h-4 w-4" />
             </Link>
@@ -677,17 +694,27 @@ export default function AdminConsole({ initialData = null }: { initialData?: Adm
 
         <section className="min-w-0">
           <header className="sticky top-0 z-40 border-b border-[#dfe5f2] bg-white/95 backdrop-blur">
-            <div className="flex min-h-16 flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between xl:px-8">
-              <div className="min-w-0">
-                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#647269]">Operations workspace</div>
-                <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <h1 className="text-xl font-semibold text-[#0f172a]">{activeSectionMeta.label}</h1>
-                  <span className="text-sm text-[#647269]">{activeSectionMeta.detail}</span>
+            <div className="px-4 py-4 sm:px-6 xl:px-8">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="min-w-0">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#3d52da]">Operations workspace</div>
+                  <div className="mt-2">
+                    <h1 className="text-2xl font-semibold tracking-[-0.01em] text-[#0f172a]">{activeSectionMeta.label}</h1>
+                    <p className="mt-1 max-w-3xl text-sm leading-6 text-[#647269]">{activeSectionMeta.detail}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="hidden rounded-full border border-[#dfe6f3] bg-[#f8faff] px-3 py-1.5 text-xs font-semibold text-[#647269] lg:block">
+                    Updated {shortDate(data?.updatedAt)}
+                  </span>
+                  <AuthSessionMenu />
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="hidden text-xs text-[#647269] lg:block">Updated {shortDate(data?.updatedAt)}</span>
-                <AuthSessionMenu />
+              <div className="mt-4 grid gap-px overflow-hidden rounded-[12px] border border-[#e2e7fb] bg-[#e2e7fb] sm:grid-cols-4">
+                <AdminHeaderStat label="Models" value={formatNumber(data?.metrics.models || 0)} />
+                <AdminHeaderStat label="Sold licenses" value={formatNumber(data?.metrics.soldModels || 0)} />
+                <AdminHeaderStat label="Open leads" value={formatNumber(data?.metrics.leads || 0)} />
+                <AdminHeaderStat label="Tickets" value={formatNumber(data?.metrics.openTickets || 0)} />
               </div>
             </div>
           </header>
@@ -904,8 +931,8 @@ function OverviewSection({ data, onRefresh }: { data: AdminOverview; onRefresh: 
                     <tr key={model.id}>
                       <td className="py-3 font-semibold text-[#0f172a]">{model.name}</td>
                       <td className="py-3 text-[#172554]">{formatRatio(model.performance.sharpeRatio)}</td>
-                      <td className="py-3 text-[#65f0dc]">{formatPct(model.performance.annualizedReturn, true)}</td>
-                      <td className="py-3 text-[#fda4af]">{formatPct(model.performance.maxDrawdown, true)}</td>
+                      <td className="py-3 text-[#047857]">{formatPct(model.performance.annualizedReturn, true)}</td>
+                      <td className="py-3 text-[#be123c]">{formatPct(model.performance.maxDrawdown, true)}</td>
                       <td className="py-3 text-[#172554]">{formatNumber(model.sales.soldUnits)}</td>
                     </tr>
                   ))}
@@ -1792,14 +1819,14 @@ function TicketsSection({
 
 function MetricCard({ helper, icon, label, value }: { helper: string; icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-md border border-[#dfe5f2] bg-white p-5 shadow-sm">
+    <div className="rounded-[16px] border border-[#dfe5f2] bg-white p-5 shadow-[0_14px_36px_rgba(15,23,42,0.05)]">
       <div className="flex items-start justify-between gap-4">
-        <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#eef2ff] text-[#3d52da]">
+        <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#3d52da]">
           {icon}
         </span>
-        <span className="text-3xl font-semibold text-[#0f172a]">{value}</span>
+        <span className="text-3xl font-semibold tracking-[-0.02em] text-[#0f172a]">{value}</span>
       </div>
-      <div className="mt-4 text-xs font-bold uppercase tracking-wide text-[#647269]">{label}</div>
+      <div className="mt-4 text-xs font-bold uppercase tracking-[0.15em] text-[#647269]">{label}</div>
       <p className="mt-2 text-sm leading-5 text-[#647269]">{helper}</p>
     </div>
   );
@@ -1817,18 +1844,27 @@ function WorkspacePanel({
   title: string;
 }) {
   return (
-    <section className="rounded-md border border-[#dfe5f2] bg-white p-5 shadow-sm">
+    <section className="overflow-hidden rounded-[16px] border border-[#dfe5f2] bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[#eef2ff] text-[#3d52da]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#3d52da]">
             {icon}
           </span>
-          <h2 className="text-lg font-semibold text-[#0f172a]">{title}</h2>
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-[#0f172a]">{title}</h2>
         </div>
         {action}
       </div>
       {children}
     </section>
+  );
+}
+
+function AdminHeaderStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 bg-white px-4 py-3">
+      <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#647269]">{label}</div>
+      <div className="mt-1 truncate text-sm font-semibold text-[#0f172a]">{value}</div>
+    </div>
   );
 }
 
@@ -1854,8 +1890,8 @@ function LockedField({ label, value }: { label: string; value: string }) {
 
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-md border border-[#dfe5f2] bg-[#f8fafc] p-4">
-      <div className="text-xs font-bold uppercase tracking-wide text-[#647269]">{label}</div>
+    <div className="rounded-[12px] border border-[#dfe5f2] bg-[#f8faff] p-4">
+      <div className="text-xs font-bold uppercase tracking-[0.15em] text-[#647269]">{label}</div>
       <div className="mt-2 text-2xl font-semibold text-[#0f172a]">{formatNumber(value)}</div>
     </div>
   );
@@ -1863,7 +1899,7 @@ function MiniStat({ label, value }: { label: string; value: number }) {
 
 function Chip({ children, tone }: { children: ReactNode; tone?: string }) {
   return (
-    <span className={`inline-flex rounded-md border px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${statusClasses(tone || '')}`}>
+    <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${statusClasses(tone || '')}`}>
       {children}
     </span>
   );
@@ -1871,7 +1907,7 @@ function Chip({ children, tone }: { children: ReactNode; tone?: string }) {
 
 function EmptyPanel({ body, title }: { body: string; title: string }) {
   return (
-    <div className="rounded-md border border-dashed border-[#cbd5e1] bg-[#f8fafc] p-6 text-center">
+    <div className="rounded-[12px] border border-dashed border-[#cbd5e1] bg-[#f8faff] p-6 text-center">
       <div className="font-semibold text-[#0f172a]">{title}</div>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#647269]">{body}</p>
     </div>
