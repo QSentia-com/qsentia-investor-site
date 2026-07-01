@@ -71,6 +71,8 @@ const fetcher = async (url: string): Promise<Payload> => {
   return response.json();
 };
 
+const MIN_RETURNS_FOR_RISK_METRICS = 5;
+
 const safePct = (value?: number | null) => {
   const x = fmtPct(value, true);
   return x === 'Pending' ? 'Not reported' : x;
@@ -342,7 +344,10 @@ function calculate(data: Payload | undefined, strategy: StrategyOption | null) {
 
     return {
       date: point.timestamp,
-      rollingSharpe: variance > 0 ? (mean / Math.sqrt(variance)) * Math.sqrt(252) : null,
+      rollingSharpe:
+        window.length >= MIN_RETURNS_FOR_RISK_METRICS && variance > 0
+          ? (mean / Math.sqrt(variance)) * Math.sqrt(252)
+          : null,
       drawdownPct: finiteNumber(point.drawdown) ? point.drawdown * 100 : finiteNumber(computedDrawdown) ? computedDrawdown * 100 : null,
     };
   });
@@ -429,7 +434,7 @@ function monthlyReturnsFromPoints(points: Array<{ timestamp: string; portfolio: 
 }
 
 function sharpeFromReturns(returns: number[]) {
-  if (returns.length < 2) return null;
+  if (returns.length < MIN_RETURNS_FOR_RISK_METRICS) return null;
 
   const mean = returns.reduce((sum, value) => sum + value, 0) / returns.length;
   const variance =

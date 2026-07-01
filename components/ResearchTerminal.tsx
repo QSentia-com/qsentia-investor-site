@@ -127,7 +127,11 @@ type FundSummary = {
   ytdReturn: number | null;
   ytdStart: string | null;
   totalReturn: number | null;
+  annualizedReturn: number | null;
   sharpe: number | null;
+  sortino: number | null;
+  calmar: number | null;
+  volatility: number | null;
   hitRate: number | null;
   maxDrawdown: number | null;
   rowCount: number | null;
@@ -499,7 +503,11 @@ export function ResearchTerminal() {
           ytdReturn: ytdReturn(curve) ?? (finiteNumber(model.stats?.totalReturn) ? model.stats?.totalReturn ?? null : null),
           ytdStart: firstYtdPoint?.timestamp || model.inceptionDate || null,
           totalReturn: finiteNumber(model.stats?.totalReturn) ? model.stats?.totalReturn ?? null : null,
+          annualizedReturn: finiteNumber(model.stats?.annualizedReturn) ? model.stats?.annualizedReturn ?? null : null,
           sharpe: finiteNumber(model.stats?.sharpe) ? model.stats?.sharpe ?? null : null,
+          sortino: finiteNumber(model.stats?.sortino) ? model.stats?.sortino ?? null : null,
+          calmar: finiteNumber(model.stats?.calmar) ? model.stats?.calmar ?? null : null,
+          volatility: finiteNumber(model.stats?.volatility) ? model.stats?.volatility ?? null : null,
           hitRate: finiteNumber(model.stats?.hitRate) ? model.stats?.hitRate ?? null : null,
           maxDrawdown: finiteNumber(model.stats?.maxDrawdown) ? model.stats?.maxDrawdown ?? null : null,
           rowCount: finiteNumber(model.dailyRowCount) ? model.dailyRowCount ?? null : null,
@@ -897,20 +905,31 @@ function PerformanceAnalytics({
   data?: DashboardPayload;
   focusedSummary: FundSummary | null;
 }) {
-  const stats = data?.stats;
+  const selectedStats: Stats = focusedSummary
+    ? {
+        totalReturn: focusedSummary.totalReturn,
+        annualizedReturn: focusedSummary.annualizedReturn,
+        sharpe: focusedSummary.sharpe,
+        sortino: focusedSummary.sortino,
+        calmar: focusedSummary.calmar,
+        volatility: focusedSummary.volatility,
+        hitRate: focusedSummary.hitRate,
+        maxDrawdown: focusedSummary.maxDrawdown,
+      }
+    : data?.stats || {};
 
   return (
     <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
       <ValueGrid
         items={[
-          ['Total return', formatPercent(focusedSummary?.totalReturn ?? stats?.totalReturn), 'Selected model return'],
-          ['Annualized return', formatPercent(stats?.annualizedReturn), 'Annualized from available observations'],
-          ['Sharpe ratio', formatNumber(focusedSummary?.sharpe ?? stats?.sharpe), 'Risk-adjusted return'],
-          ['Sortino ratio', formatNumber(stats?.sortino), 'Downside-risk adjusted return'],
-          ['Calmar ratio', formatNumber(stats?.calmar), 'Return versus max drawdown'],
-          ['Volatility', formatPlainPercent(stats?.volatility), 'Annualized volatility'],
-          ['Hit rate', formatPlainPercent(focusedSummary?.hitRate ?? stats?.hitRate), 'Positive return frequency'],
-          ['Max drawdown', formatPlainPercent(focusedSummary?.maxDrawdown ?? stats?.maxDrawdown), 'Peak-to-trough drawdown'],
+          ['Total return', formatPercent(selectedStats.totalReturn), 'Selected model return'],
+          ['Annualized return', formatPercent(selectedStats.annualizedReturn), 'Annualized from available observations'],
+          ['Sharpe ratio', formatNumber(selectedStats.sharpe), 'Risk-adjusted return'],
+          ['Sortino ratio', formatNumber(selectedStats.sortino), 'Downside-risk adjusted return'],
+          ['Calmar ratio', formatNumber(selectedStats.calmar), 'Return versus max drawdown'],
+          ['Volatility', formatPlainPercent(selectedStats.volatility), 'Annualized volatility'],
+          ['Hit rate', formatPlainPercent(selectedStats.hitRate), 'Positive return frequency'],
+          ['Max drawdown', formatPlainPercent(selectedStats.maxDrawdown), 'Peak-to-trough drawdown'],
         ]}
       />
       <ApiTable
