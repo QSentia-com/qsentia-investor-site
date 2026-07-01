@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import useSWR from "swr";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { ElementType, ReactNode } from "react";
 import {
   ArrowRight,
@@ -192,6 +192,8 @@ function formatDate(value?: string | null) {
 }
 
 export default function MleqPage() {
+  const [activePipelineLabel, setActivePipelineLabel] =
+    useState<PipelineLabel>("Signal generation");
   const { data, error, isLoading } = useSWR<DashboardPayload>(
     "/api/dashboard",
     fetcher,
@@ -273,6 +275,9 @@ export default function MleqPage() {
       icon: CheckCircle2,
     },
   ];
+  const activePipeline =
+    pipelineRows.find((row) => row.label === activePipelineLabel) ||
+    pipelineRows[0];
   const maxPipelineValue = Math.max(
     ...pipelineRows.map((row) => Number(row.value || 0)),
     1,
@@ -471,15 +476,20 @@ export default function MleqPage() {
                 />
 
                 <div className="mt-7 space-y-3">
-                  {pipelineRows.map((row, index) => {
+                  {pipelineRows.map((row) => {
                     const Icon = row.icon;
+                    const isActive = row.label === activePipeline.label;
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={row.label}
-                        className={`rounded-[10px] border p-4 ${
-                          index === 0
+                        onClick={() =>
+                          setActivePipelineLabel(row.label as PipelineLabel)
+                        }
+                        className={`w-full rounded-[10px] border p-4 text-left transition ${
+                          isActive
                             ? "border-[#4f57ff] bg-[#eef2ff]"
-                            : "border-slate-200 bg-white"
+                            : "border-slate-200 bg-white hover:border-[#8b93ff] hover:bg-slate-50"
                         }`}
                       >
                         <div className="flex items-start gap-3">
@@ -499,7 +509,7 @@ export default function MleqPage() {
                             </p>
                           </div>
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -507,6 +517,12 @@ export default function MleqPage() {
 
               <DarkPanel title="Pipeline monitor">
                 <div className="space-y-5">
+                  <PipelineStageDetail
+                    label={activePipeline.label as PipelineLabel}
+                    value={Number(activePipeline.value || 0)}
+                    maxValue={maxPipelineValue}
+                  />
+
                   {pipelineRows.map((row) => {
                     const pct = Math.max(
                       6,
@@ -529,8 +545,8 @@ export default function MleqPage() {
                   })}
                 </div>
                 <div className="mt-6 rounded-[10px] border border-slate-200 bg-white p-4 font-mono text-xs leading-6 text-slate-700">
-                  Source observations are consumed only when the dashboard API
-                  publishes them.
+                  {pipelineStageDetails[activePipeline.label as PipelineLabel]
+                    .monitorNote}
                 </div>
               </DarkPanel>
             </div>
@@ -603,6 +619,91 @@ const workflowCopy = {
   "Execution audit":
     "Submitted orders, account values, and run timestamps remain inspectable after each cycle.",
 };
+
+type PipelineLabel = keyof typeof workflowCopy;
+
+const pipelineStageDetails: Record<
+  PipelineLabel,
+  { title: string; body: string; source: string; monitorNote: string }
+> = {
+  "Signal generation": {
+    title: "Signal intake and model state",
+    body: "The review starts by checking whether model signal history is present, current, and aligned with the selected research stream.",
+    source: "Signal history rows",
+    monitorNote:
+      "Signal observations are treated as the first evidence layer before risk, benchmark, or execution review begins.",
+  },
+  "Risk assessment": {
+    title: "Risk gates before allocation",
+    body: "Position rows, drawdown behavior, and account exposure are reviewed before a signal can be treated as deployment-ready.",
+    source: "Position and exposure rows",
+    monitorNote:
+      "Risk controls should stay visible before capital exposure, including stale data, drawdown, and allocation checks.",
+  },
+  "Benchmark evaluation": {
+    title: "Comparable market context",
+    body: "Benchmarks are aligned to the strategy window so model behavior can be reviewed beside relevant market reference series.",
+    source: "Benchmark registry rows",
+    monitorNote:
+      "Benchmark context keeps strategy claims comparable and prevents isolated return numbers from being overread.",
+  },
+  "Execution audit": {
+    title: "Order and run accountability",
+    body: "Submitted orders and execution records are kept inspectable so the research path can be reconciled with operating activity.",
+    source: "Submitted order rows",
+    monitorNote:
+      "Execution audit rows connect research output to operating evidence after each model cycle.",
+  },
+};
+
+function PipelineStageDetail({
+  label,
+  value,
+  maxValue,
+}: {
+  label: PipelineLabel;
+  value: number;
+  maxValue: number;
+}) {
+  const details = pipelineStageDetails[label];
+  const pct = Math.max(6, (Number(value || 0) / Math.max(maxValue, 1)) * 100);
+
+  return (
+    <div className="rounded-[12px] border border-[#cbd5ff] bg-[#f8faff] p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#4f57ff]">
+            {label}
+          </div>
+          <h3 className="mt-2 text-base font-semibold text-[#06130c]">
+            {details.title}
+          </h3>
+        </div>
+        <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-right">
+          <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-slate-500">
+            Rows
+          </div>
+          <div className="text-lg font-semibold text-[#06130c]">
+            {displayCount(value)}
+          </div>
+        </div>
+      </div>
+      <p className="mt-3 text-sm leading-6 text-slate-600">{details.body}</p>
+      <div className="mt-4">
+        <div className="mb-2 flex justify-between font-mono text-xs text-slate-600">
+          <span>{details.source}</span>
+          <span>{Math.round(pct)}%</span>
+        </div>
+        <div className="h-2 rounded-full bg-slate-200">
+          <div
+            className="h-2 rounded-full bg-[#4f57ff]"
+            style={{ width: `${Math.min(100, pct)}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function TerminalPanel({
   modelName,
