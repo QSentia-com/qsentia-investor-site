@@ -1,12 +1,5 @@
 import type { Metadata } from "next";
-import {
-  CheckCircle2,
-  CircleDashed,
-  Database,
-  GitBranch,
-  Server,
-  Waypoints,
-} from "lucide-react";
+import { CheckCircle2, Database, GitBranch, Waypoints } from "lucide-react";
 import { PageIntro } from "@/components/InstitutionalShell";
 import { PageShell, SectionCard } from "@/components/PageChrome";
 export const metadata: Metadata = { title: "Integrations | QSentia" };
