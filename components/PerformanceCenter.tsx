@@ -71,6 +71,8 @@ const fetcher = async (url: string): Promise<Payload> => {
   return response.json();
 };
 
+const MIN_RETURNS_FOR_RISK_METRICS = 5;
+
 const safePct = (value?: number | null) => {
   const x = fmtPct(value, true);
   return x === 'Pending' ? 'Not reported' : x;
@@ -209,9 +211,9 @@ export default function PerformanceCenter() {
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-            <Stat label="Since inception" value={safePct(selectedStrategy?.stats?.totalReturn ?? data.stats?.totalReturn)} />
-            <Stat label="Sharpe" value={safeNum(selectedStrategy?.stats?.sharpe ?? data.stats?.sharpe)} />
-            <Stat label="Max drawdown" value={safePct(selectedStrategy?.stats?.maxDrawdown ?? data.stats?.maxDrawdown)} />
+            <Stat label="Since inception" value={safePct(analysis.stats.totalReturn)} />
+            <Stat label="Sharpe" value={safeNum(analysis.stats.sharpe)} />
+            <Stat label="Max drawdown" value={safePct(analysis.stats.maxDrawdown)} />
             <Stat label="Best month" value={safePct(analysis.bestMonth)} />
             <Stat label="Worst month" value={safePct(analysis.worstMonth)} />
             <Stat label="Observations" value={String(analysis.points.length)} />
@@ -270,9 +272,9 @@ export default function PerformanceCenter() {
       )}
 
       <p className="text-xs leading-5 text-[#647269]">
-        Returns are calculated from source portfolio observations and shown before any independent verification.
-        Benchmark comparison is informational; fee treatment is not reported by the source. Historical and paper
-        results do not guarantee future performance.
+        Returns, Sharpe, and drawdown are calculated from the selected strategy&apos;s visible source
+        observations. Benchmark comparison is informational; fee treatment is not reported by the
+        source. Historical and paper results do not guarantee future performance.
       </p>
     </div>
   );
@@ -320,17 +322,7 @@ function calculate(data: Payload | undefined, strategy: StrategyOption | null) {
     benchmark: benchmarkMap.get(point.timestamp) ?? null,
   }));
 
-  const groups = new Map<string, { first: number; last: number }>();
-  points.forEach((point) => {
-    const key = point.timestamp.slice(0, 7);
-    const row = groups.get(key);
-    groups.set(key, row ? { first: row.first, last: point.portfolio } : { first: point.portfolio, last: point.portfolio });
-  });
-
-  const months = Array.from(groups).map(([month, row]) => ({
-    month,
-    value: row.first ? row.last / row.first - 1 : null,
-  }));
+  const months = monthlyReturnsFromPoints(points);
   const monthValues = months.map((month) => month.value).filter((value): value is number => typeof value === 'number');
   const returns = points.map((point, index) => {
     if (finiteNumber(point.return)) return point.return;
@@ -338,6 +330,7 @@ function calculate(data: Payload | undefined, strategy: StrategyOption | null) {
     if (!finiteNumber(previous) || previous === 0) return null;
     return point.portfolio / previous - 1;
   });
+  const stats = statsFromPoints(points, returns);
 
   let peak = Number.NEGATIVE_INFINITY;
   const rolling = points.map((point, index) => {
@@ -351,7 +344,10 @@ function calculate(data: Payload | undefined, strategy: StrategyOption | null) {
 
     return {
       date: point.timestamp,
-      rollingSharpe: variance > 0 ? (mean / Math.sqrt(variance)) * Math.sqrt(252) : null,
+      rollingSharpe:
+        window.length >= MIN_RETURNS_FOR_RISK_METRICS && variance > 0
+          ? (mean / Math.sqrt(variance)) * Math.sqrt(252)
+          : null,
       drawdownPct: finiteNumber(point.drawdown) ? point.drawdown * 100 : finiteNumber(computedDrawdown) ? computedDrawdown * 100 : null,
     };
   });
@@ -361,10 +357,92 @@ function calculate(data: Payload | undefined, strategy: StrategyOption | null) {
     chart,
     months,
     rolling,
+    stats,
     benchmarkKey: benchmark ? `${benchmark.name || benchmark.ticker}` : null,
     bestMonth: monthValues.length ? Math.max(...monthValues) : null,
     worstMonth: monthValues.length ? Math.min(...monthValues) : null,
   };
+}
+
+function statsFromPoints(
+  points: Array<{ portfolio: number }>,
+  returns: Array<number | null>
+): Stats {
+  if (points.length < 2) {
+    return {
+      totalReturn: null,
+      sharpe: null,
+      maxDrawdown: null,
+    };
+  }
+
+  const first = points[0].portfolio;
+  const last = points[points.length - 1].portfolio;
+  const totalReturn = first ? last / first - 1 : null;
+  const cleanReturns = returns.filter((value): value is number => finiteNumber(value));
+  const sharpe = sharpeFromReturns(cleanReturns);
+  let peak = Number.NEGATIVE_INFINITY;
+  let maxDrawdown = 0;
+
+  for (const point of points) {
+    peak = Math.max(peak, point.portfolio);
+    const drawdown = peak > 0 ? point.portfolio / peak - 1 : 0;
+    maxDrawdown = Math.min(maxDrawdown, drawdown);
+  }
+
+  return {
+    totalReturn,
+    sharpe,
+    maxDrawdown,
+  };
+}
+
+function monthlyReturnsFromPoints(points: Array<{ timestamp: string; portfolio: number }>) {
+  const rows: Array<{ month: string; value: number | null }> = [];
+  let currentMonth = '';
+  let monthStartValue: number | null = null;
+  let monthLastValue: number | null = null;
+  let previousValue: number | null = null;
+
+  for (const point of points) {
+    const month = point.timestamp.slice(0, 7);
+
+    if (month !== currentMonth) {
+      if (currentMonth && monthStartValue !== null && monthLastValue !== null) {
+        rows.push({
+          month: currentMonth,
+          value: monthStartValue ? monthLastValue / monthStartValue - 1 : null,
+        });
+      }
+
+      currentMonth = month;
+      monthStartValue = previousValue ?? point.portfolio;
+    }
+
+    monthLastValue = point.portfolio;
+    previousValue = point.portfolio;
+  }
+
+  if (currentMonth && monthStartValue !== null && monthLastValue !== null) {
+    rows.push({
+      month: currentMonth,
+      value: monthStartValue ? monthLastValue / monthStartValue - 1 : null,
+    });
+  }
+
+  return rows;
+}
+
+function sharpeFromReturns(returns: number[]) {
+  if (returns.length < MIN_RETURNS_FOR_RISK_METRICS) return null;
+
+  const mean = returns.reduce((sum, value) => sum + value, 0) / returns.length;
+  const variance =
+    returns.reduce((sum, value) => sum + (value - mean) ** 2, 0) /
+    Math.max(returns.length - 1, 1);
+  const std = Math.sqrt(variance);
+
+  return std > 0 ? (mean / std) * Math.sqrt(252) : null;
 }
 
 function strategyPoints(data: Payload | undefined, strategy: StrategyOption | null) {

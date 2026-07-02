@@ -178,7 +178,7 @@ function mapModel(entry: ModelComparisonEntry): MarketplaceModel {
     category,
     performance: {
       sharpeRatio: numberOrNull(entry.stats?.sharpe),
-      annualizedReturn: numberOrNull(entry.stats?.annualizedReturn ?? entry.stats?.totalReturn),
+      annualizedReturn: numberOrNull(entry.stats?.annualizedReturn),
       maxDrawdown: numberOrNull(entry.stats?.maxDrawdown),
       winRate: numberOrNull(entry.stats?.hitRate),
     },
@@ -338,7 +338,7 @@ export async function getLiveModelDetails(request: Request, slug: string): Promi
       .join(' '),
     performance: {
       sharpeRatio: numberOrNull(stats.sharpe),
-      annualizedReturn: numberOrNull(stats.annualizedReturn ?? stats.totalReturn),
+      annualizedReturn: numberOrNull(stats.annualizedReturn),
       maxDrawdown: numberOrNull(stats.maxDrawdown),
       winRate: numberOrNull(stats.hitRate),
       avgHoldingPeriod: null,
