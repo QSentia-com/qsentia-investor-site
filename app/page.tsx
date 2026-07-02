@@ -103,6 +103,33 @@ const platformItems = [
   'Audit trails for operating decisions',
 ];
 
+const positioningCards = [
+  {
+    question: 'What exactly is QSentia?',
+    answer:
+      'QSentia is an investment research and model-telemetry platform for reviewing machine-learning trading strategies with live evidence, benchmark context, risk controls, and execution-readiness records.',
+    icon: Database,
+  },
+  {
+    question: 'Who is it for?',
+    answer:
+      'It is built for allocators, family offices, hedge funds, systematic investors, and operating teams that need to evaluate model behavior before approving capital, API access, or broker-connected workflows.',
+    icon: FileSearch,
+  },
+  {
+    question: 'Why is it different?',
+    answer:
+      'Bloomberg, AlphaSense, Koyfin, and traditional research are strong for market data, filings, news, and analyst context. QSentia focuses on the strategy evidence layer: source-backed model returns, benchmark drift, drawdown controls, audit rows, and deployment readiness in one workflow.',
+    icon: ShieldCheck,
+  },
+  {
+    question: 'What should visitors do?',
+    answer:
+      'Investors should start with performance and risk review, then request controlled materials. Platform buyers should review the model marketplace, developer center, and broker-readiness workflow.',
+    icon: ArrowRight,
+  },
+];
+
 function cleanText(value: unknown) {
   return String(value ?? '')
     .replace(/[\u2013\u2014]/g, '-')
@@ -256,6 +283,62 @@ export default function HomePage() {
 
       <section className="border-b border-[#e2e7fb] bg-white">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-16">
+          <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-wide text-[#3046c8]">
+                Platform position
+              </p>
+              <h2 className="mt-3 text-4xl font-semibold leading-tight tracking-normal text-[#06130c]">
+                A clearer way to evaluate systematic strategies.
+              </h2>
+              <p className="mt-4 text-base leading-7 text-[#5a685f]">
+                QSentia is not another market terminal. It is a diligence layer for
+                model-backed strategies, built to help investors understand what is
+                running, how it behaves, where risk is controlled, and whether the
+                operating evidence supports the next decision.
+              </p>
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
+                <Link
+                  href="/performance"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#172554] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#2437b5]"
+                >
+                  Review performance
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/data-room"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#cbd5ff] bg-white px-4 py-2.5 text-sm font-bold text-[#172554] transition hover:border-[#3d52da]"
+                >
+                  Request materials
+                  <ShieldCheck className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+
+            <div className="grid gap-px overflow-hidden rounded-[10px] border border-[#dbe3ff] bg-[#dbe3ff] md:grid-cols-2">
+              {positioningCards.map((card) => {
+                const Icon = card.icon;
+                return (
+                  <div key={card.question} className="bg-white p-6">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#eef2ff] text-[#3046c8]">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <h3 className="mt-5 text-xl font-semibold text-[#06130c]">
+                      {card.question}
+                    </h3>
+                    <p className="mt-3 text-sm leading-7 text-[#5a685f]">
+                      {card.answer}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-[#e2e7fb] bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-16">
           <div className="mb-8 max-w-3xl">
             <p className="text-sm font-bold uppercase tracking-wide text-[#3046c8]">
               Investor diligence
@@ -264,8 +347,9 @@ export default function HomePage() {
               The core materials investors expect before a serious review.
             </h2>
             <p className="mt-4 text-base leading-7 text-[#5a685f]">
-              The homepage should route allocators to the evidence they need: strategy scope,
-              performance quality, risk controls, methodology, and controlled access to diligence materials.
+              Move from a high-level introduction into the evidence investors need:
+              strategy scope, performance quality, risk controls, methodology, and
+              controlled access to diligence materials.
             </p>
           </div>
 
