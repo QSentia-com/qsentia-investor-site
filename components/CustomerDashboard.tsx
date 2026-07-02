@@ -2,6 +2,7 @@
 
 import type { ComponentType, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import useSWR from "swr";
 import {
@@ -335,22 +336,32 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
   const activeNav = navItems.find((item) => item.id === activeSection) || navItems[0];
 
   return (
-    <div className="min-h-screen bg-[#f6f8fc]">
-      <div className="mx-auto grid max-w-[1480px] lg:grid-cols-[300px_minmax(0,1fr)]">
-        <aside className="border-b border-[#1f2a44] bg-[#080f1f] text-white lg:sticky lg:top-16 lg:min-h-[calc(100vh-4rem)] lg:border-b-0 lg:border-r">
+    <div className="min-h-screen bg-[#f5f7fb] text-[#0f172a]">
+      <div className="mx-auto grid max-w-[1540px] lg:grid-cols-[292px_minmax(0,1fr)]">
+        <aside className="border-b border-[#dfe6f3] bg-white/95 text-[#0f172a] shadow-[1px_0_0_rgba(15,23,42,0.04)] backdrop-blur lg:sticky lg:top-16 lg:max-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4rem)] lg:overflow-y-auto lg:border-b-0 lg:border-r">
           <div className="flex h-full flex-col px-4 py-5">
-            <div className="rounded-[10px] border border-white/10 bg-white/[0.03] p-4">
-              <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#91a0ff]">
-                Customer portal
+            <div className="rounded-[14px] border border-[#dfe6f3] bg-[#f8faff] p-4">
+              <div className="flex items-center gap-3">
+                <Link href="/" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-[#cbd5ff] bg-white" aria-label="QSentia home">
+                  <Image src="/logo/qsentia-primary.png" alt="QSentia" width={26} height={26} className="h-7 w-7 object-contain" />
+                </Link>
+                <div>
+                  <div className="text-sm font-semibold text-[#0f172a]">QSentia</div>
+                  <div className="mt-0.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#3d52da]">
+                    Settings
+                  </div>
+                </div>
               </div>
-              <div className="mt-3 text-lg font-semibold">QSentia</div>
-              <p className="mt-2 text-sm leading-6 text-[#a8b2ca]">
-                Account settings for model APIs, billing, usage limits, broker
-                authorization, and deployment controls.
+              <p className="mt-4 text-sm leading-6 text-[#5a685f]">
+                Manage model entitlements, API usage, billing, broker readiness,
+                and deployment controls from one account workspace.
               </p>
             </div>
 
-            <nav className="mt-5 grid gap-1" aria-label="Customer navigation">
+            <div className="mt-6 px-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#647269]">
+              Workspace
+            </div>
+            <nav className="mt-2 grid gap-1" aria-label="Settings navigation">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = item.id === activeSection;
@@ -361,16 +372,20 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
                     type="button"
                     suppressHydrationWarning
                     onClick={() => setActiveSection(item.id)}
-                    className={`flex items-start gap-3 rounded-md px-3 py-2.5 text-left text-sm transition ${
+                    className={`group flex items-start gap-3 rounded-[10px] border px-3 py-3 text-left text-sm transition ${
                       active
-                        ? "bg-white text-[#080f1f]"
-                        : "text-[#cbd5e1] hover:bg-white/10 hover:text-white"
+                        ? "border-[#cbd5ff] bg-[#eef2ff] text-[#172554] shadow-sm"
+                        : "border-transparent text-[#334155] hover:border-[#dfe6f3] hover:bg-[#f8faff]"
                     }`}
                   >
-                    <Icon className={`mt-0.5 h-4 w-4 ${active ? "text-[#3046c8]" : "text-[#91a0ff]"}`} />
-                    <span>
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${
+                      active ? "bg-white text-[#3d52da]" : "bg-[#f1f5ff] text-[#64748b] group-hover:text-[#3d52da]"
+                    }`}>
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0">
                       <span className="block font-semibold">{item.label}</span>
-                      <span className={`mt-0.5 block text-xs ${active ? "text-[#526071]" : "text-[#8fa0c3]"}`}>
+                      <span className={`mt-0.5 block truncate text-xs ${active ? "text-[#46554b]" : "text-[#647269]"}`}>
                         {item.detail}
                       </span>
                     </span>
@@ -379,25 +394,35 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
               })}
             </nav>
 
-            <div className="mt-6 rounded-[10px] border border-white/10 bg-white/[0.03] p-4">
+            <div className="mt-6 rounded-[14px] border border-[#dfe6f3] bg-white p-4 shadow-sm">
               <div className="flex items-start gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#23316a] text-sm font-semibold">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#172554] text-sm font-semibold text-white">
                   {sessionUser.name.slice(0, 2).toUpperCase()}
                 </span>
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold">
+                  <div className="truncate text-sm font-semibold text-[#0f172a]">
                     {sessionUser.name}
                   </div>
-                  <div className="mt-1 truncate text-xs text-[#a8b2ca]">
+                  <div className="mt-1 truncate text-xs text-[#647269]">
                     {sessionUser.email}
                   </div>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded-md border border-[#e2e7fb] bg-[#f8faff] px-3 py-2">
+                  <div className="font-bold uppercase tracking-wide text-[#647269]">Plan</div>
+                  <div className="mt-1 truncate font-semibold text-[#172554]">{planName}</div>
+                </div>
+                <div className="rounded-md border border-[#e2e7fb] bg-[#f8faff] px-3 py-2">
+                  <div className="font-bold uppercase tracking-wide text-[#647269]">Models</div>
+                  <div className="mt-1 font-semibold text-[#172554]">{licensedModels.length}</div>
                 </div>
               </div>
               <button
                 type="button"
                 suppressHydrationWarning
                 onClick={logout}
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md border border-white/15 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md border border-[#cfd7e6] bg-white px-3 py-2 text-sm font-semibold text-[#172554] transition hover:border-[#3d52da] hover:bg-[#f8faff]"
               >
                 <LogOut className="h-4 w-4" />
                 Sign out
@@ -406,7 +431,7 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
 
             <Link
               href="/contact"
-              className="mt-auto hidden items-center justify-between rounded-md border border-white/10 px-3 py-3 text-sm font-semibold text-[#cbd5e1] transition hover:bg-white/10 hover:text-white lg:flex"
+              className="mt-auto hidden items-center justify-between rounded-[10px] border border-[#dfe6f3] bg-white px-3 py-3 text-sm font-semibold text-[#172554] transition hover:border-[#3d52da] hover:bg-[#f8faff] lg:flex"
             >
               Contact support
               <ArrowRight className="h-4 w-4" />
@@ -415,21 +440,30 @@ export default function CustomerDashboard({ user }: { user: CustomerUser }) {
         </aside>
 
         <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-8">
-          <div className="mb-5 flex flex-col gap-3 rounded-[12px] border border-[#dbe3ff] bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wide text-[#3d52da]">
-                {activeNav.label}
+          <div className="mb-6 overflow-hidden rounded-[16px] border border-[#dbe3ff] bg-white shadow-sm">
+            <div className="border-b border-[#e2e7fb] bg-[linear-gradient(135deg,#ffffff_0%,#f4f7ff_55%,#eef2ff_100%)] p-5 md:p-6">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#3d52da]">
+                    Account settings
+                  </div>
+                  <h1 className="mt-2 text-3xl font-semibold tracking-[-0.01em] text-[#06130c]">
+                    {sectionTitle(activeSection)}
+                  </h1>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5a685f]">
+                    {sectionDescription(activeSection)}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <StatusPill value={environment} />
+                  <StatusPill value={loading ? "Refreshing" : "Current"} />
+                </div>
               </div>
-              <h1 className="mt-2 text-3xl font-semibold text-[#06130c]">
-                {sectionTitle(activeSection)}
-              </h1>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5a685f]">
-                {sectionDescription(activeSection)}
-              </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <StatusPill value={environment} />
-              <StatusPill value={loading ? "Refreshing" : "Current"} />
+            <div className="grid gap-px bg-[#e2e7fb] sm:grid-cols-3">
+              <WorkspaceStat label="Workspace" value={workspaceId} />
+              <WorkspaceStat label="Billing" value={label(billingStatus)} />
+              <WorkspaceStat label="Active section" value={activeNav.detail} />
             </div>
           </div>
 
@@ -470,6 +504,15 @@ function sectionDescription(section: SectionId) {
     support: "Open billing, access, and technical requests, and review customer activity.",
   };
   return descriptions[section];
+}
+
+function WorkspaceStat({ label: labelText, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 bg-white px-5 py-3">
+      <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#647269]">{labelText}</div>
+      <div className="mt-1 truncate text-sm font-semibold text-[#0f172a]">{value}</div>
+    </div>
+  );
 }
 
 function OverviewSection({ ctx }: { ctx: DashboardContext }) {
@@ -792,15 +835,17 @@ function Panel({
   title: string;
 }) {
   return (
-    <SectionCard className="p-5 md:p-6">
+    <SectionCard className="overflow-hidden rounded-[16px] border-[#dbe3ff] shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="text-xs font-bold uppercase tracking-wide text-[#647269]">{eyebrow}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-[#06130c]">{title}</h2>
+        <div className="px-5 pt-5 md:px-6 md:pt-6">
+          <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#3d52da]">{eyebrow}</div>
+          <h2 className="mt-2 text-xl font-semibold text-[#06130c]">{title}</h2>
         </div>
-        {action ? <div className="shrink-0">{action}</div> : null}
+        {action ? <div className="shrink-0 px-5 pt-5 md:px-6 md:pt-6">{action}</div> : null}
       </div>
-      {children}
+      <div className="px-5 pb-5 md:px-6 md:pb-6">
+        {children}
+      </div>
     </SectionCard>
   );
 }
@@ -817,10 +862,13 @@ function SummaryTile({
   value: string;
 }) {
   return (
-    <div className="rounded-[10px] border border-[#dbe3ff] bg-white p-4 shadow-sm">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#eef2ff] text-[#3d52da]">{icon}</span>
-      <div className="mt-4 text-xs font-bold uppercase tracking-wide text-[#647269]">{labelText}</div>
-      <div className="mt-2 truncate text-lg font-semibold text-[#06130c]">{value}</div>
+    <div className="rounded-[14px] border border-[#dbe3ff] bg-white p-4 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+      <div className="flex items-start justify-between gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#eef2ff] text-[#3d52da]">{icon}</span>
+        <span className="mt-1 h-2 w-2 rounded-full bg-[#3d52da]/35" />
+      </div>
+      <div className="mt-4 text-xs font-bold uppercase tracking-[0.15em] text-[#647269]">{labelText}</div>
+      <div className="mt-2 truncate text-xl font-semibold text-[#06130c]">{value}</div>
       <p className="mt-1 truncate text-sm text-[#5a685f]">{helper}</p>
     </div>
   );
@@ -838,9 +886,9 @@ function FactCard({
   value: string;
 }) {
   return (
-    <div className="rounded-md border border-[#e2e7fb] bg-[#f8faff] p-4">
-      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[#647269]">
-        <span className="text-[#3d52da]">{icon}</span>
+    <div className="rounded-[12px] border border-[#e2e7fb] bg-[#fbfcff] p-4">
+      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-[#647269]">
+        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-white text-[#3d52da] shadow-sm">{icon}</span>
         {labelText}
       </div>
       <div className="mt-3 truncate text-lg font-semibold text-[#06130c]">{value}</div>
@@ -859,7 +907,7 @@ function InfoRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-md border border-[#e2e7fb] bg-white px-3 py-2.5">
+    <div className="flex items-center justify-between gap-3 rounded-[10px] border border-[#e2e7fb] bg-white px-3 py-2.5">
       <span className="inline-flex items-center gap-2 text-sm text-[#5a685f]">
         <span className="text-[#3d52da]">{icon}</span>
         {labelText}
@@ -871,7 +919,7 @@ function InfoRow({
 
 function ControlRow({ label: labelText, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-md border border-[#e2e7fb] bg-[#fbfcff] px-3 py-2.5">
+    <div className="flex items-center justify-between gap-3 rounded-[10px] border border-[#e2e7fb] bg-[#fbfcff] px-3 py-2.5">
       <span className="text-sm text-[#5a685f]">{labelText}</span>
       <span className="max-w-[240px] truncate rounded-md border border-[#dbe3ff] bg-white px-2 py-1 text-xs font-bold uppercase tracking-wide text-[#3046c8]">{value}</span>
     </div>
@@ -888,7 +936,7 @@ function ReadinessItem({
   status: string;
 }) {
   return (
-    <div className="rounded-md border border-[#e2e7fb] bg-white px-3 py-2.5">
+    <div className="rounded-[10px] border border-[#e2e7fb] bg-white px-3 py-2.5">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm font-semibold text-[#06130c]">{labelText}</span>
         <StatusPill value={status} />
@@ -919,7 +967,7 @@ function StatusPill({ value }: { value: string }) {
           : "border-[#e2e7fb] bg-[#f8faff] text-[#46554b]";
 
   return (
-    <span className={`inline-flex rounded-md border px-2 py-1 text-xs font-bold uppercase tracking-wide ${tone}`}>
+    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${tone}`}>
       {label(value)}
     </span>
   );
@@ -938,7 +986,7 @@ function UsageMeter({
   const percent = Math.min(Math.max((used / safeLimit) * 100, 0), 100);
 
   return (
-    <div className="rounded-md border border-[#e2e7fb] bg-[#f8faff] p-4">
+    <div className="rounded-[12px] border border-[#e2e7fb] bg-[#f8faff] p-4">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm font-semibold text-[#06130c]">{labelText}</span>
         <span className="text-xs font-bold uppercase tracking-wide text-[#647269]">
@@ -964,7 +1012,7 @@ function QuickAction({
   label: string;
 }) {
   const className =
-    "inline-flex items-center justify-between gap-3 rounded-md border border-[#dbe3ff] bg-white px-3 py-3 text-sm font-semibold text-[#172554] transition hover:border-[#3d52da] hover:bg-[#f8faff] [&>svg]:h-4 [&>svg]:w-4";
+    "inline-flex items-center justify-between gap-3 rounded-[10px] border border-[#dbe3ff] bg-white px-3 py-3 text-sm font-semibold text-[#172554] transition hover:border-[#3d52da] hover:bg-[#f8faff] [&>svg]:h-4 [&>svg]:w-4";
 
   if (external) {
     return (
@@ -991,8 +1039,8 @@ function QuickAction({
 
 function SupportCard({ body, title }: { body: string; title: string }) {
   return (
-    <div className="rounded-md border border-[#e2e7fb] bg-[#f8faff] p-4">
-      <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-[#3d52da]">
+    <div className="rounded-[12px] border border-[#e2e7fb] bg-[#f8faff] p-4">
+      <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-[#3d52da] shadow-sm">
         <LifeBuoy className="h-4 w-4" />
       </span>
       <h3 className="mt-4 font-semibold text-[#06130c]">{title}</h3>
